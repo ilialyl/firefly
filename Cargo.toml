@@ -1,0 +1,11 @@
+[package]
+name = "firefly"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rodio = "0.21.0"
+clap = { version = "4.5.40", features = ["derive"] }
+ratatui = "0.28.0"
+color-eyre = "0.6.3"
+crossterm = "0.28.1"
