@@ -1,15 +1,13 @@
 use color_eyre::eyre::{Ok, Result};
-use rodio::{Decoder, Sink};
+use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
 
-pub fn get_sink() -> Result<Sink> {
+pub fn get_sink() -> Result<(OutputStream, Sink)> {
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
 
     let sink = rodio::Sink::connect_new(&stream_handle.mixer());
 
-    sink.stop();
-
-    Ok(sink)
+    Ok((stream_handle, sink))
 }
 
 pub fn get_source(path: &str) -> Result<Decoder<File>> {

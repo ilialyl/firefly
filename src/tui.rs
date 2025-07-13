@@ -9,20 +9,24 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Paragraph, Widget},
 };
-use rodio::Sink;
+use rodio::{OutputStream, Sink};
+use std::{sync::{Arc, Mutex}, thread, time::Duration};
 
 use crate::player::{self, get_source};
 
 pub struct App {
-    sink: Sink,
+    stream: OutputStream,
+    sink: Arc<Mutex<Sink>>,
     playing: bool,
     exit: bool,
 }
 
 impl App {
     pub fn new() -> Self {
+        let (stream, sink) = player::get_sink().expect("Error creating sink");
         Self {
-            sink: player::get_sink().expect("Error creating sink"),
+            stream,
+            sink: Arc::new(Mutex::new(sink)),
             playing: false,
             exit: false,
         }
@@ -57,11 +61,19 @@ impl App {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Enter => {
                 self.playing = true;
-                let source =
-                    get_source("audios/secretly_love_you.mp3").expect("Error obtaining source");
-                self.sink.append(source);
-                self.sink.play();
-                self.sink.sleep_until_end();
+
+                let sink = Arc::clone(&self.sink); // Clone Arc to move into thread
+
+                thread::spawn(move || {
+                    let source = get_source("audios/secretly_love_you.mp3").expect("Error obtaining source");
+                    let sink = sink.lock().unwrap();
+                    sink.append(source);
+                    sink.play();
+
+                    // Optional: wait until it's done playing
+                    // This sleep won't block UI thread
+                    sink.sleep_until_end();
+                });
             }
             _ => {}
         }
