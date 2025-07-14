@@ -8,15 +8,14 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Paragraph, Widget},
 };
-use rfd::FileDialog;
+
 use rodio::{OutputStream, Sink};
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
-    thread,
 };
 
-use crate::player::{self, get_source};
+use crate::player::{self};
 
 pub struct App {
     _stream: OutputStream,
@@ -66,26 +65,7 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Enter => {
-                let sink = Arc::clone(&self.sink); // Clone Arc to move into thread
-                let file = FileDialog::new()
-                    .add_filter("audio", &["mp3", "flac"])
-                    .set_directory("~/")
-                    .pick_file();
-
-                let file = match file {
-                    Some(f) => f,
-                    None => return,
-                };
-
-                self.file_path = Some(file.clone());
-
-                thread::spawn(move || {
-                    let source = get_source(file).expect("Error obtaining source");
-
-                    let sink = sink.lock().unwrap();
-                    sink.append(source);
-                    sink.play();
-                });
+                self.file_path = player::load_track(&self.sink);
 
                 self.playing = true;
             }
@@ -118,8 +98,10 @@ impl Widget for &App {
 
         let title = Line::from(" Firefly ".bold());
         let instructions = Line::from(vec![
-            " Play ".into(),
+            " Browse ".into(),
             "<Enter>".blue().bold(),
+            " Play/Pause ".into(),
+            "<Spacebar>".blue().bold(),
             " Quit ".into(),
             "<Q> ".blue().bold(),
         ]);
