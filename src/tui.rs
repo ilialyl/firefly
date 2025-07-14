@@ -20,6 +20,7 @@ use crate::player::{self};
 pub struct App {
     _stream: OutputStream,
     sink: Arc<Mutex<Sink>>,
+    volume: f32,
     file_path: Option<PathBuf>,
     playing: bool,
     exit: bool,
@@ -31,6 +32,7 @@ impl App {
         Self {
             _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
+            volume: 1.0,
             file_path: None,
             playing: false,
             exit: false,
@@ -79,6 +81,12 @@ impl App {
                     self.playing = true;
                 }
             }
+            KeyCode::Right => {
+                player::increase_volume(&self.sink);
+            }
+            KeyCode::Left => {
+                player::decrease_volume(&self.sink);
+            }
             _ => {}
         }
     }
@@ -92,7 +100,11 @@ impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let chunks = Layout::default()
             .direction(ratatui::layout::Direction::Vertical)
-            .constraints([Constraint::Length(1), Constraint::Length(1)])
+            .constraints([
+                Constraint::Length(1),
+                Constraint::Length(1),
+                Constraint::Length(1),
+            ])
             .margin(1)
             .split(area);
 
@@ -125,6 +137,8 @@ impl Widget for &App {
             false => Text::from("Paused"),
         };
 
+        let volume: Text = Text::from(format!("Volume: {}%", self.volume * 100.0));
+
         Paragraph::new(track_name)
             .alignment(ratatui::layout::Alignment::Center)
             .render(chunks[0], buf);
@@ -132,5 +146,9 @@ impl Widget for &App {
         Paragraph::new(status)
             .alignment(ratatui::layout::Alignment::Center)
             .render(chunks[1], buf);
+
+        Paragraph::new(volume)
+            .alignment(ratatui::layout::Alignment::Center)
+            .render(chunks[2], buf);
     }
 }
