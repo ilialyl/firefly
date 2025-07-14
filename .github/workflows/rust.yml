@@ -1,4 +1,4 @@
-name: Rust
+name: Rust build
 
 on:
   push:
@@ -6,15 +6,18 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
+
+    - name: Build release
+      run: cargo build --release --verbose
+
+    - name: Upload release binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: rust-release-binary
+        path: target/release/my_binary_name
