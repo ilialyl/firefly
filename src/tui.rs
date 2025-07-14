@@ -3,20 +3,25 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
-    layout::Rect,
+    layout::{Constraint, Layout, Rect},
     style::Stylize,
-    symbols::border,
     text::{Line, Text},
     widgets::{Block, Paragraph, Widget},
 };
+use rfd::FileDialog;
 use rodio::{OutputStream, Sink};
-use std::{sync::{Arc, Mutex}, thread, time::Duration};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    thread,
+};
 
 use crate::player::{self, get_source};
 
 pub struct App {
-    stream: OutputStream,
+    _stream: OutputStream,
     sink: Arc<Mutex<Sink>>,
+    file_path: Option<PathBuf>,
     playing: bool,
     exit: bool,
 }
@@ -25,8 +30,9 @@ impl App {
     pub fn new() -> Self {
         let (stream, sink) = player::get_sink().expect("Error creating sink");
         Self {
-            stream,
+            _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
+            file_path: None,
             playing: false,
             exit: false,
         }
@@ -60,20 +66,38 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Enter => {
-                self.playing = true;
-
                 let sink = Arc::clone(&self.sink); // Clone Arc to move into thread
+                let file = FileDialog::new()
+                    .add_filter("audio", &["mp3", "flac"])
+                    .set_directory("~/")
+                    .pick_file();
+
+                let file = match file {
+                    Some(f) => f,
+                    None => return,
+                };
+
+                self.file_path = Some(file.clone());
 
                 thread::spawn(move || {
-                    let source = get_source("audios/secretly_love_you.mp3").expect("Error obtaining source");
+                    let source = get_source(file).expect("Error obtaining source");
+
                     let sink = sink.lock().unwrap();
                     sink.append(source);
                     sink.play();
-
-                    // Optional: wait until it's done playing
-                    // This sleep won't block UI thread
-                    sink.sleep_until_end();
                 });
+
+                self.playing = true;
+            }
+            KeyCode::Char(' ') => {
+                let sink = self.sink.lock().unwrap();
+                if self.playing {
+                    sink.pause();
+                    self.playing = false;
+                } else {
+                    sink.play();
+                    self.playing = true;
+                }
             }
             _ => {}
         }
@@ -86,6 +110,12 @@ impl App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let chunks = Layout::default()
+            .direction(ratatui::layout::Direction::Vertical)
+            .constraints([Constraint::Length(1), Constraint::Length(1)])
+            .margin(1)
+            .split(area);
+
         let title = Line::from(" Firefly ".bold());
         let instructions = Line::from(vec![
             " Play ".into(),
@@ -93,19 +123,32 @@ impl Widget for &App {
             " Quit ".into(),
             "<Q> ".blue().bold(),
         ]);
+
         let block = Block::bordered()
             .title(title.centered())
-            .title_bottom(instructions.centered())
-            .border_set(border::THICK);
+            .title_bottom(instructions.centered());
+
+        block.render(area, buf);
+
+        let track_name: Text = match self.file_path.clone() {
+            Some(f) => {
+                let name = f.file_name().unwrap().to_str().unwrap();
+                Text::from(format!("{}", name))
+            }
+            None => Text::from("Empty"),
+        };
 
         let status: Text = match self.playing {
             true => Text::from("Playing"),
             false => Text::from("Paused"),
         };
 
+        Paragraph::new(track_name)
+            .alignment(ratatui::layout::Alignment::Center)
+            .render(chunks[0], buf);
+
         Paragraph::new(status)
-            .centered()
-            .block(block)
-            .render(area, buf);
+            .alignment(ratatui::layout::Alignment::Center)
+            .render(chunks[1], buf);
     }
 }
