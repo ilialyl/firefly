@@ -17,7 +17,7 @@ jobs:
       run: cargo build --release --verbose
 
     - name: Upload release binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: rust-release-binary
-        path: target/release/my_binary_name
+        path: target/release/firefly
