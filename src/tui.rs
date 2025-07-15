@@ -89,6 +89,17 @@ impl App {
                 player::decrease_volume(&self.sink);
                 self.volume = self.sink.lock().unwrap().volume();
             }
+            KeyCode::Right => {
+                if self.file_path.is_some() {
+                    player::forward(&self.sink);
+                }
+            }
+            KeyCode::Left => {
+                if self.file_path.is_some() {
+                    let file = self.file_path.as_ref().unwrap().clone();
+                    player::rewind(&self.sink, file);
+                }
+            }
             _ => {}
         }
     }

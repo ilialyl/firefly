@@ -6,6 +6,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
     thread,
+    time::Duration,
 };
 
 pub fn get_sink() -> Result<(OutputStream, Sink)> {
@@ -59,4 +60,27 @@ pub fn decrease_volume(sink: &Arc<Mutex<Sink>>) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
     sink.set_volume(current_vol - 0.05);
+}
+
+pub fn forward(sink: &Arc<Mutex<Sink>>) {
+    let sink = sink.lock().unwrap();
+    let current_pos = sink.get_pos();
+    sink.try_seek(current_pos + Duration::new(5, 0))
+        .expect("Error forwarding");
+}
+
+pub fn rewind(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
+    let sink = sink.lock().unwrap();
+    let current_pos = sink.get_pos();
+    let rewinded_pos = current_pos
+        .checked_sub(Duration::new(5, 0))
+        .unwrap_or(Duration::new(1, 0));
+
+    sink.clear();
+    let source = get_source(file).expect("Error obtaining source");
+    sink.append(source);
+
+    sink.try_seek(rewinded_pos).expect("Error rewinding");
+
+    sink.play();
 }
