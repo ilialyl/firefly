@@ -43,6 +43,7 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
         let source = get_source(file).expect("Error obtaining source");
 
         let sink = loaded_sink.lock().unwrap();
+        sink.clear();
         sink.append(source);
         sink.play();
     });
@@ -83,4 +84,13 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
     sink.try_seek(rewinded_pos).expect("Error rewinding");
 
     sink.play();
+}
+
+pub fn get_track_pos(sink: &Arc<Mutex<Sink>>) -> String {
+    let sink = sink.lock().unwrap();
+    let raw_pos = sink.get_pos();
+    let sec = raw_pos.as_secs() % 60;
+    let min = raw_pos.as_secs() / 60;
+
+    format!("{:02}:{:02}", min, sec)
 }
