@@ -1,4 +1,4 @@
-name: Rust build and create release
+name: Rust build for Linux and Windows
 
 on:
   workflow_dispatch:
