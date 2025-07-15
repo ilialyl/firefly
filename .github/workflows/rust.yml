@@ -1,4 +1,4 @@
-name: Rust build and upload artifact
+name: Rust build and create release
 
 on:
   workflow_dispatch:
@@ -14,10 +14,19 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libwayland-dev libasound2-dev pkg-config
 
       - name: Build release
-        run: cargo build --release
+        run: cargo build --release --locked
 
-      - name: Upload release binary
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rust-release-binary
+          name: firefly-release
           path: target/release/firefly
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.sha }}
+          files: |
+            target/release/firefly
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
