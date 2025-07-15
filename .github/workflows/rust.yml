@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-linux:
+    name: Build for Linux
     runs-on: ubuntu-latest
 
     steps:
@@ -19,14 +20,21 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firefly-release
+          name: firefly-release-linux
           path: target/release/firefly
 
-      - name: Create release
-        uses: softprops/action-gh-release@v1
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build release
+        run: cargo build --release --locked
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.sha }}
-          files: |
-            target/release/firefly
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: firefly-release-windows
+          path: target/release/firefly
