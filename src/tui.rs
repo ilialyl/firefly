@@ -13,6 +13,7 @@ use rodio::{OutputStream, Sink};
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use crate::player::{self};
@@ -23,6 +24,7 @@ pub struct App {
     volume: f32,
     file_path: Option<PathBuf>,
     playing: bool,
+    track_pos: String,
     exit: bool,
 }
 
@@ -35,16 +37,31 @@ impl App {
             volume: 1.0,
             file_path: None,
             playing: false,
+            track_pos: String::from("00:00"),
             exit: false,
         }
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while !self.exit {
+            self.update_logic();
             terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
         }
         Ok(())
+    }
+
+    fn update_logic(&mut self) {
+        {
+            let sink = self.sink.lock().unwrap();
+            if sink.is_paused() {
+                self.playing = false;
+            } else {
+                self.playing = true;
+            }
+        }
+
+        self.track_pos = player::get_track_pos(&self.sink);
     }
 
     fn draw(&self, frame: &mut Frame) {
@@ -52,14 +69,16 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match event::read()? {
-            // it's important to check that the event is a key press event as
-            // crossterm also emits key release and repeat events on Windows.
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
-            }
-            _ => {}
-        };
+        if event::poll(Duration::from_millis(16))? {
+            match event::read()? {
+                // it's important to check that the event is a key press event as
+                // crossterm also emits key release and repeat events on Windows.
+                Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                    self.handle_key_event(key_event)
+                }
+                _ => {}
+            };
+        }
         Ok(())
     }
 
@@ -67,18 +86,17 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Enter => {
-                self.file_path = player::load_track(&self.sink);
-
-                self.playing = true;
+                let track = player::load_track(&self.sink);
+                if track.is_some() {
+                    self.file_path = track;
+                }
             }
             KeyCode::Char(' ') => {
                 let sink = self.sink.lock().unwrap();
                 if self.playing {
                     sink.pause();
-                    self.playing = false;
                 } else {
                     sink.play();
-                    self.playing = true;
                 }
             }
             KeyCode::Up => {
@@ -117,6 +135,7 @@ impl Widget for &App {
                 Constraint::Length(1),
                 Constraint::Length(1),
                 Constraint::Length(1),
+                Constraint::Length(1),
             ])
             .margin(1)
             .split(area);
@@ -145,6 +164,8 @@ impl Widget for &App {
             None => Text::from("Empty"),
         };
 
+        let track_pos: Text = Text::from(self.track_pos.clone());
+
         let status: Text = match self.playing {
             true => Text::from("Playing"),
             false => Text::from("Paused"),
@@ -156,12 +177,16 @@ impl Widget for &App {
             .alignment(ratatui::layout::Alignment::Center)
             .render(chunks[0], buf);
 
-        Paragraph::new(status)
+        Paragraph::new(track_pos)
             .alignment(ratatui::layout::Alignment::Center)
             .render(chunks[1], buf);
 
-        Paragraph::new(volume)
+        Paragraph::new(status)
             .alignment(ratatui::layout::Alignment::Center)
             .render(chunks[2], buf);
+
+        Paragraph::new(volume)
+            .alignment(ratatui::layout::Alignment::Center)
+            .render(chunks[3], buf);
     }
 }
