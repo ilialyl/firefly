@@ -81,11 +81,13 @@ impl App {
                     self.playing = true;
                 }
             }
-            KeyCode::Right => {
+            KeyCode::Up => {
                 player::increase_volume(&self.sink);
+                self.volume = self.sink.lock().unwrap().volume();
             }
-            KeyCode::Left => {
+            KeyCode::Down => {
                 player::decrease_volume(&self.sink);
+                self.volume = self.sink.lock().unwrap().volume();
             }
             _ => {}
         }
@@ -137,7 +139,7 @@ impl Widget for &App {
             false => Text::from("Paused"),
         };
 
-        let volume: Text = Text::from(format!("Volume: {}%", self.volume * 100.0));
+        let volume: Text = Text::from(format!("Volume: {}%", (self.volume * 100.00).ceil() as i32));
 
         Paragraph::new(track_name)
             .alignment(ratatui::layout::Alignment::Center)

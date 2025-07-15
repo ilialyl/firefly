@@ -52,11 +52,11 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
 pub fn increase_volume(sink: &Arc<Mutex<Sink>>) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
-    sink.set_volume(current_vol + 0.1);
+    sink.set_volume(current_vol + 0.05);
 }
 
 pub fn decrease_volume(sink: &Arc<Mutex<Sink>>) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
-    sink.set_volume(current_vol - 0.1);
+    sink.set_volume(current_vol - 0.05);
 }
