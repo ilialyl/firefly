@@ -142,10 +142,14 @@ impl Widget for &App {
 
         let title = Line::from(" Firefly ".bold());
         let instructions = Line::from(vec![
-            " Browse ".into(),
+            " Load ".into(),
             "<Enter>".blue().bold(),
             " Play/Pause ".into(),
             "<Spacebar>".blue().bold(),
+            " Rewind/Forward ".into(),
+            "<Left/Right>".blue().bold(),
+            " Volume ".into(),
+            "<Up/Down>".blue().bold(),
             " Quit ".into(),
             "<Q> ".blue().bold(),
         ]);
