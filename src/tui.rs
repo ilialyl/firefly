@@ -25,6 +25,7 @@ pub struct App {
     file_path: Option<PathBuf>,
     playing: bool,
     track_pos: Duration,
+    looping: bool,
     exit: bool,
 }
 
@@ -38,6 +39,7 @@ impl App {
             file_path: None,
             playing: false,
             track_pos: Duration::ZERO,
+            looping: false,
             exit: false,
         }
     }
@@ -62,7 +64,15 @@ impl App {
             self.track_pos = sink.get_pos();
 
             if sink.empty() && self.track_pos.as_secs() > 3 {
-                self.file_path = None;
+                if self.looping {
+                    if self.file_path.is_some() {
+                        player::load_track(&self.sink, self.file_path.as_ref().unwrap().clone());
+                    }
+                } else {
+                    self.file_path = None;
+                    self.playing = false;
+                    self.track_pos = Duration::ZERO;
+                }
             }
         }
     }
@@ -89,7 +99,7 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Enter => {
-                let track = player::load_track(&self.sink);
+                let track = player::load_track_manual(&self.sink);
                 if track.is_some() {
                     self.file_path = track;
                 }
@@ -119,6 +129,13 @@ impl App {
                 if self.file_path.is_some() {
                     let file = self.file_path.as_ref().unwrap().clone();
                     player::rewind(&self.sink, file);
+                }
+            }
+            KeyCode::Char('l') => {
+                if self.looping {
+                    self.looping = false;
+                } else {
+                    self.looping = true;
                 }
             }
             _ => {}

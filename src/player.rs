@@ -24,9 +24,15 @@ pub fn get_source(path: PathBuf) -> Result<Decoder<File>> {
 }
 
 pub fn load_track(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
-    let sink = sink.lock().unwrap();
-    let source = get_source(file).expect("Error obtaining source");
-    sink.append(source);
+    let sink = Arc::clone(sink);
+    thread::spawn(move || {
+        let source = get_source(file).expect("Error obtaining source");
+
+        let sink = sink.lock().unwrap();
+        sink.clear();
+        sink.append(source);
+        sink.play();
+    });
 }
 
 pub fn load_track_manual(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
