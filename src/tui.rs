@@ -163,6 +163,7 @@ impl Widget for &App {
                 Constraint::Length(1),
                 Constraint::Length(1),
                 Constraint::Length(1),
+                Constraint::Length(1),
             ])
             .margin(1)
             .split(area);
@@ -192,7 +193,7 @@ impl Widget for &App {
                 let name = f.file_name().unwrap().to_str().unwrap();
                 Text::from(format!("{}", name))
             }
-            None => Text::from("Empty"),
+            None => Text::from("[Track Empty]"),
         };
 
         let track_pos: Text = Text::from(self.get_track_pos());
@@ -200,6 +201,11 @@ impl Widget for &App {
         let status: Text = match self.playing {
             true => Text::from("Playing"),
             false => Text::from("Paused"),
+        };
+
+        let loop_status: Text = match self.looping {
+            true => Text::from("[Looped]"),
+            false => Text::from(""),
         };
 
         let volume: Text = Text::from(format!("Volume: {}%", (self.volume * 100.00).ceil() as i32));
@@ -216,8 +222,12 @@ impl Widget for &App {
             .alignment(ratatui::layout::Alignment::Center)
             .render(chunks[2], buf);
 
-        Paragraph::new(volume)
+        Paragraph::new(loop_status)
             .alignment(ratatui::layout::Alignment::Center)
             .render(chunks[3], buf);
+
+        Paragraph::new(volume)
+            .alignment(ratatui::layout::Alignment::Center)
+            .render(chunks[4], buf);
     }
 }
