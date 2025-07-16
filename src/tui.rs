@@ -99,7 +99,7 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Enter => {
-                let track = player::load_track_manual(&self.sink);
+                let track = player::load_track_manually(&self.sink);
                 if track.is_some() {
                     self.file_path = track;
                 }

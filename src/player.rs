@@ -16,17 +16,17 @@ pub fn get_sink() -> Result<(OutputStream, Sink)> {
     Ok((stream_handle, sink))
 }
 
-pub fn get_source(path: PathBuf) -> Result<Decoder<File>> {
-    let file = File::open(path)?;
+pub fn get_source(track: PathBuf) -> Result<Decoder<File>> {
+    let file = File::open(track)?;
     let source = Decoder::new(file)?;
 
     Ok(source)
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
+pub fn load_track(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
     let sink = Arc::clone(sink);
     thread::spawn(move || {
-        let source = get_source(file).expect("Error obtaining source");
+        let source = get_source(track).expect("Error obtaining source");
 
         let sink = sink.lock().unwrap();
         sink.clear();
@@ -35,7 +35,7 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
     });
 }
 
-pub fn load_track_manual(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
+pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     let loaded_sink = Arc::clone(sink); // Clone Arc to move into thread
     let file = FileDialog::new()
         .add_filter("audio", &["mp3", "flac"])
@@ -82,7 +82,7 @@ pub fn forward(sink: &Arc<Mutex<Sink>>) {
         .expect("Error forwarding");
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
     let rewinded_pos = current_pos
@@ -90,7 +90,7 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
         .unwrap_or(Duration::new(1, 0));
 
     sink.clear();
-    let source = get_source(file).expect("Error obtaining source");
+    let source = get_source(track).expect("Error obtaining source");
     sink.append(source);
 
     sink.try_seek(rewinded_pos).expect("Error rewinding");
