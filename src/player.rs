@@ -11,7 +11,6 @@ use std::{
 
 pub fn get_sink() -> Result<(OutputStream, Sink)> {
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
-
     let sink = rodio::Sink::connect_new(&stream_handle.mixer());
 
     Ok((stream_handle, sink))
@@ -19,13 +18,18 @@ pub fn get_sink() -> Result<(OutputStream, Sink)> {
 
 pub fn get_source(path: PathBuf) -> Result<Decoder<File>> {
     let file = File::open(path)?;
-
     let source = Decoder::new(file)?;
 
     Ok(source)
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
+pub fn load_track(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
+    let sink = sink.lock().unwrap();
+    let source = get_source(file).expect("Error obtaining source");
+    sink.append(source);
+}
+
+pub fn load_track_manual(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     let loaded_sink = Arc::clone(sink); // Clone Arc to move into thread
     let file = FileDialog::new()
         .add_filter("audio", &["mp3", "flac"])
@@ -86,13 +90,4 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, file: PathBuf) {
     sink.try_seek(rewinded_pos).expect("Error rewinding");
 
     sink.play();
-}
-
-pub fn get_track_pos(sink: &Arc<Mutex<Sink>>) -> String {
-    let sink = sink.lock().unwrap();
-    let raw_pos = sink.get_pos();
-    let sec = raw_pos.as_secs() % 60;
-    let min = raw_pos.as_secs() / 60;
-
-    format!("{:02}:{:02}", min, sec)
 }
