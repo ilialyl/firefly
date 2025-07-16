@@ -51,16 +51,18 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     file_path
 }
 
-pub fn increase_volume(sink: &Arc<Mutex<Sink>>) {
+pub fn increase_volume(sink: &Arc<Mutex<Sink>>, increase_by: f32) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
-    sink.set_volume(current_vol + 0.05);
+    let increased_vol = f32::min(current_vol + increase_by, 2.0);
+    sink.set_volume(increased_vol);
 }
 
-pub fn decrease_volume(sink: &Arc<Mutex<Sink>>) {
+pub fn decrease_volume(sink: &Arc<Mutex<Sink>>, decrease_by: f32) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
-    sink.set_volume(current_vol - 0.05);
+    let decreased_vol = f32::max(current_vol - decrease_by, 0.0);
+    sink.set_volume(decreased_vol);
 }
 
 pub fn forward(sink: &Arc<Mutex<Sink>>) {

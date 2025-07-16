@@ -100,11 +100,11 @@ impl App {
                 }
             }
             KeyCode::Up => {
-                player::increase_volume(&self.sink);
+                player::increase_volume(&self.sink, 0.05);
                 self.volume = self.sink.lock().unwrap().volume();
             }
             KeyCode::Down => {
-                player::decrease_volume(&self.sink);
+                player::decrease_volume(&self.sink, 0.05);
                 self.volume = self.sink.lock().unwrap().volume();
             }
             KeyCode::Right => {
