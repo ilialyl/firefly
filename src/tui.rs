@@ -24,7 +24,7 @@ pub struct App {
     volume: f32,
     file_path: Option<PathBuf>,
     playing: bool,
-    track_pos: String,
+    track_pos: Duration,
     exit: bool,
 }
 
@@ -37,7 +37,7 @@ impl App {
             volume: 1.0,
             file_path: None,
             playing: false,
-            track_pos: String::from("00:00"),
+            track_pos: Duration::ZERO,
             exit: false,
         }
     }
@@ -59,9 +59,12 @@ impl App {
             } else {
                 self.playing = true;
             }
-        }
+            self.track_pos = sink.get_pos();
 
-        self.track_pos = player::get_track_pos(&self.sink);
+            if sink.empty() && self.track_pos.as_secs() > 3 {
+                self.file_path = None;
+            }
+        }
     }
 
     fn draw(&self, frame: &mut Frame) {
@@ -125,6 +128,13 @@ impl App {
     fn exit(&mut self) {
         self.exit = true;
     }
+
+    pub fn get_track_pos(&self) -> String {
+        let sec = self.track_pos.as_secs() % 60;
+        let min = self.track_pos.as_secs() / 60;
+
+        format!("{:02}:{:02}", min, sec)
+    }
 }
 
 impl Widget for &App {
@@ -168,7 +178,7 @@ impl Widget for &App {
             None => Text::from("Empty"),
         };
 
-        let track_pos: Text = Text::from(self.track_pos.clone());
+        let track_pos: Text = Text::from(self.get_track_pos());
 
         let status: Text = match self.playing {
             true => Text::from("Playing"),
