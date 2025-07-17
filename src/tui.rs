@@ -72,7 +72,6 @@ impl App {
                     if self.looping {
                         player::load_track(&self.sink, path.clone());
                     } else {
-                        self.track_path = None;
                         self.playing = false;
                         self.track_pos = None;
                         self.track_duration = None;
@@ -202,9 +201,16 @@ impl Widget for &App {
         block.render(area, buf);
 
         let track_name: Text = match self.track_path.clone() {
-            Some(f) => {
-                let name = f.file_name().unwrap().to_str().unwrap();
-                Text::from(format!("{}", name))
+            Some(path) => {
+                if let Some(os_name) = path.file_name() {
+                    if let Some(name) = os_name.to_str() {
+                        Text::from(name.to_string())
+                    } else {
+                        Text::from("[Invalid UTF-8 name]")
+                    }
+                } else {
+                    Text::from("[No file name]")
+                }
             }
             None => Text::from("[Track Empty]"),
         };
