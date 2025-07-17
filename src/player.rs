@@ -4,7 +4,7 @@ use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use std::{
     fs::File,
-    ops::Add,
+    ops::{Add, Sub},
     path::PathBuf,
     sync::{Arc, Mutex},
     thread,
@@ -82,6 +82,11 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_duration: &Duration, duration: Dur
     let current_pos = sink.get_pos();
     if current_pos.add(duration) < *track_duration {
         sink.try_seek(current_pos.add(duration))
+            .expect("Error forwarding");
+    } else if track_duration.sub(current_pos) < duration
+        && track_duration.sub(current_pos) > Duration::from_secs(1)
+    {
+        sink.try_seek(track_duration.sub(Duration::from_secs(1)))
             .expect("Error forwarding");
     }
 }
