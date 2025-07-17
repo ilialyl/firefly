@@ -24,7 +24,7 @@ pub struct App {
     volume: f32,
     track_path: Option<PathBuf>,
     playing: bool,
-    track_pos: Duration,
+    track_pos: Option<Duration>,
     track_duration: Option<Duration>,
     looping: bool,
     exit: bool,
@@ -39,7 +39,7 @@ impl App {
             volume: 1.0,
             track_path: None,
             playing: false,
-            track_pos: Duration::ZERO,
+            track_pos: None,
             track_duration: None,
             looping: false,
             exit: false,
@@ -63,9 +63,16 @@ impl App {
             } else {
                 self.playing = true;
             }
-            self.track_pos = sink.get_pos();
+            self.track_pos = Some(sink.get_pos());
 
-            if sink.empty() && self.track_pos.as_secs() > 3 {
+            if self.track_path.is_some()
+                && sink.empty()
+                && self
+                    .track_duration
+                    .unwrap_or(Duration::from_secs(0))
+                    .saturating_sub(self.track_pos.unwrap_or(Duration::from_secs(0)))
+                    < Duration::from_secs(3)
+            {
                 if self.looping {
                     if self.track_path.is_some() {
                         player::load_track(&self.sink, self.track_path.as_ref().unwrap().clone());
@@ -73,7 +80,7 @@ impl App {
                 } else {
                     self.track_path = None;
                     self.playing = false;
-                    self.track_pos = Duration::ZERO;
+                    self.track_pos = None;
                     self.track_duration = None;
                 }
             }
@@ -156,8 +163,8 @@ impl App {
     }
 
     pub fn get_track_pos(&self) -> String {
-        let sec = self.track_pos.as_secs() % 60;
-        let min = self.track_pos.as_secs() / 60;
+        let sec = self.track_pos.unwrap_or(Duration::from_secs(0)).as_secs() % 60;
+        let min = self.track_pos.unwrap_or(Duration::from_secs(0)).as_secs() / 60;
 
         format!("{:02}:{:02}", min, sec)
     }
