@@ -156,9 +156,10 @@ impl App {
         self.exit = true;
     }
 
-    pub fn get_track_pos(&self) -> String {
-        let sec = self.track_pos.unwrap_or(Duration::from_secs(0)).as_secs() % 60;
-        let min = self.track_pos.unwrap_or(Duration::from_secs(0)).as_secs() / 60;
+    pub fn track_pos_as_str(&self) -> String {
+        let track_pos = self.track_pos.unwrap_or(Duration::from_secs(0));
+        let sec = track_pos.as_secs() % 60;
+        let min = track_pos.as_secs() / 60;
 
         format!("{:02}:{:02}", min, sec)
     }
@@ -215,7 +216,7 @@ impl Widget for &App {
             None => Text::from("[Track Empty]"),
         };
 
-        let track_pos: Text = Text::from(self.get_track_pos());
+        let track_pos: Text = Text::from(self.track_pos_as_str());
 
         let status: Text = match self.playing {
             true => Text::from("Playing"),
