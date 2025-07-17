@@ -22,7 +22,7 @@ pub struct App {
     _stream: OutputStream,
     sink: Arc<Mutex<Sink>>,
     volume: f32,
-    file_path: Option<PathBuf>,
+    track_path: Option<PathBuf>,
     playing: bool,
     track_pos: Duration,
     looping: bool,
@@ -36,7 +36,7 @@ impl App {
             _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
             volume: 1.0,
-            file_path: None,
+            track_path: None,
             playing: false,
             track_pos: Duration::ZERO,
             looping: false,
@@ -65,11 +65,11 @@ impl App {
 
             if sink.empty() && self.track_pos.as_secs() > 3 {
                 if self.looping {
-                    if self.file_path.is_some() {
-                        player::load_track(&self.sink, self.file_path.as_ref().unwrap().clone());
+                    if self.track_path.is_some() {
+                        player::load_track(&self.sink, self.track_path.as_ref().unwrap().clone());
                     }
                 } else {
-                    self.file_path = None;
+                    self.track_path = None;
                     self.playing = false;
                     self.track_pos = Duration::ZERO;
                 }
@@ -101,7 +101,7 @@ impl App {
             KeyCode::Enter => {
                 let track = player::load_track_manually(&self.sink);
                 if track.is_some() {
-                    self.file_path = track;
+                    self.track_path = track;
                 }
             }
             KeyCode::Char(' ') => {
@@ -121,13 +121,13 @@ impl App {
                 self.volume = self.sink.lock().unwrap().volume();
             }
             KeyCode::Right => {
-                if self.file_path.is_some() {
+                if self.track_path.is_some() {
                     player::forward(&self.sink);
                 }
             }
             KeyCode::Left => {
-                if self.file_path.is_some() {
-                    let file = self.file_path.as_ref().unwrap().clone();
+                if self.track_path.is_some() {
+                    let file = self.track_path.as_ref().unwrap().clone();
                     player::rewind(&self.sink, file);
                 }
             }
@@ -190,7 +190,7 @@ impl Widget for &App {
 
         block.render(area, buf);
 
-        let track_name: Text = match self.file_path.clone() {
+        let track_name: Text = match self.track_path.clone() {
             Some(f) => {
                 let name = f.file_name().unwrap().to_str().unwrap();
                 Text::from(format!("{}", name))
