@@ -25,6 +25,7 @@ pub struct App {
     track_path: Option<PathBuf>,
     playing: bool,
     track_pos: Duration,
+    track_duration: Option<Duration>,
     looping: bool,
     exit: bool,
 }
@@ -39,6 +40,7 @@ impl App {
             track_path: None,
             playing: false,
             track_pos: Duration::ZERO,
+            track_duration: None,
             looping: false,
             exit: false,
         }
@@ -72,6 +74,7 @@ impl App {
                     self.track_path = None;
                     self.playing = false;
                     self.track_pos = Duration::ZERO;
+                    self.track_duration = None;
                 }
             }
         }
@@ -102,6 +105,8 @@ impl App {
                 let track = player::load_track_manually(&self.sink);
                 if track.is_some() {
                     self.track_path = track;
+                    self.track_duration =
+                        Some(player::get_track_duration(self.track_path.clone().unwrap()));
                 }
             }
             KeyCode::Char(' ') => {
