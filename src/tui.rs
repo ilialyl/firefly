@@ -68,7 +68,7 @@ impl App {
             if let (Some(path), Some(dur), Some(pos)) =
                 (&self.track_path, self.track_duration, self.track_pos)
             {
-                if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(1) {
+                if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
                     if self.looping {
                         player::load_track(&self.sink, path.clone());
                     } else {
