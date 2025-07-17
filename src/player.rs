@@ -38,7 +38,7 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
 }
 
 pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
-    let loaded_sink = Arc::clone(sink); // Clone Arc to move into thread
+    let sink = Arc::clone(sink); // Clone Arc to move into thread
     let file = FileDialog::new()
         .add_filter("audio", &["mp3", "flac"])
         .set_directory("~/")
@@ -54,7 +54,7 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     thread::spawn(move || {
         let source = get_source(file).expect("Error obtaining source");
 
-        let sink = loaded_sink.lock().unwrap();
+        let sink = sink.lock().unwrap();
         sink.clear();
         sink.append(source);
         sink.play();
@@ -63,40 +63,38 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     file_path
 }
 
-pub fn increase_volume(sink: &Arc<Mutex<Sink>>, increase_by: f32) {
+pub fn increase_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
-    let increased_vol = f32::min(current_vol + increase_by, 2.0);
+    let increased_vol = f32::min(current_vol + amount, 2.0);
     sink.set_volume(increased_vol);
 }
 
-pub fn decrease_volume(sink: &Arc<Mutex<Sink>>, decrease_by: f32) {
+pub fn decrease_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
-    let decreased_vol = f32::max(current_vol - decrease_by, 0.0);
+    let decreased_vol = f32::max(current_vol - amount, 0.0);
     sink.set_volume(decreased_vol);
 }
 
-pub fn forward(sink: &Arc<Mutex<Sink>>, track_duration: &Duration, duration: Duration) {
+pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
-    if current_pos.add(duration) < *track_duration {
-        sink.try_seek(current_pos.add(duration))
+    if current_pos.add(dur) < *track_dur {
+        sink.try_seek(current_pos.add(dur))
             .expect("Error forwarding");
-    } else if track_duration.sub(current_pos) < duration
-        && track_duration.sub(current_pos) > Duration::from_secs(1)
+    } else if track_dur.sub(current_pos) < dur
+        && track_dur.sub(current_pos) > Duration::from_secs(1)
     {
-        sink.try_seek(track_duration.sub(Duration::from_secs(1)))
+        sink.try_seek(track_dur.sub(Duration::from_secs(1)))
             .expect("Error forwarding");
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, duration: Duration) {
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
-    let rewinded_pos = current_pos
-        .checked_sub(duration)
-        .unwrap_or(Duration::new(1, 0));
+    let rewinded_pos = current_pos.checked_sub(dur).unwrap_or(Duration::new(1, 0));
 
     sink.clear();
     let source = get_source(track).expect("Error obtaining source");
