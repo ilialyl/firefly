@@ -4,6 +4,7 @@ use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use std::{
     fs::File,
+    ops::Add,
     path::PathBuf,
     sync::{Arc, Mutex},
     thread,
@@ -76,18 +77,20 @@ pub fn decrease_volume(sink: &Arc<Mutex<Sink>>, decrease_by: f32) {
     sink.set_volume(decreased_vol);
 }
 
-pub fn forward(sink: &Arc<Mutex<Sink>>) {
+pub fn forward(sink: &Arc<Mutex<Sink>>, track_duration: &Duration, duration: Duration) {
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
-    sink.try_seek(current_pos + Duration::new(5, 0))
-        .expect("Error forwarding");
+    if current_pos.add(duration) < *track_duration {
+        sink.try_seek(current_pos.add(duration))
+            .expect("Error forwarding");
+    }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, duration: Duration) {
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
     let rewinded_pos = current_pos
-        .checked_sub(Duration::new(5, 0))
+        .checked_sub(duration)
         .unwrap_or(Duration::new(1, 0));
 
     sink.clear();

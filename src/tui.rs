@@ -127,13 +127,17 @@ impl App {
             }
             KeyCode::Right => {
                 if self.track_path.is_some() {
-                    player::forward(&self.sink);
+                    player::forward(
+                        &self.sink,
+                        self.track_duration.as_ref().unwrap(),
+                        Duration::new(5, 0),
+                    );
                 }
             }
             KeyCode::Left => {
                 if self.track_path.is_some() {
                     let file = self.track_path.as_ref().unwrap().clone();
-                    player::rewind(&self.sink, file);
+                    player::rewind(&self.sink, file, Duration::new(5, 0));
                 }
             }
             KeyCode::Char('l') => {
