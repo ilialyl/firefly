@@ -1,4 +1,5 @@
 use color_eyre::eyre::{Ok, Result};
+use lofty::{file::AudioFile, probe::Probe};
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use std::{
@@ -96,4 +97,13 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
     sink.try_seek(rewinded_pos).expect("Error rewinding");
 
     sink.play();
+}
+
+pub fn get_track_duration(track: PathBuf) -> Duration {
+    let tagged_file = Probe::open(track)
+        .expect("ERROR: Bad path provided!")
+        .read()
+        .expect("ERROR: Failed to read file!");
+
+    tagged_file.properties().duration()
 }
