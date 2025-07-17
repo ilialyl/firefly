@@ -65,23 +65,18 @@ impl App {
             }
             self.track_pos = Some(sink.get_pos());
 
-            if self.track_path.is_some()
-                && sink.empty()
-                && self
-                    .track_duration
-                    .unwrap_or(Duration::from_secs(0))
-                    .saturating_sub(self.track_pos.unwrap_or(Duration::from_secs(0)))
-                    < Duration::from_secs(3)
+            if let (Some(path), Some(dur), Some(pos)) =
+                (&self.track_path, self.track_duration, self.track_pos)
             {
-                if self.looping {
-                    if self.track_path.is_some() {
-                        player::load_track(&self.sink, self.track_path.as_ref().unwrap().clone());
+                if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(1) {
+                    if self.looping {
+                        player::load_track(&self.sink, path.clone());
+                    } else {
+                        self.track_path = None;
+                        self.playing = false;
+                        self.track_pos = None;
+                        self.track_duration = None;
                     }
-                } else {
-                    self.track_path = None;
-                    self.playing = false;
-                    self.track_pos = None;
-                    self.track_duration = None;
                 }
             }
         }
@@ -137,14 +132,14 @@ impl App {
                     player::forward(
                         &self.sink,
                         self.track_duration.as_ref().unwrap(),
-                        Duration::new(5, 0),
+                        Duration::from_secs(5),
                     );
                 }
             }
             KeyCode::Left => {
                 if self.track_path.is_some() {
                     let file = self.track_path.as_ref().unwrap().clone();
-                    player::rewind(&self.sink, file, Duration::new(5, 0));
+                    player::rewind(&self.sink, file, Duration::from_secs(5));
                 }
             }
             KeyCode::Char('l') => {
