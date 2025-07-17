@@ -11,6 +11,13 @@ use std::{
     time::Duration,
 };
 
+#[derive(PartialEq)]
+pub enum Status {
+    Playing,
+    Paused,
+    Idle,
+}
+
 pub fn get_sink() -> Result<(OutputStream, Sink)> {
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
     let sink = rodio::Sink::connect_new(&stream_handle.mixer());

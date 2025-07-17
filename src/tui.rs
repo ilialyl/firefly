@@ -16,14 +16,14 @@ use std::{
     time::Duration,
 };
 
-use crate::player::{self};
+use crate::player::{self, Status};
 
 pub struct App {
     _stream: OutputStream,
     sink: Arc<Mutex<Sink>>,
     volume: f32,
     track_path: Option<PathBuf>,
-    playing: bool,
+    status: player::Status,
     track_pos: Option<Duration>,
     track_duration: Option<Duration>,
     looping: bool,
@@ -38,7 +38,7 @@ impl App {
             sink: Arc::new(Mutex::new(sink)),
             volume: 1.0,
             track_path: None,
-            playing: false,
+            status: Status::Idle,
             track_pos: None,
             track_duration: None,
             looping: false,
@@ -59,9 +59,9 @@ impl App {
         {
             let sink = self.sink.lock().unwrap();
             if sink.is_paused() {
-                self.playing = false;
-            } else {
-                self.playing = true;
+                self.status = Status::Paused;
+            } else if self.track_path.is_some() && !sink.empty() {
+                self.status = Status::Playing;
             }
             self.track_pos = Some(sink.get_pos());
 
@@ -72,7 +72,7 @@ impl App {
                     if self.looping {
                         player::load_track(&self.sink, path.clone());
                     } else {
-                        self.playing = false;
+                        self.status = Status::Idle;
                         self.track_pos = None;
                         self.track_duration = None;
                     }
@@ -112,7 +112,7 @@ impl App {
             }
             KeyCode::Char(' ') => {
                 let sink = self.sink.lock().unwrap();
-                if self.playing {
+                if self.status == Status::Playing {
                     sink.pause();
                 } else {
                     sink.play();
@@ -218,9 +218,10 @@ impl Widget for &App {
 
         let track_pos: Text = Text::from(self.track_pos_as_str());
 
-        let status: Text = match self.playing {
-            true => Text::from("Playing"),
-            false => Text::from("Paused"),
+        let status: Text = match self.status {
+            Status::Playing => Text::from("Playing"),
+            Status::Paused => Text::from("Paused"),
+            Status::Idle => Text::from("Idle"),
         };
 
         let loop_status: Text = match self.looping {
