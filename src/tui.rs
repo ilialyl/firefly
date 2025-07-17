@@ -127,18 +127,18 @@ impl App {
                 self.volume = self.sink.lock().unwrap().volume();
             }
             KeyCode::Right => {
-                if self.track_path.is_some() {
-                    player::forward(
-                        &self.sink,
-                        self.track_duration.as_ref().unwrap(),
-                        Duration::from_secs(5),
-                    );
+                if let Some(track_dur) = &self.track_duration {
+                    if self.track_path.is_some() {
+                        player::forward(&self.sink, track_dur, Duration::from_secs(5));
+                    }
                 }
             }
             KeyCode::Left => {
-                if self.track_path.is_some() {
-                    let file = self.track_path.as_ref().unwrap().clone();
-                    player::rewind(&self.sink, file, Duration::from_secs(5));
+                if let Some(track) = &self.track_path {
+                    if self.track_path.is_some() {
+                        player::rewind(&self.sink, track.clone(), Duration::from_secs(5));
+                        self.track_duration = Some(player::get_track_duration(track.clone()));
+                    }
                 }
             }
             KeyCode::Char('l') => {
