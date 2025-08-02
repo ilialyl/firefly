@@ -35,17 +35,18 @@ pub fn get_source(track: PathBuf) -> Result<Decoder<File>> {
     Ok(source)
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>, mut track: PathBuf) {
+pub fn load_track(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
+    let mut track_temp = track;
     if !NATIVE_EXTENSIONS
         .iter()
-        .any(|&i| i == track.extension().unwrap())
+        .any(|&i| i == track_temp.extension().unwrap())
     {
-        track = PathBuf::from("temp.flac");
+        track_temp = PathBuf::from("temp.flac");
     }
 
     let sink = Arc::clone(sink);
     thread::spawn(move || {
-        let source = get_source(track).expect("Error obtaining source");
+        let source = get_source(track_temp).expect("Error obtaining source");
 
         let sink = sink.lock().unwrap();
         sink.clear();
@@ -122,12 +123,13 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, mut track: PathBuf, dur: Duration) {
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
+    let mut track_temp = track;
     if !NATIVE_EXTENSIONS
         .iter()
-        .any(|&i| i == track.extension().unwrap())
+        .any(|&i| i == track_temp.extension().unwrap())
     {
-        track = PathBuf::from("temp.flac");
+        track_temp = PathBuf::from("temp.flac");
     }
 
     let sink = sink.lock().unwrap();
@@ -135,7 +137,7 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, mut track: PathBuf, dur: Duration) {
     let rewinded_pos = current_pos.checked_sub(dur).unwrap_or(Duration::new(1, 0));
 
     sink.clear();
-    let source = get_source(track).expect("Error obtaining source");
+    let source = get_source(track_temp).expect("Error obtaining source");
     sink.append(source);
 
     sink.try_seek(rewinded_pos).expect("Error rewinding");
@@ -143,15 +145,16 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, mut track: PathBuf, dur: Duration) {
     sink.play();
 }
 
-pub fn get_track_duration(mut track: PathBuf) -> Duration {
+pub fn get_track_duration(track: PathBuf) -> Duration {
+    let mut track_temp = track;
     if !NATIVE_EXTENSIONS
         .iter()
-        .any(|&i| i == track.extension().unwrap())
+        .any(|&i| i == track_temp.extension().unwrap())
     {
-        track = PathBuf::from("temp.flac");
+        track_temp = PathBuf::from("temp.flac");
     }
 
-    let tagged_file = Probe::open(track)
+    let tagged_file = Probe::open(track_temp)
         .expect("ERROR: Bad path provided!")
         .read()
         .expect("ERROR: Failed to read file!");
