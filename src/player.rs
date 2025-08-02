@@ -35,7 +35,14 @@ pub fn get_source(track: PathBuf) -> Result<Decoder<File>> {
     Ok(source)
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
+pub fn load_track(sink: &Arc<Mutex<Sink>>, mut track: PathBuf) {
+    if !NATIVE_EXTENSIONS
+        .iter()
+        .any(|&i| i == track.extension().unwrap())
+    {
+        track = PathBuf::from("temp.flac");
+    }
+
     let sink = Arc::clone(sink);
     thread::spawn(move || {
         let source = get_source(track).expect("Error obtaining source");
@@ -115,7 +122,14 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
+pub fn rewind(sink: &Arc<Mutex<Sink>>, mut track: PathBuf, dur: Duration) {
+    if !NATIVE_EXTENSIONS
+        .iter()
+        .any(|&i| i == track.extension().unwrap())
+    {
+        track = PathBuf::from("temp.flac");
+    }
+
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
     let rewinded_pos = current_pos.checked_sub(dur).unwrap_or(Duration::new(1, 0));
@@ -129,7 +143,14 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
     sink.play();
 }
 
-pub fn get_track_duration(track: PathBuf) -> Duration {
+pub fn get_track_duration(mut track: PathBuf) -> Duration {
+    if !NATIVE_EXTENSIONS
+        .iter()
+        .any(|&i| i == track.extension().unwrap())
+    {
+        track = PathBuf::from("temp.flac");
+    }
+
     let tagged_file = Probe::open(track)
         .expect("ERROR: Bad path provided!")
         .read()
