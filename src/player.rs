@@ -1,10 +1,9 @@
 use crate::NATIVE_EXTENSIONS;
 use color_eyre::eyre::{Ok, Result};
-use ez_ffmpeg::FfmpegContext;
-use ez_ffmpeg::FfmpegScheduler;
 use lofty::{file::AudioFile, probe::Probe};
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
+use rust_ffmpeg::prelude::*;
 use std::{
     fs::File,
     ops::{Add, Sub},
@@ -13,6 +12,7 @@ use std::{
     thread,
     time::Duration,
 };
+use tokio::runtime::Runtime;
 
 #[derive(PartialEq)]
 pub enum Status {
@@ -71,7 +71,7 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
         .iter()
         .any(|&i| i == file.extension().unwrap())
     {
-        convert_format(&file).unwrap();
+        convert_format(&file);
     }
 
     let file_path = Some(file.clone());
@@ -162,15 +162,14 @@ pub fn get_track_duration(track: PathBuf) -> Duration {
     tagged_file.properties().duration()
 }
 
-pub fn convert_format(track_path: &PathBuf) -> Result<()> {
+pub fn convert_format(track_path: &PathBuf) {
     let track_path_str = track_path.display().to_string();
-    let context = FfmpegContext::builder()
-        .input(track_path_str)
-        .output("temp.flac")
-        .build()?;
+    let runtime = Runtime::new().unwrap();
 
-    // 2. Run it via FfmpegScheduler (synchronous mode)
-    let result = FfmpegScheduler::new(context).start()?.wait();
-    result?; // Propagate any errors that occur
-    Ok(())
+    runtime.block_on(async {
+        FFmpegBuilder::convert(track_path_str, "temp.flac")
+            .run()
+            .await
+            .unwrap();
+    });
 }
