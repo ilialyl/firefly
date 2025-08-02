@@ -1,3 +1,4 @@
+use crate::NATIVE_EXTENSIONS;
 use color_eyre::eyre::{Ok, Result};
 use ez_ffmpeg::FfmpegContext;
 use ez_ffmpeg::FfmpegScheduler;
@@ -58,9 +59,7 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
         None => return None,
     };
 
-    let supported_extension = vec!["flac", "mp3"];
-
-    if !supported_extension
+    if !NATIVE_EXTENSIONS
         .iter()
         .any(|&i| i == file.extension().unwrap())
     {
@@ -70,7 +69,7 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     let file_path = Some(file.clone());
 
     thread::spawn(move || {
-        if !supported_extension
+        if !NATIVE_EXTENSIONS
             .iter()
             .any(|&i| i == file.extension().unwrap())
         {
