@@ -166,7 +166,6 @@ pub fn convert_format(track_path: &PathBuf) -> Result<()> {
     let track_path_str = track_path.display().to_string();
     let context = FfmpegContext::builder()
         .input(track_path_str)
-        .filter_desc("hue=s=0") // Example filter: desaturate (optional)
         .output("temp.flac")
         .build()?;
 
