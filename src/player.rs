@@ -59,7 +59,7 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     let sink = Arc::clone(sink); // Clone Arc to move into thread
     let file = FileDialog::new()
         .add_filter("audio", &["mp3", "flac", "opus"])
-        .add_filter("audio", &["*"])
+        .add_filter("all audio formats", &["*"])
         .set_directory("~/")
         .pick_file();
 
