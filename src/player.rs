@@ -1,4 +1,3 @@
-use crate::NATIVE_EXTENSIONS;
 use color_eyre::eyre::{Ok, Result};
 use lofty::{file::AudioFile, probe::Probe};
 use rfd::FileDialog;
@@ -20,6 +19,8 @@ pub enum Status {
     Paused,
     Idle,
 }
+
+const NATIVE_EXTENSIONS: [&'static str; 2] = ["flac", "mp3"];
 
 pub fn get_sink() -> Result<(OutputStream, Sink)> {
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
