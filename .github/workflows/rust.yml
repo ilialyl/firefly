@@ -1,4 +1,4 @@
-name: Rust build for Linux and Windows
+name: Build and Release (Linux and Windows)
 
 on:
   workflow_dispatch:
@@ -46,10 +46,6 @@ jobs:
       - build-linux
       - build-windows
     steps:
-      - name: Set tag name from short commit SHA
-        id: vars
-        run: echo "TAG_NAME=v-${GITHUB_SHA::7}" >> $GITHUB_ENV
-
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
@@ -66,11 +62,13 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ env.TAG_NAME }}
-          release_name: ${{ env.TAG_NAME }}
           draft: false
           prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: "v0.1.0"
+          tag_name: ${{ github.ref }}
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload Linux artifact to Release
         uses: actions/upload-release-asset@v1
