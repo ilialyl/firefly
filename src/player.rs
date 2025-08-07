@@ -20,7 +20,9 @@ pub enum Status {
     Idle,
 }
 
-const NATIVE_EXTENSIONS: [&'static str; 2] = ["flac", "mp3"];
+const RODIO_SUPPORTED_FORMATS: [&'static str; 4] = ["flac", "mp3", "ogg", "wav"];
+const TESTED_FORMATS: [&'static str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
+const UNTESTED_FORMATS: [&'static str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
 
 pub fn get_sink() -> Result<(OutputStream, Sink)> {
     let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
@@ -38,7 +40,7 @@ pub fn get_source(track: PathBuf) -> Result<Decoder<File>> {
 
 pub fn load_track(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
     let mut track_temp = track;
-    if !NATIVE_EXTENSIONS
+    if !RODIO_SUPPORTED_FORMATS
         .iter()
         .any(|&i| i == track_temp.extension().unwrap())
     {
@@ -59,7 +61,8 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
 pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     let sink = Arc::clone(sink); // Clone Arc to move into thread
     let file = FileDialog::new()
-        .add_filter("audio", &["mp3", "flac", "opus"])
+        .add_filter("Tested audio formats", &TESTED_FORMATS)
+        .add_filter("Untested audio formats", &UNTESTED_FORMATS)
         .set_directory("~/")
         .pick_file();
 
@@ -68,7 +71,7 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
         None => return None,
     };
 
-    if !NATIVE_EXTENSIONS
+    if !RODIO_SUPPORTED_FORMATS
         .iter()
         .any(|&i| i == file.extension().unwrap())
     {
@@ -78,7 +81,7 @@ pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
     let file_path = Some(file.clone());
 
     thread::spawn(move || {
-        if !NATIVE_EXTENSIONS
+        if !RODIO_SUPPORTED_FORMATS
             .iter()
             .any(|&i| i == file.extension().unwrap())
         {
@@ -126,7 +129,7 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
 
 pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
     let mut track_temp = track;
-    if !NATIVE_EXTENSIONS
+    if !RODIO_SUPPORTED_FORMATS
         .iter()
         .any(|&i| i == track_temp.extension().unwrap())
     {
@@ -148,7 +151,7 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
 
 pub fn get_track_duration(track: PathBuf) -> Duration {
     let mut track_temp = track;
-    if !NATIVE_EXTENSIONS
+    if !RODIO_SUPPORTED_FORMATS
         .iter()
         .any(|&i| i == track_temp.extension().unwrap())
     {
