@@ -9,7 +9,10 @@ use std::{
     time::Duration,
 };
 
-use crate::player::{self, Status};
+use crate::{
+    player::{self, Status},
+    ui,
+};
 
 pub struct App {
     pub _stream: OutputStream,
@@ -75,7 +78,8 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+        // frame.render_widget(self, frame.area());
+        ui::render(frame);
     }
 
     fn handle_events(&mut self) -> Result<()> {

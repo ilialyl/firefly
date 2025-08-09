@@ -1,97 +1,55 @@
 use ratatui::{
+    Frame,
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    style::Stylize,
-    text::{Line, Text},
-    widgets::{Block, Paragraph, Widget},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Stylize},
+    text::{Line, Text, ToSpan},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 
 use crate::{app, player::Status};
 
-impl Widget for &app::App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let chunks = Layout::default()
-            .direction(ratatui::layout::Direction::Vertical)
-            .constraints([
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-            ])
-            .margin(1)
-            .split(area);
+// impl Widget for &app::App {
+//     fn render(self, area: Rect, buf: &mut Buffer) {}
+// }
 
-        let title = Line::from(" Firefly ".bold());
-        let instructions = Line::from(vec![
-            " Load ".into(),
-            "<Enter>".blue().bold(),
-            " Play/Pause ".into(),
-            "<Space>".blue().bold(),
-            " Rewind/Forward ".into(),
-            "<Left/Right>".blue().bold(),
-            " Vol ".into(),
-            "<Up/Down>".blue().bold(),
-            " Loop ".into(),
-            "<L>".blue().bold(),
-            " Quit ".into(),
-            "<Q> ".blue().bold(),
-        ]);
+pub fn render(frame: &mut Frame) {
+    let outer_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Length(1), Constraint::Fill(1)])
+        .split(frame.area());
 
-        let block = Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered());
+    Block::new()
+        .fg(Color::White)
+        .title("Firefly Player".to_span().into_centered_line())
+        .render(outer_layout[0], frame.buffer_mut());
 
-        block.render(area, buf);
+    let inner_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Percentage(25), Constraint::Percentage(75)])
+        .split(outer_layout[1]);
 
-        let track_name: Text = match self.track_path.clone() {
-            Some(path) => {
-                if let Some(os_name) = path.file_name() {
-                    if let Some(name) = os_name.to_str() {
-                        Text::from(name.to_string())
-                    } else {
-                        Text::from("[Invalid UTF-8 name]")
-                    }
-                } else {
-                    Text::from("[No file name]")
-                }
-            }
-            None => Text::from("[Track Empty]"),
-        };
+    let main_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(60), Constraint::Percentage(40)])
+        .split(inner_layout[1]);
 
-        let track_pos: Text = Text::from(self.track_pos_as_str());
+    frame.render_widget(
+        Paragraph::new("Queue").block(Block::new().fg(Color::White).borders(Borders::ALL)),
+        inner_layout[0],
+    );
 
-        let status: Text = match self.status {
-            Status::Playing => Text::from("Playing"),
-            Status::Paused => Text::from("Paused"),
-            Status::Idle => Text::from("Idle"),
-        };
+    frame.render_widget(
+        Paragraph::new("Player")
+            .block(Block::new().fg(Color::White).borders(Borders::ALL))
+            .alignment(Alignment::Right),
+        main_layout[0],
+    );
 
-        let loop_status: Text = match self.looping {
-            true => Text::from("[Looped]"),
-            false => Text::from(""),
-        };
-
-        let volume: Text = Text::from(format!("Volume: {}%", (self.volume * 100.00).ceil() as i32));
-
-        Paragraph::new(track_name)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[0], buf);
-
-        Paragraph::new(track_pos)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[1], buf);
-
-        Paragraph::new(status)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[2], buf);
-
-        Paragraph::new(loop_status)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[3], buf);
-
-        Paragraph::new(volume)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[4], buf);
-    }
+    frame.render_widget(
+        Paragraph::new("Control")
+            .block(Block::new().fg(Color::White).borders(Borders::ALL))
+            .alignment(Alignment::Right),
+        main_layout[1],
+    );
 }
