@@ -79,7 +79,7 @@ impl App {
 
     fn draw(&self, frame: &mut Frame) {
         // frame.render_widget(self, frame.area());
-        ui::render(frame);
+        ui::render(self, frame);
     }
 
     fn handle_events(&mut self) -> Result<()> {
