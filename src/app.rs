@@ -98,7 +98,7 @@ impl App {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit(),
+            KeyCode::Esc => self.exit(),
             KeyCode::Enter => {
                 let track = player::load_track_manually(&self.sink);
                 if track.is_some() {
