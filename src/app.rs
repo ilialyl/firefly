@@ -1,13 +1,6 @@
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{
-    DefaultTerminal, Frame,
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    style::Stylize,
-    text::{Line, Text},
-    widgets::{Block, Paragraph, Widget},
-};
+use ratatui::{DefaultTerminal, Frame};
 
 use rodio::{OutputStream, Sink};
 use std::{
@@ -16,18 +9,21 @@ use std::{
     time::Duration,
 };
 
-use crate::player::{self, Status};
+use crate::{
+    player::{self, Status},
+    ui,
+};
 
 pub struct App {
-    _stream: OutputStream,
-    sink: Arc<Mutex<Sink>>,
-    volume: f32,
-    track_path: Option<PathBuf>,
-    status: player::Status,
-    track_pos: Option<Duration>,
-    track_duration: Option<Duration>,
-    looping: bool,
-    exit: bool,
+    pub _stream: OutputStream,
+    pub sink: Arc<Mutex<Sink>>,
+    pub volume: f32,
+    pub track_path: Option<PathBuf>,
+    pub status: player::Status,
+    pub track_pos: Option<Duration>,
+    pub track_duration: Option<Duration>,
+    pub looping: bool,
+    pub exit: bool,
 }
 
 impl App {
@@ -82,7 +78,8 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+        // frame.render_widget(self, frame.area());
+        ui::render(self, frame);
     }
 
     fn handle_events(&mut self) -> Result<()> {
@@ -101,7 +98,7 @@ impl App {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit(),
+            KeyCode::Esc => self.exit(),
             KeyCode::Enter => {
                 let track = player::load_track_manually(&self.sink);
                 if track.is_some() {
@@ -162,93 +159,5 @@ impl App {
         let min = track_pos.as_secs() / 60;
 
         format!("{:02}:{:02}", min, sec)
-    }
-}
-
-impl Widget for &App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let chunks = Layout::default()
-            .direction(ratatui::layout::Direction::Vertical)
-            .constraints([
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-            ])
-            .margin(1)
-            .split(area);
-
-        let title = Line::from(" Firefly ".bold());
-        let instructions = Line::from(vec![
-            " Load ".into(),
-            "<Enter>".blue().bold(),
-            " Play/Pause ".into(),
-            "<Space>".blue().bold(),
-            " Rewind/Forward ".into(),
-            "<Left/Right>".blue().bold(),
-            " Vol ".into(),
-            "<Up/Down>".blue().bold(),
-            " Loop ".into(),
-            "<L>".blue().bold(),
-            " Quit ".into(),
-            "<Q> ".blue().bold(),
-        ]);
-
-        let block = Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered());
-
-        block.render(area, buf);
-
-        let track_name: Text = match self.track_path.clone() {
-            Some(path) => {
-                if let Some(os_name) = path.file_name() {
-                    if let Some(name) = os_name.to_str() {
-                        Text::from(name.to_string())
-                    } else {
-                        Text::from("[Invalid UTF-8 name]")
-                    }
-                } else {
-                    Text::from("[No file name]")
-                }
-            }
-            None => Text::from("[Track Empty]"),
-        };
-
-        let track_pos: Text = Text::from(self.track_pos_as_str());
-
-        let status: Text = match self.status {
-            Status::Playing => Text::from("Playing"),
-            Status::Paused => Text::from("Paused"),
-            Status::Idle => Text::from("Idle"),
-        };
-
-        let loop_status: Text = match self.looping {
-            true => Text::from("[Looped]"),
-            false => Text::from(""),
-        };
-
-        let volume: Text = Text::from(format!("Volume: {}%", (self.volume * 100.00).ceil() as i32));
-
-        Paragraph::new(track_name)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[0], buf);
-
-        Paragraph::new(track_pos)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[1], buf);
-
-        Paragraph::new(status)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[2], buf);
-
-        Paragraph::new(loop_status)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[3], buf);
-
-        Paragraph::new(volume)
-            .alignment(ratatui::layout::Alignment::Center)
-            .render(chunks[4], buf);
     }
 }

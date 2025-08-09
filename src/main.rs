@@ -2,14 +2,15 @@ use std::path::Path;
 
 use color_eyre::eyre::Result;
 
+pub mod app;
 pub mod player;
-pub mod tui;
+pub mod ui;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
 
     let mut terminal = ratatui::init();
-    let result = tui::App::new().run(&mut terminal);
+    let result = app::App::new().run(&mut terminal);
     ratatui::restore();
 
     let temp_file = Path::new("temp.flac");
