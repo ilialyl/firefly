@@ -38,7 +38,11 @@ pub fn render(app: &App, frame: &mut Frame) {
     let left_panel_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(10); 10])
-        .split(inner_layout[1]);
+        .margin(2)
+        .split(inner_layout[0]);
+
+    let todo_text = Text::from("Work in progress.").centered();
+    frame.render_widget(todo_text, left_panel_chunks[0]);
 
     Block::bordered()
         .fg(Color::White)
