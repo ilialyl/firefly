@@ -1,16 +1,14 @@
+use std::rc::Rc;
+
 use ratatui::{
     Frame,
-    buffer::Buffer,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Stylize},
     text::{Line, Text, ToSpan},
-    widgets::{Block, Borders, Padding, Paragraph, Widget},
+    widgets::{Block, Widget},
 };
 
-use crate::{
-    app::{self, App},
-    player::Status,
-};
+use crate::{app::App, player::Status};
 
 // impl Widget for &app::App {
 //     fn render(self, area: Rect, buf: &mut Buffer) {}
@@ -72,22 +70,44 @@ pub fn render(app: &App, frame: &mut Frame) {
         .margin(2)
         .split(main_chunks[0]);
 
+    draw_player(app, frame, player_chunks);
+
     let control_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+        .constraints(vec![Constraint::Length(1); 6])
+        .margin(2)
         .split(main_chunks[1]);
 
+    draw_control(frame, control_chunks);
+}
+
+fn draw_player(app: &App, frame: &mut Frame, chunks: Rc<[Rect]>) {
     let track_name = get_track_name_text(&app).centered();
     let track_pos = get_track_pos_text(&app).centered();
     let status = get_status_text(&app).centered();
     let loop_status = get_loop_status_text(&app).centered();
     let volume = get_volume_text(&app).centered();
 
-    frame.render_widget(track_name, player_chunks[0]);
-    frame.render_widget(track_pos, player_chunks[1]);
-    frame.render_widget(status, player_chunks[2]);
-    frame.render_widget(loop_status, player_chunks[3]);
-    frame.render_widget(volume, player_chunks[4]);
+    frame.render_widget(track_name, chunks[0]);
+    frame.render_widget(track_pos, chunks[1]);
+    frame.render_widget(status, chunks[2]);
+    frame.render_widget(loop_status, chunks[3]);
+    frame.render_widget(volume, chunks[4]);
+}
+
+fn draw_control(frame: &mut Frame, chunks: Rc<[Rect]>) {
+    let controls = vec![
+        Line::from("Load <Enter>"),
+        Line::from("Play/Pause <Space>"),
+        Line::from("Rewind/Forward <Left/Right>"),
+        Line::from("Volume <Up/Down>"),
+        Line::from("Loop <L>"),
+        Line::from("Quit <Esc>"),
+    ];
+
+    for (idx, line) in controls.iter().enumerate() {
+        frame.render_widget(line, chunks[idx]);
+    }
 }
 
 fn get_track_name_text(app: &App) -> Text<'static> {
