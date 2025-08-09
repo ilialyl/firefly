@@ -1,7 +1,6 @@
 # Terminal Audio Player
-
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and [Ratatui](https://ratatui.rs/) for interface.
-
+![example_img](example_img/firefly_1.png)
 ## Features
 - Play, Pause, Rewind, and Forward.
 - Volume control from 0-200%
