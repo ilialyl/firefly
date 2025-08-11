@@ -6,6 +6,7 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Volume control from 0-200%
 - Track Looping
 - File Dialog
+- Track queuing (Pre-Release)
 
 ### Formats supported by Rodio
 - FLAC
@@ -19,6 +20,5 @@ It can still play other formats by converting formats not supported by Rodio to 
 - OGA
 
 ### Planned Features
-- [ ] Track Queuing
 - [ ] Playlists
 - [ ] Music Library
