@@ -91,21 +91,10 @@ impl App {
                     }
                 }
             }
+        }
 
-            if self.status == Status::Idle && !self.track_queue.is_empty() {
-                let next_track = match self.track_queue.pop_front() {
-                    Some(path) => path,
-                    None => {
-                        return;
-                    }
-                };
-
-                player::convert_format(&next_track);
-                player::load_track(&self.sink, next_track.clone());
-                self.track_path = Some(next_track);
-                self.track_duration =
-                    Some(player::get_track_duration(self.track_path.clone().unwrap()));
-            }
+        if self.status == Status::Idle && !self.track_queue.is_empty() {
+            self.play_next_track();
         }
     }
 
@@ -194,5 +183,19 @@ impl App {
         let min = track_pos.as_secs() / 60;
 
         format!("{:02}:{:02}", min, sec)
+    }
+
+    fn play_next_track(&mut self) {
+        let next_track = match self.track_queue.pop_front() {
+            Some(path) => path,
+            None => {
+                return;
+            }
+        };
+
+        player::convert_format(&next_track);
+        player::load_track(&self.sink, next_track.clone());
+        self.track_path = Some(next_track);
+        self.track_duration = Some(player::get_track_duration(self.track_path.clone().unwrap()));
     }
 }
