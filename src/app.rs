@@ -4,24 +4,26 @@ use ratatui::{DefaultTerminal, Frame};
 
 use rodio::{OutputStream, Sink};
 use std::{
+    collections::VecDeque,
     path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
 };
 
 use crate::{
-    player::{self, Status},
+    player::{self, Status, enqueue_track},
     ui,
 };
 
 pub struct App {
     pub _stream: OutputStream,
     pub sink: Arc<Mutex<Sink>>,
-    pub volume: f32,
-    pub track_path: Option<PathBuf>,
     pub status: player::Status,
+    pub track_path: Option<PathBuf>,
+    pub track_queue: VecDeque<PathBuf>,
     pub track_pos: Option<Duration>,
     pub track_duration: Option<Duration>,
+    pub volume: f32,
     pub looping: bool,
     pub exit: bool,
 }
@@ -32,11 +34,12 @@ impl App {
         Self {
             _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
-            volume: 1.0,
-            track_path: None,
             status: Status::Idle,
+            track_path: None,
+            track_queue: VecDeque::new(),
             track_pos: None,
             track_duration: None,
+            volume: 1.0,
             looping: false,
             exit: false,
         }
@@ -144,6 +147,9 @@ impl App {
                 } else {
                     self.looping = true;
                 }
+            }
+            KeyCode::Char('q') => {
+                enqueue_track(&mut self.track_queue).ok();
             }
             _ => {}
         }
