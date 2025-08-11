@@ -1,9 +1,10 @@
-use color_eyre::eyre::{Ok, Result};
+use color_eyre::eyre::{Ok, Result, eyre};
 use lofty::{file::AudioFile, probe::Probe};
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::prelude::*;
 use std::{
+    collections::VecDeque,
     fs::File,
     ops::{Add, Sub},
     path::PathBuf,
@@ -176,4 +177,21 @@ pub fn convert_format(track_path: &PathBuf) {
             .await
             .unwrap();
     });
+}
+
+pub fn enqueue_track(track_queue: &mut VecDeque<PathBuf>) -> Result<()> {
+    let file = FileDialog::new()
+        .add_filter("Tested audio formats", &TESTED_FORMATS)
+        .add_filter("Untested audio formats", &UNTESTED_FORMATS)
+        .set_directory("~/")
+        .pick_file();
+
+    let file = match file {
+        Some(f) => f,
+        None => return Err(eyre!("No track was chosen.")),
+    };
+
+    track_queue.push_back(file);
+
+    Ok(())
 }
