@@ -41,8 +41,10 @@ pub fn render(app: &App, frame: &mut Frame) {
         .margin(2)
         .split(inner_layout[0]);
 
-    let todo_text = Text::from("Work in progress.").centered();
-    frame.render_widget(todo_text, left_panel_chunks[0]);
+    // let todo_text = Text::from("Work in progress.").centered();
+    // frame.render_widget(todo_text, left_panel_chunks[0]);
+
+    draw_queue(frame, left_panel_chunks, get_queue_text(app));
 
     Block::bordered()
         .fg(Color::White)
@@ -114,6 +116,12 @@ fn draw_control(frame: &mut Frame, chunks: Rc<[Rect]>) {
     }
 }
 
+fn draw_queue(frame: &mut Frame, chunks: Rc<[Rect]>, text_vec: Vec<Text<'static>>) {
+    for (idx, text) in text_vec.iter().enumerate() {
+        frame.render_widget(text, chunks[idx]);
+    }
+}
+
 fn get_track_name_text(app: &App) -> Text<'static> {
     match app.track_path.clone() {
         Some(path) => {
@@ -152,4 +160,18 @@ fn get_loop_status_text(app: &App) -> Text<'static> {
 
 fn get_volume_text(app: &App) -> Text<'static> {
     Text::from(format!("Volume: {}%", (app.volume * 100.00).ceil() as i32))
+}
+
+fn get_queue_text(app: &App) -> Vec<Text<'static>> {
+    let mut text_vec: Vec<Text<'static>> = Vec::new();
+    for track in app.track_queue.clone() {
+        let text: Text;
+        if let Some(track_name) = track.file_name().unwrap().to_str() {
+            text = Text::from(track_name.to_string());
+        } else {
+            text = Text::from("[Invalid UTF-8 name]");
+        }
+        text_vec.push(text);
+    }
+    text_vec
 }
