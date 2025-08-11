@@ -56,14 +56,28 @@ impl App {
 
     fn update_logic(&mut self) {
         {
+            // Get sink
             let sink = self.sink.lock().unwrap();
+
+            // If sink paused, set status to paused
+            // If track_path exists in App and sink isn't empty, set status to playing
             if sink.is_paused() {
                 self.status = Status::Paused;
             } else if self.track_path.is_some() && !sink.empty() {
                 self.status = Status::Playing;
             }
+
+            if sink.empty() {
+                self.status = Status::Idle;
+            }
+
+            // Get track position
             self.track_pos = Some(sink.get_pos());
 
+            // If path, duration, and position are not None,
+            // If sink is empty or the track is within 3 seconds away from ending
+            // If looping is on, load the same track
+            // Else, load next track in queue.
             if let (Some(path), Some(dur), Some(pos)) =
                 (&self.track_path, self.track_duration, self.track_pos)
             {
@@ -71,11 +85,26 @@ impl App {
                     if self.looping {
                         player::load_track(&self.sink, path.clone());
                     } else {
-                        self.status = Status::Idle;
                         self.track_pos = None;
                         self.track_duration = None;
+                        self.status = Status::Idle;
                     }
                 }
+            }
+
+            if self.status == Status::Idle && !self.track_queue.is_empty() {
+                let next_track = match self.track_queue.pop_front() {
+                    Some(path) => path,
+                    None => {
+                        return;
+                    }
+                };
+
+                player::convert_format(&next_track);
+                player::load_track(&self.sink, next_track.clone());
+                self.track_path = Some(next_track);
+                self.track_duration =
+                    Some(player::get_track_duration(self.track_path.clone().unwrap()));
             }
         }
     }
