@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Stylize},
     text::{Line, Text, ToSpan},
-    widgets::{Block, Widget},
+    widgets::{Block, Paragraph, Widget},
 };
 
 use crate::{app::App, player::Status};
@@ -37,14 +37,11 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     let left_panel_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(10); 10])
+        .constraints(vec![Constraint::Percentage(100)])
         .margin(2)
         .split(inner_layout[0]);
 
-    // let todo_text = Text::from("Work in progress.").centered();
-    // frame.render_widget(todo_text, left_panel_chunks[0]);
-
-    draw_queue(frame, left_panel_chunks, get_queue_text(app));
+    frame.render_widget(get_queue_para(app), left_panel_chunks[0]);
 
     Block::bordered()
         .fg(Color::White)
@@ -117,12 +114,6 @@ fn draw_control(frame: &mut Frame, chunks: Rc<[Rect]>) {
     }
 }
 
-fn draw_queue(frame: &mut Frame, chunks: Rc<[Rect]>, text_vec: Vec<Text<'static>>) {
-    for (idx, text) in text_vec.iter().enumerate() {
-        frame.render_widget(text, chunks[idx]);
-    }
-}
-
 fn get_track_name_text(app: &App) -> Text<'static> {
     match app.track_path.clone() {
         Some(path) => {
@@ -163,16 +154,17 @@ fn get_volume_text(app: &App) -> Text<'static> {
     Text::from(format!("Volume: {}%", (app.volume * 100.00).ceil() as i32))
 }
 
-fn get_queue_text(app: &App) -> Vec<Text<'static>> {
-    let mut text_vec: Vec<Text<'static>> = Vec::new();
+fn get_queue_para(app: &App) -> Paragraph<'static> {
+    let mut track_vec: Vec<String> = Vec::new();
     for track in app.track_queue.clone() {
-        let text: Text;
         if let Some(track_name) = track.file_name().unwrap().to_str() {
-            text = Text::from(track_name.to_string());
+            track_vec.push(track_name.to_string());
         } else {
-            text = Text::from("[Invalid UTF-8 name]");
+            track_vec.push("[Invalid UTF-8 name]".into());
         }
-        text_vec.push(text);
     }
-    text_vec
+
+    let tracks_str = track_vec.join("\n");
+
+    Paragraph::new(tracks_str)
 }
