@@ -4,7 +4,7 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Stylize},
-    text::{Line, Text, ToSpan},
+    text::{Text, ToSpan},
     widgets::{Block, Paragraph, Widget},
 };
 
@@ -77,11 +77,11 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     let control_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1); 8])
+        .constraints(vec![Constraint::Percentage(100)])
         .margin(2)
         .split(main_chunks[1]);
 
-    draw_control(frame, control_chunks);
+    draw_control(frame, control_chunks[0]);
 }
 
 fn draw_player(app: &App, frame: &mut Frame, chunks: Rc<[Rect]>) {
@@ -98,21 +98,19 @@ fn draw_player(app: &App, frame: &mut Frame, chunks: Rc<[Rect]>) {
     frame.render_widget(volume, chunks[4]);
 }
 
-fn draw_control(frame: &mut Frame, chunks: Rc<[Rect]>) {
+fn draw_control(frame: &mut Frame, chunk: Rect) {
     let controls = vec![
-        Line::from("Play/Pause <Space>"),
-        Line::from("Load Now <N>"),
-        Line::from("Queue <Q>"),
-        Line::from("Skip <S>"),
-        Line::from("Rewind/Forward <Left/Right>"),
-        Line::from("Volume <Up/Down>"),
-        Line::from("Loop <L>"),
-        Line::from("Quit <Esc>"),
+        "Play/Pause <Space>",
+        "Load Now <N>",
+        "Queue <Q>",
+        "Skip <S>",
+        "Rewind/Forward <Left/Right>",
+        "Volume <Up/Down>",
+        "Loop <L>",
+        "Quit <Esc>",
     ];
 
-    for (idx, line) in controls.iter().enumerate() {
-        frame.render_widget(line, chunks[idx]);
-    }
+    frame.render_widget(Paragraph::new(controls.join("\n")), chunk);
 }
 
 fn get_track_name_text(app: &App) -> Text<'static> {
