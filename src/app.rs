@@ -19,6 +19,7 @@ pub struct App {
     pub _stream: OutputStream,
     pub sink: Arc<Mutex<Sink>>,
     pub status: player::Status,
+    pub info: Vec<String>,
     pub track_path: Option<PathBuf>,
     pub track_queue: VecDeque<PathBuf>,
     pub track_pos: Option<Duration>,
@@ -35,6 +36,7 @@ impl App {
             _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
             status: Status::Idle,
+            info: vec!["".into()],
             track_path: None,
             track_queue: VecDeque::new(),
             track_pos: None,
@@ -47,14 +49,21 @@ impl App {
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while !self.exit {
-            self.update_logic();
+            self.update_logic(terminal);
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_events()?;
+            self.handle_events(terminal)?;
         }
         Ok(())
     }
 
-    fn update_logic(&mut self) {
+    fn refresh_frame(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        self.update_logic(terminal);
+        terminal.draw(|frame| self.draw(frame))?;
+
+        Ok(())
+    }
+
+    fn update_logic(&mut self, terminal: &mut DefaultTerminal) {
         {
             // Get sink
             let sink = self.sink.lock().unwrap();
@@ -94,7 +103,7 @@ impl App {
         }
 
         if self.status == Status::Idle && !self.track_queue.is_empty() {
-            self.play_next_track();
+            self.play_next_track(terminal);
         }
     }
 
@@ -103,13 +112,13 @@ impl App {
         ui::render(self, frame);
     }
 
-    fn handle_events(&mut self) -> Result<()> {
+    fn handle_events(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         if event::poll(Duration::from_millis(16))? {
             match event::read()? {
                 // it's important to check that the event is a key press event as
                 // crossterm also emits key release and repeat events on Windows.
                 Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                    self.handle_key_event(key_event)
+                    self.handle_key_event(key_event, terminal)
                 }
                 _ => {}
             };
@@ -117,7 +126,7 @@ impl App {
         Ok(())
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event(&mut self, key_event: KeyEvent, terminal: &mut DefaultTerminal) {
         match key_event.code {
             KeyCode::Esc => self.exit(),
             KeyCode::Char('n') => {
@@ -137,7 +146,7 @@ impl App {
                 }
             }
             KeyCode::Char('s') => {
-                self.play_next_track();
+                self.play_next_track(terminal);
             }
             KeyCode::Up => {
                 player::increase_volume(&self.sink, 0.05);
@@ -188,7 +197,7 @@ impl App {
         format!("{:02}:{:02}", min, sec)
     }
 
-    fn play_next_track(&mut self) {
+    fn play_next_track(&mut self, terminal: &mut DefaultTerminal) {
         let next_track = match self.track_queue.pop_front() {
             Some(path) => path,
             None => {
@@ -196,9 +205,23 @@ impl App {
             }
         };
 
+        self.info
+            .push("Converting format and normalizing volume...".into());
+
+        self.refresh_frame(terminal)
+            .expect("Error refreshing frame");
+
         player::convert_format(&next_track);
+
+        self.info.push("Loading track...".into());
+
+        self.refresh_frame(terminal)
+            .expect("Error refreshing frame");
+
         player::load_track(&self.sink, next_track.clone());
         self.track_path = Some(next_track);
         self.track_duration = Some(player::get_track_duration(self.track_path.clone().unwrap()));
+
+        self.info.push("".into());
     }
 }

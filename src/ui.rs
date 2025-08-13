@@ -78,14 +78,14 @@ pub fn render(app: &App, frame: &mut Frame) {
 
 fn draw_player(app: &App, frame: &mut Frame, chunk: Rect) {
     let player_text = vec![
-        get_track_name_str(&app),
+        get_track_name_str(app),
         "".into(),
-        get_track_pos_str(&app),
+        get_track_pos_str(app),
         "".into(),
-        get_status_str(&app),
-        get_loop_status_str(&app),
-        "".into(),
-        get_volume_str(&app),
+        get_status_str(app),
+        get_loop_status_str(app),
+        get_info_str(app),
+        get_volume_str(app),
     ];
 
     let area = center_vertical(chunk, player_text.len() as u16);
@@ -150,6 +150,13 @@ fn get_loop_status_str(app: &App) -> String {
 
 fn get_volume_str(app: &App) -> String {
     format!("Volume: {}%", (app.volume * 100.00).ceil() as i32)
+}
+
+fn get_info_str(app: &App) -> String {
+    match app.info.last() {
+        Some(str) => str.clone(),
+        None => "".into(),
+    }
 }
 
 fn get_queue_para(app: &App) -> Paragraph<'static> {
