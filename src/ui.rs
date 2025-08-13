@@ -94,8 +94,8 @@ fn draw_player(app: &App, frame: &mut Frame, chunks: Rc<[Rect]>) {
     frame.render_widget(track_name, chunks[0]);
     frame.render_widget(track_pos, chunks[1]);
     frame.render_widget(status, chunks[2]);
-    frame.render_widget(loop_status, chunks[3]);
-    frame.render_widget(volume, chunks[4]);
+    frame.render_widget(volume, chunks[3]);
+    frame.render_widget(loop_status, chunks[4]);
 }
 
 fn draw_control(frame: &mut Frame, chunk: Rect) {
