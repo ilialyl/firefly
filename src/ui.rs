@@ -1,10 +1,8 @@
-use std::rc::Rc;
-
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
     style::{Color, Stylize},
-    text::{Text, ToSpan},
+    text::ToSpan,
     widgets::{Block, Paragraph, Widget},
 };
 
@@ -63,17 +61,11 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     let player_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-        ])
+        .constraints(vec![Constraint::Percentage(100)])
         .margin(2)
         .split(main_chunks[0]);
 
-    draw_player(app, frame, player_chunks);
+    draw_player(app, frame, player_chunks[0]);
 
     let control_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -84,18 +76,25 @@ pub fn render(app: &App, frame: &mut Frame) {
     draw_control(frame, control_chunks[0]);
 }
 
-fn draw_player(app: &App, frame: &mut Frame, chunks: Rc<[Rect]>) {
-    let track_name = get_track_name_text(&app).centered();
-    let track_pos = get_track_pos_text(&app).centered();
-    let status = get_status_text(&app).centered();
-    let loop_status = get_loop_status_text(&app).centered();
-    let volume = get_volume_text(&app).centered();
+fn draw_player(app: &App, frame: &mut Frame, chunk: Rect) {
+    let player_text = vec![
+        get_track_name_str(&app),
+        "".into(),
+        get_track_pos_str(&app),
+        "".into(),
+        get_status_str(&app),
+        get_loop_status_str(&app),
+        "".into(),
+        get_volume_str(&app),
+    ];
 
-    frame.render_widget(track_name, chunks[0]);
-    frame.render_widget(track_pos, chunks[1]);
-    frame.render_widget(status, chunks[2]);
-    frame.render_widget(volume, chunks[3]);
-    frame.render_widget(loop_status, chunks[4]);
+    let area = center_vertical(chunk, player_text.len() as u16);
+
+    let player_para = Paragraph::new(player_text.join("\n"))
+        .centered()
+        .alignment(Alignment::Center);
+
+    frame.render_widget(player_para, area);
 }
 
 fn draw_control(frame: &mut Frame, chunk: Rect) {
@@ -113,44 +112,44 @@ fn draw_control(frame: &mut Frame, chunk: Rect) {
     frame.render_widget(Paragraph::new(controls.join("\n")), chunk);
 }
 
-fn get_track_name_text(app: &App) -> Text<'static> {
+fn get_track_name_str(app: &App) -> String {
     match app.track_path.clone() {
         Some(path) => {
             if let Some(os_name) = path.file_name() {
                 if let Some(name) = os_name.to_str() {
-                    Text::from(name.to_string())
+                    name.to_string()
                 } else {
-                    Text::from("[Invalid UTF-8 name]")
+                    "[Invalid UTF-8 name]".into()
                 }
             } else {
-                Text::from("[No file name]")
+                "[No file name]".into()
             }
         }
-        None => Text::from("[Track Empty]"),
+        None => "[Track Empty]".into(),
     }
 }
 
-fn get_track_pos_text(app: &App) -> Text<'static> {
-    Text::from(app.track_pos_as_str())
+fn get_track_pos_str(app: &App) -> String {
+    app.track_pos_as_str()
 }
 
-fn get_status_text(app: &App) -> Text<'static> {
+fn get_status_str(app: &App) -> String {
     match app.status {
-        Status::Playing => Text::from("Playing"),
-        Status::Paused => Text::from("Paused"),
-        Status::Idle => Text::from("Idle"),
+        Status::Playing => "Playing".into(),
+        Status::Paused => ("Paused").into(),
+        Status::Idle => ("Idle").into(),
     }
 }
 
-fn get_loop_status_text(app: &App) -> Text<'static> {
+fn get_loop_status_str(app: &App) -> String {
     match app.looping {
-        true => Text::from("[Looped]"),
-        false => Text::from(""),
+        true => "[Looped]".into(),
+        false => "".into(),
     }
 }
 
-fn get_volume_text(app: &App) -> Text<'static> {
-    Text::from(format!("Volume: {}%", (app.volume * 100.00).ceil() as i32))
+fn get_volume_str(app: &App) -> String {
+    format!("Volume: {}%", (app.volume * 100.00).ceil() as i32)
 }
 
 fn get_queue_para(app: &App) -> Paragraph<'static> {
@@ -166,4 +165,11 @@ fn get_queue_para(app: &App) -> Paragraph<'static> {
     let tracks_str = track_vec.join("\n");
 
     Paragraph::new(tracks_str)
+}
+
+fn center_vertical(area: Rect, height: u16) -> Rect {
+    let [area] = Layout::vertical([Constraint::Length(height)])
+        .flex(Flex::Center)
+        .areas(area);
+    area
 }
