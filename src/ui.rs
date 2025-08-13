@@ -77,7 +77,7 @@ pub fn render(app: &App, frame: &mut Frame) {
 
     let control_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1); 7])
+        .constraints(vec![Constraint::Length(1); 8])
         .margin(2)
         .split(main_chunks[1]);
 
@@ -100,9 +100,10 @@ fn draw_player(app: &App, frame: &mut Frame, chunks: Rc<[Rect]>) {
 
 fn draw_control(frame: &mut Frame, chunks: Rc<[Rect]>) {
     let controls = vec![
+        Line::from("Play/Pause <Space>"),
         Line::from("Load Now <N>"),
         Line::from("Queue <Q>"),
-        Line::from("Play/Pause <Space>"),
+        Line::from("Skip <S>"),
         Line::from("Rewind/Forward <Left/Right>"),
         Line::from("Volume <Up/Down>"),
         Line::from("Loop <L>"),

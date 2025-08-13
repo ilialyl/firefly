@@ -136,6 +136,9 @@ impl App {
                     sink.play();
                 }
             }
+            KeyCode::Char('s') => {
+                self.play_next_track();
+            }
             KeyCode::Up => {
                 player::increase_volume(&self.sink, 0.05);
                 self.volume = self.sink.lock().unwrap().volume();
