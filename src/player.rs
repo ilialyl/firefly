@@ -173,6 +173,7 @@ pub fn convert_format(track_path: &PathBuf) {
 
     runtime.block_on(async {
         FFmpegBuilder::convert(track_path_str, "temp.flac")
+            .audio_filter(AudioFilter::loudnorm())
             .run()
             .await
             .unwrap();
