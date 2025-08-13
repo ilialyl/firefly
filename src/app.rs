@@ -205,18 +205,14 @@ impl App {
             }
         };
 
-        self.info
-            .push("Converting format and normalizing volume...".into());
+        if !player::is_rodio_supported(&next_track) {
+            self.info
+                .push("Converting format and normalizing volume...".into());
 
-        self.refresh_frame(terminal)
-            .expect("Error refreshing frame");
-
-        player::convert_format(&next_track);
-
-        self.info.push("Loading track...".into());
-
-        self.refresh_frame(terminal)
-            .expect("Error refreshing frame");
+            self.refresh_frame(terminal)
+                .expect("Error refreshing frame");
+            player::convert_format(&next_track);
+        }
 
         player::load_track(&self.sink, next_track.clone());
         self.track_path = Some(next_track);
