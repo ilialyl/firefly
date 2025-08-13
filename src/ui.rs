@@ -100,7 +100,7 @@ fn draw_player(app: &App, frame: &mut Frame, chunks: Rc<[Rect]>) {
 
 fn draw_control(frame: &mut Frame, chunks: Rc<[Rect]>) {
     let controls = vec![
-        Line::from("Load Now <Enter>"),
+        Line::from("Load Now <N>"),
         Line::from("Queue <Q>"),
         Line::from("Play/Pause <Space>"),
         Line::from("Rewind/Forward <Left/Right>"),

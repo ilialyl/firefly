@@ -120,7 +120,7 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Esc => self.exit(),
-            KeyCode::Enter => {
+            KeyCode::Char('n') => {
                 let track = player::load_track_manually(&self.sink);
                 if track.is_some() {
                     self.track_path = track;
