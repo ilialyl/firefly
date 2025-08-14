@@ -8,10 +8,6 @@ use ratatui::{
 
 use crate::{app::App, player::Status};
 
-// impl Widget for &app::App {
-//     fn render(self, area: Rect, buf: &mut Buffer) {}
-// }
-
 pub fn render(app: &App, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
