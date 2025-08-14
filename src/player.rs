@@ -140,11 +140,10 @@ pub fn get_track_duration(track: &PathBuf) -> Duration {
 }
 
 pub fn convert_format(track_path: &PathBuf) {
-    let path_str = track_path.display().to_string();
     let runtime = Runtime::new().unwrap();
 
     runtime.block_on(async {
-        FFmpegBuilder::convert(path_str, CONVERTED_TRACK)
+        FFmpegBuilder::convert(track_path.clone(), CONVERTED_TRACK)
             .audio_filter(AudioFilter::loudnorm())
             .run()
             .await
