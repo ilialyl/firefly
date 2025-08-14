@@ -105,7 +105,11 @@ fn draw_control(frame: &mut Frame, chunk: Rect) {
         "Quit <Esc>",
     ];
 
-    frame.render_widget(Paragraph::new(controls.join("\n")), chunk);
+    let area = center_vertical(chunk, controls.len() as u16);
+
+    let control_para = Paragraph::new(controls.join("\n"));
+
+    frame.render_widget(control_para, area);
 }
 
 fn get_track_name_str(app: &App) -> String {
