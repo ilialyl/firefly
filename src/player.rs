@@ -140,8 +140,8 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
-    let mut track_temp = track;
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, dur: Duration) {
+    let mut track_temp = track.clone();
     if !is_rodio_supported(&track_temp) {
         track_temp = PathBuf::from("temp.flac");
     }
@@ -159,8 +159,8 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: PathBuf, dur: Duration) {
     sink.play();
 }
 
-pub fn get_track_duration(track: PathBuf) -> Duration {
-    let mut track_temp = track;
+pub fn get_track_duration(track: &PathBuf) -> Duration {
+    let mut track_temp = track.clone();
     if !is_rodio_supported(&track_temp) {
         track_temp = PathBuf::from("temp.flac");
     }
