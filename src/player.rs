@@ -92,13 +92,13 @@ pub fn decrease_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
     sink.set_volume(decreased_vol);
 }
 
-pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
+pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Duration) {
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
-    if current_pos.add(dur) < *track_dur {
-        sink.try_seek(current_pos.add(dur))
+    if current_pos.add(forward_dur) < *track_dur {
+        sink.try_seek(current_pos.add(forward_dur))
             .expect("Error forwarding");
-    } else if track_dur.sub(current_pos) < dur
+    } else if track_dur.sub(current_pos) < forward_dur
         && track_dur.sub(current_pos) > Duration::from_secs(1)
     {
         sink.try_seek(track_dur.sub(Duration::from_secs(1)))
@@ -106,7 +106,7 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, dur: Duration) {
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) {
     let mut temp_path = track.clone();
     if !is_rodio_supported(&temp_path) {
         temp_path = PathBuf::from(CONVERTED_TRACK);
@@ -114,7 +114,9 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, dur: Duration) {
 
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
-    let rewinded_pos = current_pos.checked_sub(dur).unwrap_or(Duration::new(1, 0));
+    let rewinded_pos = current_pos
+        .checked_sub(rewind_dur)
+        .unwrap_or(Duration::new(1, 0));
 
     sink.clear();
     let source = get_source(temp_path).expect("Error obtaining source");
