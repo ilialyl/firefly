@@ -77,41 +77,6 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) {
     });
 }
 
-pub fn load_track_manually(sink: &Arc<Mutex<Sink>>) -> Option<PathBuf> {
-    let sink = Arc::clone(sink); // Clone Arc to move into thread
-    let file = FileDialog::new()
-        .add_filter("Tested audio formats", &TESTED_FORMATS)
-        .add_filter("Untested audio formats", &UNTESTED_FORMATS)
-        .set_directory("~/")
-        .pick_file();
-
-    let mut file = match file {
-        Some(f) => f,
-        None => return None,
-    };
-
-    if !is_rodio_supported(&file) {
-        convert_format(&file);
-    }
-
-    let file_path = Some(file.clone());
-
-    thread::spawn(move || {
-        if !is_rodio_supported(&file) {
-            file = PathBuf::from("temp.flac");
-        }
-
-        let source = get_source(file).expect("Error obtaining source");
-
-        let sink = sink.lock().unwrap();
-        sink.clear();
-        sink.append(source);
-        sink.play();
-    });
-
-    file_path
-}
-
 pub fn increase_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
     let sink = sink.lock().unwrap();
     let current_vol = sink.volume().clone();
