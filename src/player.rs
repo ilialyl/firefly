@@ -50,8 +50,18 @@ pub fn get_source(track: PathBuf) -> Result<Decoder<File>> {
     Ok(source)
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>, track: PathBuf) {
-    let mut track_temp = track;
+pub fn choose_file() -> Option<PathBuf> {
+    let file = FileDialog::new()
+        .add_filter("Tested audio formats", &TESTED_FORMATS)
+        .add_filter("Untested audio formats", &UNTESTED_FORMATS)
+        .set_directory("~/")
+        .pick_file();
+
+    file
+}
+
+pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) {
+    let mut track_temp = track.clone();
     if !is_rodio_supported(&track_temp) {
         track_temp = PathBuf::from("temp.flac");
     }
