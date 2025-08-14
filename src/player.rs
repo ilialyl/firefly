@@ -24,7 +24,7 @@ pub enum Status {
 const RODIO_SUPPORTED_FORMATS: [&'static str; 4] = ["flac", "mp3", "ogg", "wav"];
 const TESTED_FORMATS: [&'static str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
 const UNTESTED_FORMATS: [&'static str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
-const CONVERTED_TRACK: &'static str = "temp.flac";
+pub const CONVERTED_TRACK: &'static str = "temp.flac";
 
 pub fn is_rodio_supported(track: &PathBuf) -> bool {
     if RODIO_SUPPORTED_FORMATS

@@ -13,7 +13,7 @@ fn main() -> Result<()> {
     let result = app::App::new().run(&mut terminal);
     ratatui::restore();
 
-    let temp_file = Path::new("temp.flac");
+    let temp_file = Path::new(player::CONVERTED_TRACK);
     if temp_file.exists() {
         std::fs::remove_file(temp_file).expect("Error removing temporary file.");
     }
