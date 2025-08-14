@@ -92,7 +92,7 @@ impl App {
             {
                 if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
                     if self.looping {
-                        player::load_track(&self.sink, path.clone());
+                        player::load_track(&self.sink, path);
                     } else {
                         self.track_pos = None;
                         self.track_duration = None;
@@ -130,11 +130,20 @@ impl App {
         match key_event.code {
             KeyCode::Esc => self.exit(),
             KeyCode::Char('n') => {
-                let track = player::load_track_manually(&self.sink);
-                if track.is_some() {
-                    self.track_path = track;
-                    self.track_duration =
-                        Some(player::get_track_duration(self.track_path.clone().unwrap()));
+                if let Some(path) = player::choose_file() {
+                    if !player::is_rodio_supported(&path) {
+                        self.info
+                            .push("Converting format and normalizing volume...".into());
+
+                        self.refresh_frame(terminal)
+                            .expect("Error refreshing frame");
+                        player::convert_format(&path);
+                    }
+                    player::load_track(&self.sink, &path);
+                    self.track_path = Some(path);
+                    self.track_duration = Some(player::get_track_duration(
+                        self.track_path.as_ref().unwrap(),
+                    ));
                 }
             }
             KeyCode::Char(' ') => {
@@ -166,8 +175,8 @@ impl App {
             KeyCode::Left => {
                 if let Some(track) = &self.track_path {
                     if self.track_path.is_some() {
-                        player::rewind(&self.sink, track.clone(), Duration::from_secs(5));
-                        self.track_duration = Some(player::get_track_duration(track.clone()));
+                        player::rewind(&self.sink, track, Duration::from_secs(5));
+                        self.track_duration = Some(player::get_track_duration(track));
                     }
                 }
             }
@@ -214,9 +223,11 @@ impl App {
             player::convert_format(&next_track);
         }
 
-        player::load_track(&self.sink, next_track.clone());
+        player::load_track(&self.sink, &next_track);
         self.track_path = Some(next_track);
-        self.track_duration = Some(player::get_track_duration(self.track_path.clone().unwrap()));
+        self.track_duration = Some(player::get_track_duration(
+            self.track_path.as_ref().unwrap(),
+        ));
 
         self.info.push("".into());
     }
