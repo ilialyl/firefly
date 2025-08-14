@@ -36,7 +36,7 @@ impl App {
             _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
             status: Status::Idle,
-            info: vec!["".into()],
+            info: vec![String::new()],
             track_path: None,
             track_queue: VecDeque::new(),
             track_pos: None,
