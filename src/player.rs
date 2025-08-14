@@ -152,18 +152,11 @@ pub fn convert_format(track_path: &PathBuf) {
 }
 
 pub fn enqueue_track(track_queue: &mut VecDeque<PathBuf>) -> Result<()> {
-    let file = FileDialog::new()
-        .add_filter("Tested audio formats", &TESTED_FORMATS)
-        .add_filter("Untested audio formats", &UNTESTED_FORMATS)
-        .set_directory("~/")
-        .pick_file();
-
-    let file = match file {
-        Some(f) => f,
+    match choose_file() {
+        Some(f) => {
+            track_queue.push_back(f);
+            Ok(())
+        }
         None => return Err(eyre!("No track was chosen.")),
-    };
-
-    track_queue.push_back(file);
-
-    Ok(())
+    }
 }
