@@ -132,8 +132,7 @@ impl App {
             KeyCode::Char('n') => {
                 if let Some(path) = player::choose_file() {
                     if !player::is_rodio_supported(&path) {
-                        self.info
-                            .push("Converting format and normalizing volume...".into());
+                        self.display_info("Converting format and normalizing volume...");
 
                         self.refresh_frame(terminal)
                             .expect("Error refreshing frame");
@@ -145,7 +144,7 @@ impl App {
                         self.track_path.as_ref().unwrap(),
                     ));
 
-                    self.info.push("".into());
+                    self.stop_info_display();
                 }
             }
             KeyCode::Char(' ') => {
@@ -217,8 +216,7 @@ impl App {
         };
 
         if !player::is_rodio_supported(&next_track) {
-            self.info
-                .push("Converting format and normalizing volume...".into());
+            self.display_info("Converting format and normalizing volume...");
 
             self.refresh_frame(terminal)
                 .expect("Error refreshing frame");
@@ -231,6 +229,14 @@ impl App {
             self.track_path.as_ref().unwrap(),
         ));
 
-        self.info.push("".into());
+        self.stop_info_display();
+    }
+
+    fn display_info(&mut self, info: &str) {
+        self.info.push(info.to_string());
+    }
+
+    fn stop_info_display(&mut self) {
+        self.info.push(String::new());
     }
 }
