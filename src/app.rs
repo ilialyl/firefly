@@ -144,6 +144,8 @@ impl App {
                     self.track_duration = Some(player::get_track_duration(
                         self.track_path.as_ref().unwrap(),
                     ));
+
+                    self.info.push("".into());
                 }
             }
             KeyCode::Char(' ') => {
