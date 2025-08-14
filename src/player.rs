@@ -24,6 +24,7 @@ pub enum Status {
 const RODIO_SUPPORTED_FORMATS: [&'static str; 4] = ["flac", "mp3", "ogg", "wav"];
 const TESTED_FORMATS: [&'static str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
 const UNTESTED_FORMATS: [&'static str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
+const CONVERTED_TRACK: &'static str = "temp.flac";
 
 pub fn is_rodio_supported(track: &PathBuf) -> bool {
     if RODIO_SUPPORTED_FORMATS
@@ -63,7 +64,7 @@ pub fn choose_file() -> Option<PathBuf> {
 pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) {
     let mut track_temp = track.clone();
     if !is_rodio_supported(&track_temp) {
-        track_temp = PathBuf::from("temp.flac");
+        track_temp = PathBuf::from(CONVERTED_TRACK);
     }
 
     let sink = Arc::clone(sink);
@@ -106,9 +107,9 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, dur: Duration) {
 }
 
 pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, dur: Duration) {
-    let mut track_temp = track.clone();
-    if !is_rodio_supported(&track_temp) {
-        track_temp = PathBuf::from("temp.flac");
+    let mut temp_path = track.clone();
+    if !is_rodio_supported(&temp_path) {
+        temp_path = PathBuf::from(CONVERTED_TRACK);
     }
 
     let sink = sink.lock().unwrap();
@@ -116,7 +117,7 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, dur: Duration) {
     let rewinded_pos = current_pos.checked_sub(dur).unwrap_or(Duration::new(1, 0));
 
     sink.clear();
-    let source = get_source(track_temp).expect("Error obtaining source");
+    let source = get_source(temp_path).expect("Error obtaining source");
     sink.append(source);
 
     sink.try_seek(rewinded_pos).expect("Error rewinding");
@@ -125,12 +126,12 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, dur: Duration) {
 }
 
 pub fn get_track_duration(track: &PathBuf) -> Duration {
-    let mut track_temp = track.clone();
-    if !is_rodio_supported(&track_temp) {
-        track_temp = PathBuf::from("temp.flac");
+    let mut temp_path = track.clone();
+    if !is_rodio_supported(&temp_path) {
+        temp_path = PathBuf::from(CONVERTED_TRACK)
     }
 
-    let tagged_file = Probe::open(track_temp)
+    let tagged_file = Probe::open(temp_path)
         .expect("ERROR: Bad path provided!")
         .read()
         .expect("ERROR: Failed to read file!");
@@ -139,11 +140,11 @@ pub fn get_track_duration(track: &PathBuf) -> Duration {
 }
 
 pub fn convert_format(track_path: &PathBuf) {
-    let track_path_str = track_path.display().to_string();
+    let path_str = track_path.display().to_string();
     let runtime = Runtime::new().unwrap();
 
     runtime.block_on(async {
-        FFmpegBuilder::convert(track_path_str, "temp.flac")
+        FFmpegBuilder::convert(path_str, CONVERTED_TRACK)
             .audio_filter(AudioFilter::loudnorm())
             .run()
             .await
