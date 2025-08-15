@@ -1,4 +1,4 @@
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Result, eyre};
 use lofty::{file::AudioFile, probe::Probe};
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
@@ -29,14 +29,19 @@ const AUDIO_FORMATS: [&'static str; 11] = [
 ];
 pub const CONVERTED_TRACK: &'static str = "temp.flac";
 
-pub fn is_rodio_supported(track: &PathBuf) -> bool {
-    if RODIO_SUPPORTED_FORMATS
-        .iter()
-        .any(|&i| i == track.extension().unwrap())
-    {
-        true
+pub fn is_rodio_supported(path: &PathBuf) -> Result<bool> {
+    if path.is_file() {
+        if let Some(extension) = path.extension().and_then(|e| e.to_str()) {
+            if RODIO_SUPPORTED_FORMATS.contains(&extension) {
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Err(eyre!("file has no extension"))
+        }
     } else {
-        false
+        Err(eyre!("path is not a file"))
     }
 }
 
@@ -80,9 +85,9 @@ pub fn choose_dir() -> Option<PathBuf> {
     dir
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) {
+pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) -> Result<()> {
     let mut track_temp = track.clone();
-    if !is_rodio_supported(&track_temp) {
+    if !is_rodio_supported(&track_temp)? {
         track_temp = PathBuf::from(CONVERTED_TRACK);
     }
 
@@ -95,6 +100,8 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) {
         sink.append(source);
         sink.play();
     });
+
+    Ok(())
 }
 
 pub fn increase_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
@@ -125,9 +132,9 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Durat
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) {
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) -> Result<()> {
     let mut temp_path = track.clone();
-    if !is_rodio_supported(&temp_path) {
+    if !is_rodio_supported(&temp_path)? {
         temp_path = PathBuf::from(CONVERTED_TRACK);
     }
 
@@ -144,11 +151,13 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) {
     sink.try_seek(rewinded_pos).expect("Error rewinding");
 
     sink.play();
+
+    Ok(())
 }
 
-pub fn get_track_duration(track: &PathBuf) -> Duration {
+pub fn get_track_duration(track: &PathBuf) -> Result<Duration> {
     let mut temp_path = track.clone();
-    if !is_rodio_supported(&temp_path) {
+    if !is_rodio_supported(&temp_path)? {
         temp_path = PathBuf::from(CONVERTED_TRACK)
     }
 
@@ -157,7 +166,7 @@ pub fn get_track_duration(track: &PathBuf) -> Duration {
         .read()
         .expect("ERROR: Failed to read file!");
 
-    tagged_file.properties().duration()
+    Ok(tagged_file.properties().duration())
 }
 
 pub fn convert_format(track_path: &PathBuf) {
