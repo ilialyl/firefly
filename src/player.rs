@@ -1,11 +1,11 @@
-use color_eyre::eyre::{Ok, Result, eyre};
+use color_eyre::eyre::Result;
 use lofty::{file::AudioFile, probe::Probe};
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::prelude::*;
 use std::{
     collections::VecDeque,
-    fs::File,
+    fs::{self, File},
     ops::{Add, Sub},
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -24,6 +24,9 @@ pub enum Status {
 const RODIO_SUPPORTED_FORMATS: [&'static str; 4] = ["flac", "mp3", "ogg", "wav"];
 const TESTED_FORMATS: [&'static str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
 const UNTESTED_FORMATS: [&'static str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
+const AUDIO_FORMATS: [&'static str; 11] = [
+    "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac",
+];
 pub const CONVERTED_TRACK: &'static str = "temp.flac";
 
 pub fn is_rodio_supported(track: &PathBuf) -> bool {
@@ -69,6 +72,12 @@ pub fn choose_multiple_files() -> Option<Vec<PathBuf>> {
         .pick_files();
 
     file
+}
+
+pub fn choose_dir() -> Option<PathBuf> {
+    let dir = FileDialog::new().pick_folder();
+
+    dir
 }
 
 pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) {
@@ -163,14 +172,29 @@ pub fn convert_format(track_path: &PathBuf) {
     });
 }
 
-pub fn enqueue_track(track_queue: &mut VecDeque<PathBuf>) -> Result<()> {
-    match choose_multiple_files() {
-        Some(files) => {
-            for f in files {
-                track_queue.push_back(f);
-            }
-            Ok(())
+pub fn enqueue_track(path_vec: Vec<PathBuf>, track_queue: &mut VecDeque<PathBuf>) {
+    for path in path_vec {
+        if path.is_file() {
+            track_queue.push_back(path);
         }
-        None => return Err(eyre!("No track was chosen.")),
     }
+}
+
+pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
+    let mut path_vec: Vec<PathBuf> = Vec::new();
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry_result in entries {
+            if let Ok(entry) = entry_result {
+                if entry.path().is_file()
+                    && AUDIO_FORMATS
+                        .iter()
+                        .any(|&i| i == entry.path().extension().unwrap())
+                {
+                    path_vec.push(entry.path());
+                }
+            }
+        }
+    }
+
+    track_queue.extend(path_vec);
 }
