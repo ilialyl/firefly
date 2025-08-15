@@ -98,6 +98,7 @@ fn draw_control(frame: &mut Frame, chunk: Rect) {
         "Play/Pause <Space>",
         "Load Now <N>",
         "Queue <Q>",
+        "Queue Folder <D>",
         "Skip <S>",
         "Rewind/Forward <Left/Right>",
         "Volume <Up/Down>",
