@@ -11,7 +11,7 @@ use std::{
 };
 
 use crate::{
-    player::{self, Status, enqueue_track},
+    player::{self, Status, enqueue_dir, enqueue_track},
     ui,
 };
 
@@ -191,6 +191,11 @@ impl App {
             KeyCode::Char('q') => {
                 if let Some(path_vec) = player::choose_multiple_files() {
                     enqueue_track(path_vec, &mut self.track_queue);
+                }
+            }
+            KeyCode::Char('d') => {
+                if let Some(dir) = player::choose_dir() {
+                    enqueue_dir(dir, &mut self.track_queue);
                 }
             }
             _ => {}
