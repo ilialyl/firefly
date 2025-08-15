@@ -185,12 +185,12 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     if let Ok(entries) = fs::read_dir(dir) {
         for entry_result in entries {
             if let Ok(entry) = entry_result {
-                if entry.path().is_file()
-                    && AUDIO_FORMATS
-                        .iter()
-                        .any(|&i| i == entry.path().extension().unwrap())
-                {
-                    path_vec.push(entry.path());
+                if entry.path().is_file() {
+                    if let Some(extension) = entry.path().extension().and_then(|e| e.to_str()) {
+                        if AUDIO_FORMATS.contains(&extension) {
+                            path_vec.push(entry.path());
+                        }
+                    }
                 }
             }
         }
