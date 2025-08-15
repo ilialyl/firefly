@@ -189,7 +189,9 @@ impl App {
                 }
             }
             KeyCode::Char('q') => {
-                enqueue_track(&mut self.track_queue).ok();
+                if let Some(path_vec) = player::choose_multiple_files() {
+                    enqueue_track(path_vec, &mut self.track_queue);
+                }
             }
             _ => {}
         }
