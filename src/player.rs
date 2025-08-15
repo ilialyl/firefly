@@ -61,6 +61,16 @@ pub fn choose_file() -> Option<PathBuf> {
     file
 }
 
+pub fn choose_multiple_files() -> Option<Vec<PathBuf>> {
+    let file = FileDialog::new()
+        .add_filter("Tested audio formats", &TESTED_FORMATS)
+        .add_filter("Untested audio formats", &UNTESTED_FORMATS)
+        .set_directory("~/")
+        .pick_files();
+
+    file
+}
+
 pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) {
     let mut track_temp = track.clone();
     if !is_rodio_supported(&track_temp) {
@@ -154,9 +164,11 @@ pub fn convert_format(track_path: &PathBuf) {
 }
 
 pub fn enqueue_track(track_queue: &mut VecDeque<PathBuf>) -> Result<()> {
-    match choose_file() {
-        Some(f) => {
-            track_queue.push_back(f);
+    match choose_multiple_files() {
+        Some(files) => {
+            for f in files {
+                track_queue.push_back(f);
+            }
             Ok(())
         }
         None => return Err(eyre!("No track was chosen.")),
