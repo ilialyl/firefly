@@ -64,6 +64,7 @@ impl App {
     }
 
     fn update_logic(&mut self, terminal: &mut DefaultTerminal) {
+        let mut err: Option<color_eyre::eyre::ErrReport> = None;
         {
             // Get sink
             let sink = self.sink.lock().unwrap();
@@ -87,19 +88,27 @@ impl App {
             // If sink is empty or the track is within 3 seconds away from ending
             // If looping is on, load the same track
             // Else, load next track in queue.
-            if let (Some(path), Some(dur), Some(pos)) =
-                (&self.track_path, self.track_duration, self.track_pos)
+
             {
-                if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
-                    if self.looping {
-                        player::load_track(&self.sink, path);
-                    } else {
-                        self.track_pos = None;
-                        self.track_duration = None;
-                        self.status = Status::Idle;
+                if let (Some(path), Some(dur), Some(pos)) =
+                    (&self.track_path, self.track_duration, self.track_pos)
+                {
+                    if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
+                        if self.looping {
+                            if let Err(e) = player::load_track(&self.sink, path) {
+                                err = Some(e);
+                            }
+                        } else {
+                            self.track_pos = None;
+                            self.track_duration = None;
+                            self.status = Status::Idle;
+                        }
                     }
                 }
             }
+        }
+        if let Some(e) = err {
+            self.display_info(e.to_string().as_str())
         }
 
         if self.status == Status::Idle && !self.track_queue.is_empty() {
@@ -131,18 +140,25 @@ impl App {
             KeyCode::Esc => self.exit(),
             KeyCode::Char('n') => {
                 if let Some(path) = player::choose_file() {
-                    if !player::is_rodio_supported(&path) {
-                        self.display_info("Converting format and normalizing volume...");
+                    match player::is_rodio_supported(&path) {
+                        Ok(condition) => {
+                            if !condition {
+                                self.display_info("Converting format and normalizing volume...");
 
-                        self.refresh_frame(terminal)
-                            .expect("Error refreshing frame");
-                        player::convert_format(&path);
+                                self.refresh_frame(terminal)
+                                    .expect("Error refreshing frame");
+                                player::convert_format(&path);
+                            }
+                        }
+                        Err(e) => self.display_info(e.to_string().as_str()),
                     }
-                    player::load_track(&self.sink, &path);
+
+                    if let Err(e) = player::load_track(&self.sink, &path) {
+                        self.display_info(e.to_string().as_str())
+                    }
                     self.track_path = Some(path);
-                    self.track_duration = Some(player::get_track_duration(
-                        self.track_path.as_ref().unwrap(),
-                    ));
+                    self.track_duration =
+                        player::get_track_duration(self.track_path.as_ref().unwrap()).ok();
 
                     self.stop_info_display();
                 }
@@ -174,10 +190,12 @@ impl App {
                 }
             }
             KeyCode::Left => {
-                if let Some(track) = &self.track_path {
+                if let Some(track) = self.track_path.clone() {
                     if self.track_path.is_some() {
-                        player::rewind(&self.sink, track, Duration::from_secs(5));
-                        self.track_duration = Some(player::get_track_duration(track));
+                        if let Err(e) = player::rewind(&self.sink, &track, Duration::from_secs(5)) {
+                            self.display_info(e.to_string().as_str())
+                        };
+                        self.track_duration = player::get_track_duration(&track).ok();
                     }
                 }
             }
@@ -222,19 +240,25 @@ impl App {
             }
         };
 
-        if !player::is_rodio_supported(&next_track) {
-            self.display_info("Converting format and normalizing volume...");
+        match player::is_rodio_supported(&next_track) {
+            Ok(condition) => {
+                if !condition {
+                    self.display_info("Converting format and normalizing volume...");
 
-            self.refresh_frame(terminal)
-                .expect("Error refreshing frame");
-            player::convert_format(&next_track);
+                    self.refresh_frame(terminal)
+                        .expect("Error refreshing frame");
+                    player::convert_format(&next_track);
+                }
+            }
+            Err(e) => self.display_info(e.to_string().as_str()),
         }
 
-        player::load_track(&self.sink, &next_track);
+        if let Err(e) = player::load_track(&self.sink, &next_track) {
+            self.display_info(e.to_string().as_str())
+        };
+
         self.track_path = Some(next_track);
-        self.track_duration = Some(player::get_track_duration(
-            self.track_path.as_ref().unwrap(),
-        ));
+        self.track_duration = player::get_track_duration(self.track_path.as_ref().unwrap()).ok();
 
         self.stop_info_display();
     }
