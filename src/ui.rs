@@ -67,9 +67,10 @@ pub fn render(app: &App, frame: &mut Frame) {
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(100)])
         .margin(2)
+        .horizontal_margin(3)
         .split(main_chunks[1]);
 
-    draw_control(frame, control_chunks[0]);
+    draw_controls(frame, control_chunks[0]);
 }
 
 fn draw_player(app: &App, frame: &mut Frame, chunk: Rect) {
@@ -93,24 +94,40 @@ fn draw_player(app: &App, frame: &mut Frame, chunk: Rect) {
     frame.render_widget(player_para, area);
 }
 
-fn draw_control(frame: &mut Frame, chunk: Rect) {
+fn draw_controls(frame: &mut Frame, chunk: Rect) {
     let controls = vec![
-        "Play/Pause <Space>",
-        "Load Now <N>",
-        "Queue <Q>",
-        "Queue Folder <D>",
-        "Skip <S>",
-        "Rewind/Forward <Left/Right>",
-        "Volume <Up/Down>",
-        "Loop <L>",
-        "Quit <Esc>",
+        " Play/Pause <Space>",
+        " Load Now <N>",
+        " Queue <Q>",
+        " Queue Folder <D>",
+        " Skip <S>",
+        " Rewind/Seek <←/→>",
+        " Volume <↑/↓>",
+        " Loop <L>",
+        " Quit <Esc>",
     ];
 
-    let area = center_vertical(chunk, controls.len() as u16);
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Length(1); 4])
+        .spacing(1)
+        .split(chunk);
 
-    let control_para = Paragraph::new(controls.join("\n"));
+    let grid: Vec<Rect> = rows
+        .iter()
+        .flat_map(|col| {
+            Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(vec![Constraint::Percentage(25); 4])
+                .spacing(1)
+                .split(*col)
+                .to_vec()
+        })
+        .collect();
 
-    frame.render_widget(control_para, area);
+    for (idx, control) in controls.iter().enumerate() {
+        frame.render_widget(Paragraph::new(*control), grid[idx])
+    }
 }
 
 fn get_track_name_str(app: &App) -> String {
