@@ -19,13 +19,13 @@ fn main() -> Result<()> {
     let mut model = Model::default();
 
     while model.running_state != RunningState::Done {
-        update(&mut model, Message::Tick);
+        update(&mut model, Message::Tick, &mut terminal);
         terminal.draw(|f| view(&mut model, f))?;
 
         let mut current_msg = handle_events()?;
 
         while current_msg.is_some() {
-            current_msg = update(&mut model, current_msg.unwrap());
+            current_msg = update(&mut model, current_msg.unwrap(), &mut terminal);
         }
     }
 
@@ -34,6 +34,5 @@ fn main() -> Result<()> {
         std::fs::remove_file(temp_file).expect("Error removing temporary file.");
     }
 
-    ui::restore_terminal();
-    Ok(())
+    ui::restore_terminal()
 }
