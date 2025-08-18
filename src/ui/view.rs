@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::{player::Status, ui::model::Model, update};
+use crate::{player::Status, ui::model::Model};
 
 pub fn view(model: &Model, frame: &mut Frame) {
     render(model, frame);
@@ -154,7 +154,7 @@ fn get_track_name_str(model: &Model) -> String {
 }
 
 fn get_track_pos_str(model: &Model) -> String {
-    update::track_pos_as_str(model)
+    track_pos_as_str(model)
 }
 
 fn get_status_str(model: &Model) -> String {
