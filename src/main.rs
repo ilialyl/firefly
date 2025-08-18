@@ -10,7 +10,6 @@ use crate::ui::{
 
 pub mod player;
 pub mod ui;
-pub mod update;
 
 fn main() -> Result<()> {
     ui::install_panic_hook();
