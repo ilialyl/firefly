@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
@@ -201,4 +203,20 @@ fn center_vertical(area: Rect, height: u16) -> Rect {
         .flex(Flex::Center)
         .areas(area);
     area
+}
+
+pub fn track_pos_as_str(model: &Model) -> String {
+    let track_pos = model.track_pos.clone().unwrap_or(Duration::from_secs(0));
+    let sec = track_pos.as_secs() % 60;
+    let min = track_pos.as_secs() / 60;
+
+    format!("{:02}:{:02}", min, sec)
+}
+
+pub fn stop_info_display(model: &mut Model) {
+    model.info.push(String::new());
+}
+
+pub fn display_info(model: &mut Model, info: &str) {
+    model.info.push(info.to_string());
 }
