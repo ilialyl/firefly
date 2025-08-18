@@ -211,7 +211,7 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     track_queue.extend(path_vec);
 }
 
-fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
+pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
     let next_track = match model.track_queue.pop_front() {
         Some(path) => path,
         None => {
