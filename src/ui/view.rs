@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
@@ -6,9 +8,13 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::{app::App, player::Status};
+use crate::{player::Status, ui::model::Model};
 
-pub fn render(app: &App, frame: &mut Frame) {
+pub fn view(model: &Model, frame: &mut Frame) {
+    render(model, frame);
+}
+
+pub fn render(model: &Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(1), Constraint::Fill(1)])
@@ -35,7 +41,7 @@ pub fn render(app: &App, frame: &mut Frame) {
         .margin(2)
         .split(inner_layout[0]);
 
-    frame.render_widget(get_queue_para(app), left_panel_chunks[0]);
+    frame.render_widget(get_queue_para(model), left_panel_chunks[0]);
 
     Block::bordered()
         .fg(Color::White)
@@ -61,7 +67,7 @@ pub fn render(app: &App, frame: &mut Frame) {
         .margin(2)
         .split(main_chunks[0]);
 
-    draw_player(app, frame, player_chunks[0]);
+    draw_player(model, frame, player_chunks[0]);
 
     let control_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -73,16 +79,16 @@ pub fn render(app: &App, frame: &mut Frame) {
     draw_controls(frame, control_chunks[0]);
 }
 
-fn draw_player(app: &App, frame: &mut Frame, chunk: Rect) {
+fn draw_player(model: &Model, frame: &mut Frame, chunk: Rect) {
     let player_text = vec![
-        get_track_name_str(app),
+        get_track_name_str(model),
         "".into(),
-        get_track_pos_str(app),
+        get_track_pos_str(model),
         "".into(),
-        get_status_str(app),
-        get_loop_status_str(app),
-        get_info_str(app),
-        get_volume_str(app),
+        get_status_str(model),
+        get_loop_status_str(model),
+        get_info_str(model),
+        get_volume_str(model),
     ];
 
     let area = center_vertical(chunk, player_text.len() as u16);
@@ -130,8 +136,8 @@ fn draw_controls(frame: &mut Frame, chunk: Rect) {
     }
 }
 
-fn get_track_name_str(app: &App) -> String {
-    match app.track_path.clone() {
+fn get_track_name_str(model: &Model) -> String {
+    match model.track_path.clone() {
         Some(path) => {
             if let Some(os_name) = path.file_name() {
                 if let Some(name) = os_name.to_str() {
@@ -147,39 +153,39 @@ fn get_track_name_str(app: &App) -> String {
     }
 }
 
-fn get_track_pos_str(app: &App) -> String {
-    app.track_pos_as_str()
+fn get_track_pos_str(model: &Model) -> String {
+    track_pos_as_str(model)
 }
 
-fn get_status_str(app: &App) -> String {
-    match app.status {
+fn get_status_str(model: &Model) -> String {
+    match model.status {
         Status::Playing => "Playing".into(),
         Status::Paused => ("Paused").into(),
         Status::Idle => ("Idle").into(),
     }
 }
 
-fn get_loop_status_str(app: &App) -> String {
-    match app.looping {
+fn get_loop_status_str(model: &Model) -> String {
+    match model.looping {
         true => "[Looped]".into(),
         false => "".into(),
     }
 }
 
-fn get_volume_str(app: &App) -> String {
-    format!("Volume: {}%", (app.volume * 100.00).ceil() as i32)
+fn get_volume_str(model: &Model) -> String {
+    format!("Volume: {}%", (model.volume * 100.00).ceil() as i32)
 }
 
-fn get_info_str(app: &App) -> String {
-    match app.info.last() {
+fn get_info_str(model: &Model) -> String {
+    match model.info.last() {
         Some(str) => str.clone(),
         None => "".into(),
     }
 }
 
-fn get_queue_para(app: &App) -> Paragraph<'static> {
+fn get_queue_para(model: &Model) -> Paragraph<'static> {
     let mut track_vec: Vec<String> = Vec::new();
-    for track in app.track_queue.clone() {
+    for track in model.track_queue.clone() {
         if let Some(track_name) = track.file_name().unwrap().to_str() {
             track_vec.push(track_name.to_string());
         } else {
@@ -197,4 +203,20 @@ fn center_vertical(area: Rect, height: u16) -> Rect {
         .flex(Flex::Center)
         .areas(area);
     area
+}
+
+pub fn track_pos_as_str(model: &Model) -> String {
+    let track_pos = model.track_pos.clone().unwrap_or(Duration::from_secs(0));
+    let sec = track_pos.as_secs() % 60;
+    let min = track_pos.as_secs() / 60;
+
+    format!("{:02}:{:02}", min, sec)
+}
+
+pub fn stop_info_display(model: &mut Model) {
+    model.info.push(String::new());
+}
+
+pub fn display_info(model: &mut Model, info: &str) {
+    model.info.push(info.to_string());
 }

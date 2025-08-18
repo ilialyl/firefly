@@ -1,5 +1,6 @@
 use color_eyre::eyre::{Result, eyre};
 use lofty::{file::AudioFile, probe::Probe};
+use ratatui::DefaultTerminal;
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::prelude::*;
@@ -13,6 +14,8 @@ use std::{
     time::Duration,
 };
 use tokio::runtime::Runtime;
+
+use crate::ui::{self, model::Model, view};
 
 #[derive(PartialEq)]
 pub enum Status {
@@ -206,4 +209,34 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     }
 
     track_queue.extend(path_vec);
+}
+
+pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
+    let next_track = match model.track_queue.pop_front() {
+        Some(path) => path,
+        None => {
+            return;
+        }
+    };
+
+    match is_rodio_supported(&next_track) {
+        Ok(condition) => {
+            if !condition {
+                view::display_info(model, "Converting format and normalizing volume...");
+
+                ui::refresh_frame(model, terminal).expect("Error refreshing frame");
+                convert_format(&next_track);
+            }
+        }
+        Err(e) => view::display_info(model, e.to_string().as_str()),
+    }
+
+    if let Err(e) = load_track(&model.sink, &next_track) {
+        view::display_info(model, e.to_string().as_str())
+    };
+
+    model.track_path = Some(next_track);
+    model.track_duration = get_track_duration(model.track_path.as_ref().unwrap()).ok();
+
+    view::stop_info_display(model);
 }
