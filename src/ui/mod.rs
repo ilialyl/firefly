@@ -5,13 +5,16 @@ pub mod view;
 use color_eyre::eyre::Result;
 use ratatui::{
     DefaultTerminal, Terminal,
-    backend::{Backend, CrosstermBackend},
+    backend::CrosstermBackend,
     crossterm::{
         ExecutableCommand,
         terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
     },
 };
-use std::{io::stdout, panic};
+use std::{
+    io::{Stdout, stdout},
+    panic,
+};
 
 use crate::ui::{
     message::{Message, update},
@@ -20,13 +23,13 @@ use crate::ui::{
 };
 
 pub fn refresh_frame(model: &mut Model, terminal: &mut DefaultTerminal) -> Result<()> {
-    update(model, Message::Tick);
+    update(model, Message::Tick, terminal);
     terminal.draw(|f| view(model, f))?;
 
     Ok(())
 }
 
-pub fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
+pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;
     let terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
