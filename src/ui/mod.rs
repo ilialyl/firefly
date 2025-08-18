@@ -2,8 +2,9 @@ pub mod message;
 pub mod model;
 pub mod view;
 
+use color_eyre::eyre::Result;
 use ratatui::{
-    Terminal,
+    DefaultTerminal, Terminal,
     backend::{Backend, CrosstermBackend},
     crossterm::{
         ExecutableCommand,
@@ -11,6 +12,19 @@ use ratatui::{
     },
 };
 use std::{io::stdout, panic};
+
+use crate::ui::{
+    message::{Message, update},
+    model::Model,
+    view::view,
+};
+
+pub fn refresh_frame(model: &mut Model, terminal: &mut DefaultTerminal) -> Result<()> {
+    update(model, Message::Tick);
+    terminal.draw(|f| view(model, f))?;
+
+    Ok(())
+}
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
     enable_raw_mode()?;
