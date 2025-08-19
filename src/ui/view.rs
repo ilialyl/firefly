@@ -3,8 +3,8 @@ use std::time::Duration;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
-    style::{Color, Stylize},
-    text::ToSpan,
+    style::{Color, Style, Stylize},
+    text::{Span, ToSpan},
     widgets::{Block, Paragraph, Widget},
 };
 
@@ -41,7 +41,7 @@ pub fn render(model: &Model, frame: &mut Frame) {
         .margin(2)
         .split(inner_layout[0]);
 
-    frame.render_widget(get_queue_para(model), left_panel_chunks[0]);
+    draw_queue(get_queued_tracks(model), frame, left_panel_chunks[0]);
 
     Block::bordered()
         .fg(Color::White)
@@ -98,6 +98,35 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rect) {
         .alignment(Alignment::Center);
 
     frame.render_widget(player_para, area);
+}
+
+fn get_queued_tracks(model: &Model) -> Vec<String> {
+    let mut tracks: Vec<String> = Vec::new();
+    for track in model.track_queue.clone() {
+        if let Some(track_name) = track.file_name().unwrap().to_str() {
+            tracks.push(track_name.to_string());
+        } else {
+            tracks.push("[Invalid UTF-8 name]".into());
+        }
+    }
+
+    tracks
+}
+
+fn draw_queue(queued_tracks: Vec<String>, frame: &mut Frame, area: Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Length(1); queued_tracks.len()])
+        .split(area);
+
+    let style = Style::default();
+
+    for (idx, track) in queued_tracks.iter().enumerate() {
+        frame.render_widget(
+            Paragraph::new(Span::styled(track.clone(), style)),
+            chunks[idx],
+        );
+    }
 }
 
 fn draw_controls(frame: &mut Frame, chunk: Rect) {
@@ -181,21 +210,6 @@ fn get_info_str(model: &Model) -> String {
         Some(str) => str.clone(),
         None => "".into(),
     }
-}
-
-fn get_queue_para(model: &Model) -> Paragraph<'static> {
-    let mut track_vec: Vec<String> = Vec::new();
-    for track in model.track_queue.clone() {
-        if let Some(track_name) = track.file_name().unwrap().to_str() {
-            track_vec.push(track_name.to_string());
-        } else {
-            track_vec.push("[Invalid UTF-8 name]".into());
-        }
-    }
-
-    let tracks_str = track_vec.join("\n");
-
-    Paragraph::new(tracks_str)
 }
 
 fn center_vertical(area: Rect, height: u16) -> Rect {
