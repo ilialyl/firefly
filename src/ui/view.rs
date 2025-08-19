@@ -41,7 +41,7 @@ pub fn render(model: &Model, frame: &mut Frame) {
         .margin(2)
         .split(inner_layout[0]);
 
-    draw_queue(get_queued_tracks(model), frame, left_panel_chunks[0]);
+    draw_queue(model, get_queued_tracks(model), frame, left_panel_chunks[0]);
 
     Block::bordered()
         .fg(Color::White)
@@ -113,19 +113,22 @@ fn get_queued_tracks(model: &Model) -> Vec<String> {
     tracks
 }
 
-fn draw_queue(queued_tracks: Vec<String>, frame: &mut Frame, area: Rect) {
+fn draw_queue(model: &Model, queued_tracks: Vec<String>, frame: &mut Frame, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(1); queued_tracks.len()])
         .split(area);
 
-    let style = Style::default();
+    let on_select = Style::new().bg(Color::White).fg(Color::Black);
 
     for (idx, track) in queued_tracks.iter().enumerate() {
-        frame.render_widget(
-            Paragraph::new(Span::styled(track.clone(), style)),
-            chunks[idx],
-        );
+        if model.selected_track == idx {
+            frame.render_widget(
+                Paragraph::new(Span::styled(track.clone(), on_select)),
+                chunks[idx],
+            );
+        }
+        frame.render_widget(Paragraph::new(track.clone()), chunks[idx]);
     }
 }
 
