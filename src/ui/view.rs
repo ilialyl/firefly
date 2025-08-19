@@ -3,7 +3,7 @@ use std::time::Duration;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Modifier, Style, Stylize},
     text::{Span, ToSpan},
     widgets::{Block, Paragraph, Widget},
 };
@@ -119,14 +119,13 @@ fn draw_queue(model: &Model, queued_tracks: Vec<String>, frame: &mut Frame, area
         .constraints(vec![Constraint::Length(1); queued_tracks.len()])
         .split(area);
 
-    let on_select = Style::new().bg(Color::White).fg(Color::Black);
+    let on_select = Style::default()
+        .add_modifier(Modifier::ITALIC)
+        .add_modifier(Modifier::UNDERLINED);
 
     for (idx, track) in queued_tracks.iter().enumerate() {
         if model.selected_track == idx {
-            frame.render_widget(
-                Paragraph::new(Span::styled(track.clone(), on_select)),
-                chunks[idx],
-            );
+            frame.render_widget(Span::styled(track.clone(), on_select), chunks[idx]);
         }
         frame.render_widget(Paragraph::new(track.clone()), chunks[idx]);
     }
