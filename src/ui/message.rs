@@ -23,6 +23,8 @@ pub enum Message {
     Seek,
     Rewind,
     ToggleLoop,
+    QueueUp,
+    QueueDown,
     QueueFile,
     QueueDir,
     Quit,
@@ -79,6 +81,19 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
         Message::QueueFile => {
             if let Some(path_vec) = player::choose_multiple_files() {
                 player::enqueue_track(path_vec, &mut model.track_queue);
+            }
+
+            None
+        }
+        Message::QueueUp => {
+            model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
+            None
+        }
+
+        Message::QueueDown => {
+            model.selected_track = model.selected_track + 1;
+            if model.selected_track == model.track_queue.len() {
+                model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
             }
 
             None
@@ -225,6 +240,8 @@ fn handle_key(key_event: KeyEvent) -> Option<Message> {
         KeyCode::Char('l') => Some(Message::ToggleLoop),
         KeyCode::Char('q') => Some(Message::QueueFile),
         KeyCode::Char('Q') => Some(Message::QueueDir),
+        KeyCode::Up => Some(Message::QueueUp),
+        KeyCode::Down => Some(Message::QueueDown),
         _ => None,
     }
 }
