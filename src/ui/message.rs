@@ -218,13 +218,13 @@ fn handle_key(key_event: KeyEvent) -> Option<Message> {
         KeyCode::Char('n') => Some(Message::LoadNow),
         KeyCode::Char(' ') => Some(Message::PlayPause),
         KeyCode::Char('s') => Some(Message::Skip),
-        KeyCode::Up => Some(Message::VolumeUp),
-        KeyCode::Down => Some(Message::VolumeDown),
+        KeyCode::Char('=') => Some(Message::VolumeUp),
+        KeyCode::Char('-') => Some(Message::VolumeDown),
         KeyCode::Right => Some(Message::Seek),
         KeyCode::Left => Some(Message::Rewind),
         KeyCode::Char('l') => Some(Message::ToggleLoop),
         KeyCode::Char('q') => Some(Message::QueueFile),
-        KeyCode::Char('d') => Some(Message::QueueDir),
+        KeyCode::Char('Q') => Some(Message::QueueDir),
         _ => None,
     }
 }
