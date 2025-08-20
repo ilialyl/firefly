@@ -121,7 +121,7 @@ fn draw_queue(model: &Model, queued_tracks: Vec<String>, frame: &mut Frame, area
 
     let mut on_select = Style::default().add_modifier(Modifier::ITALIC);
 
-    if model.arrange_queue {
+    if model.arrange_mode {
         on_select = on_select.add_modifier(Modifier::UNDERLINED);
     }
 

@@ -93,7 +93,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
 
             model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
 
-            if model.arrange_queue && model.track_queue.len() > model.selected_track {
+            if model.arrange_mode && model.track_queue.len() > model.selected_track {
                 model
                     .track_queue
                     .swap(model.selected_track, model.selected_track + 1);
@@ -109,7 +109,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
 
             model.selected_track = (model.selected_track + 1).min(model.track_queue.len() - 1);
 
-            if model.arrange_queue {
+            if model.arrange_mode {
                 model
                     .track_queue
                     .swap(model.selected_track, model.selected_track - 1);
@@ -211,10 +211,10 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
         }
 
         Message::ToggleArrange => {
-            if model.arrange_queue {
-                model.arrange_queue = false;
+            if model.arrange_mode {
+                model.arrange_mode = false;
             } else {
-                model.arrange_queue = true;
+                model.arrange_mode = true;
             }
 
             None
