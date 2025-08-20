@@ -22,6 +22,7 @@ pub enum Message {
     VolumeDown,
     Seek,
     Rewind,
+    ToggleArrange,
     ToggleLoop,
     QueueUp,
     QueueDown,
@@ -186,6 +187,16 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
 
             if model.status == Status::Idle && !model.track_queue.is_empty() {
                 player::play_next_track(model, terminal);
+            }
+
+            None
+        }
+
+        Message::ToggleArrange => {
+            if model.arrange_queue {
+                model.arrange_queue = false;
+            } else {
+                model.arrange_queue = true;
             }
 
             None
