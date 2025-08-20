@@ -88,6 +88,12 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
         }
         Message::QueueUp => {
             model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
+            if model.arrange_queue && model.track_queue.len() > model.selected_track {
+                model
+                    .track_queue
+                    .swap(model.selected_track, model.selected_track + 1);
+            }
+
             None
         }
 
@@ -95,6 +101,11 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
             model.selected_track = model.selected_track + 1;
             if model.selected_track == model.track_queue.len() {
                 model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
+            }
+            if model.arrange_queue && model.selected_track > 0 {
+                model
+                    .track_queue
+                    .swap(model.selected_track, model.selected_track - 1);
             }
 
             None
