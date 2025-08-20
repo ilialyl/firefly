@@ -168,7 +168,7 @@ fn draw_controls(frame: &mut Frame, chunk: Rect) {
 }
 
 fn get_track_name_str(model: &Model) -> String {
-    match model.track_path.clone() {
+    match model.current_track.path.clone() {
         Some(path) => {
             if let Some(os_name) = path.file_name() {
                 if let Some(name) = os_name.to_str() {
@@ -222,7 +222,11 @@ fn center_vertical(area: Rect, height: u16) -> Rect {
 }
 
 pub fn track_pos_as_str(model: &Model) -> String {
-    let track_pos = model.track_pos.clone().unwrap_or(Duration::from_secs(0));
+    let track_pos = model
+        .current_track
+        .pos
+        .clone()
+        .unwrap_or(Duration::from_secs(0));
     let sec = track_pos.as_secs() % 60;
     let min = track_pos.as_secs() / 60;
 

@@ -3,10 +3,9 @@ use std::{
     collections::VecDeque,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::Duration,
 };
 
-use crate::player::{self, Status};
+use crate::player::{self, Status, Track};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum RunningState {
@@ -22,10 +21,8 @@ pub struct Model {
     pub sink: Arc<Mutex<Sink>>,
     pub status: player::Status,
     pub info: Vec<String>,
-    pub track_path: Option<PathBuf>,
+    pub current_track: Track,
     pub track_queue: VecDeque<PathBuf>,
-    pub track_pos: Option<Duration>,
-    pub track_duration: Option<Duration>,
     pub volume: f32,
     pub looping: bool,
 }
@@ -40,10 +37,12 @@ impl Default for Model {
             sink: Arc::new(Mutex::new(sink)),
             status: Status::Idle,
             info: vec![String::new()],
-            track_path: None,
+            current_track: Track {
+                path: None,
+                pos: None,
+                duration: None,
+            },
             track_queue: VecDeque::new(),
-            track_pos: None,
-            track_duration: None,
             volume: 1.0,
             looping: false,
         }

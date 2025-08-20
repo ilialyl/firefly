@@ -17,6 +17,12 @@ use tokio::runtime::Runtime;
 
 use crate::ui::{self, model::Model, view};
 
+pub struct Track {
+    pub path: Option<PathBuf>,
+    pub pos: Option<Duration>,
+    pub duration: Option<Duration>,
+}
+
 #[derive(PartialEq)]
 pub enum Status {
     Playing,
@@ -235,8 +241,9 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
         view::display_info(model, e.to_string().as_str())
     };
 
-    model.track_path = Some(next_track);
-    model.track_duration = get_track_duration(model.track_path.as_ref().unwrap()).ok();
+    model.current_track.path = Some(next_track);
+    model.current_track.duration =
+        get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
 
     view::stop_info_display(model);
 }

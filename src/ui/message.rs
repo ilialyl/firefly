@@ -52,9 +52,9 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 if let Err(e) = player::load_track(&model.sink, &path) {
                     view::display_info(model, e.to_string().as_str())
                 }
-                model.track_path = Some(path);
-                model.track_duration =
-                    player::get_track_duration(model.track_path.as_ref().unwrap()).ok();
+                model.current_track.path = Some(path);
+                model.current_track.duration =
+                    player::get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
 
                 view::stop_info_display(model);
             }
@@ -106,12 +106,12 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
         }
 
         Message::Rewind => {
-            if let Some(track) = model.track_path.clone() {
-                if model.track_path.is_some() {
+            if let Some(track) = model.current_track.path.clone() {
+                if model.current_track.path.is_some() {
                     if let Err(e) = player::rewind(&model.sink, &track, Duration::from_secs(5)) {
                         view::display_info(model, e.to_string().as_str())
                     };
-                    model.track_duration = player::get_track_duration(&track).ok();
+                    model.current_track.duration = player::get_track_duration(&track).ok();
                 }
             }
 
@@ -119,8 +119,8 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
         }
 
         Message::Seek => {
-            if let Some(track_dur) = &model.track_duration {
-                if model.track_path.is_some() {
+            if let Some(track_dur) = &model.current_track.duration {
+                if model.current_track.path.is_some() {
                     player::forward(&model.sink, track_dur, Duration::from_secs(5));
                 }
             }
@@ -144,7 +144,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 // If track_path exists in App and sink isn't empty, set status to playing
                 if sink.is_paused() {
                     model.status = Status::Paused;
-                } else if model.track_path.is_some() && !sink.empty() {
+                } else if model.current_track.path.is_some() && !sink.empty() {
                     model.status = Status::Playing;
                 }
 
@@ -153,7 +153,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 }
 
                 // Get track position
-                model.track_pos = Some(sink.get_pos());
+                model.current_track.pos = Some(sink.get_pos());
 
                 // If path, duration, and position are not None,
                 // If sink is empty or the track is within 3 seconds away from ending
@@ -161,17 +161,19 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 // Else, load next track in queue.
 
                 {
-                    if let (Some(path), Some(dur), Some(pos)) =
-                        (&model.track_path, model.track_duration, model.track_pos)
-                    {
+                    if let (Some(path), Some(dur), Some(pos)) = (
+                        &model.current_track.path,
+                        model.current_track.duration,
+                        model.current_track.pos,
+                    ) {
                         if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
                             if model.looping {
                                 if let Err(e) = player::load_track(&model.sink, path) {
                                     err = Some(e);
                                 }
                             } else {
-                                model.track_pos = None;
-                                model.track_duration = None;
+                                model.current_track.pos = None;
+                                model.current_track.duration = None;
                                 model.status = Status::Idle;
                             }
                         }
