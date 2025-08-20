@@ -17,6 +17,7 @@ pub enum RunningState {
 pub struct Model {
     pub running_state: RunningState,
     pub selected_track: usize,
+    pub arrange_queue: bool,
     pub _stream: OutputStream,
     pub sink: Arc<Mutex<Sink>>,
     pub status: player::Status,
@@ -33,6 +34,7 @@ impl Default for Model {
         Self {
             running_state: RunningState::Running,
             selected_track: 0,
+            arrange_queue: false,
             _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
             status: Status::Idle,
