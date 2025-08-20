@@ -266,6 +266,7 @@ fn handle_key(key_event: KeyEvent) -> Option<Message> {
         KeyCode::Char('Q') => Some(Message::QueueDir),
         KeyCode::Up => Some(Message::QueueUp),
         KeyCode::Down => Some(Message::QueueDown),
+        KeyCode::Char('a') => Some(Message::ToggleArrange),
         _ => None,
     }
 }
