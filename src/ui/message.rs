@@ -102,7 +102,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
             if model.selected_track == model.track_queue.len() {
                 model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
             }
-            if model.arrange_queue && model.selected_track > 0 {
+            if model.arrange_queue && model.selected_track > 0 as usize {
                 model
                     .track_queue
                     .swap(model.selected_track, model.selected_track - 1);
