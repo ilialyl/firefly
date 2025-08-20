@@ -119,9 +119,11 @@ fn draw_queue(model: &Model, queued_tracks: Vec<String>, frame: &mut Frame, area
         .constraints(vec![Constraint::Length(1); queued_tracks.len()])
         .split(area);
 
-    let on_select = Style::default()
-        .add_modifier(Modifier::ITALIC)
-        .add_modifier(Modifier::UNDERLINED);
+    let mut on_select = Style::default().add_modifier(Modifier::ITALIC);
+
+    if model.arrange_queue {
+        on_select = on_select.add_modifier(Modifier::UNDERLINED);
+    }
 
     for (idx, track) in queued_tracks.iter().enumerate() {
         if model.selected_track == idx {
