@@ -1,12 +1,14 @@
 # Terminal Audio Player
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and [Ratatui](https://ratatui.rs/) for interface.
-![example_img](example_img/firefly_v0-3-1.png)
+![example_img](example_img/firefly_v0-3-3.png)
 ## Features
-- Play, Pause, Rewind, and Forward.
+- Play, Pause, Rewind, and Seek.
 - Volume control from 0-200%
 - Track Looping
 - File Dialog
-- Track queuing and skipping
+- Track and Directory queuing
+- Queue arrangement
+- Track Skipping
 
 ### Formats supported by Rodio
 - FLAC
@@ -20,5 +22,6 @@ It can still play other formats by converting formats not supported by Rodio to 
 - OGA
 
 ### Planned Features
+- [ ] Metadata display
 - [ ] Playlists
 - [ ] Music Library
