@@ -84,7 +84,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
             None
         }
         Message::QueueUp => {
-            if model.selected_track == 0 {
+            if model.selected_track == 0 || model.track_queue.len() == 0 {
                 return None;
             }
 
@@ -100,7 +100,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
         }
 
         Message::QueueDown => {
-            if model.selected_track == model.track_queue.len() - 1 {
+            if model.track_queue.len() == 0 || model.selected_track == model.track_queue.len() - 1 {
                 return None;
             }
 
