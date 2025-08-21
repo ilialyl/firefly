@@ -7,7 +7,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Span, ToSpan},
-    widgets::{Block, Paragraph, Widget},
+    widgets::{Block, Paragraph, Widget, Wrap},
 };
 
 use crate::model::{Model, player};
@@ -37,10 +37,17 @@ pub fn render(model: &Model, frame: &mut Frame) {
         .constraints(vec![Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(inner_layout[1]);
 
+    let (term_width, term_height) = crossterm::terminal::size().unwrap();
+    let term_too_small = term_width < 112 || term_height < 28;
+    let queue_panel_constant = if term_too_small {
+        vec![Constraint::Percentage(70), Constraint::Percentage(30)]
+    } else {
+        vec![Constraint::Percentage(100)]
+    };
+
     let left_panel_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(100)])
-        .margin(2)
+        .constraints(queue_panel_constant)
         .split(inner_layout[0]);
 
     draw_queue(model, get_queued_tracks(model), frame, left_panel_chunks[0]);
@@ -61,7 +68,27 @@ pub fn render(model: &Model, frame: &mut Frame) {
         .fg(Color::White)
         .title("Queue")
         .title_alignment(Alignment::Left)
-        .render(inner_layout[0], frame.buffer_mut());
+        .render(left_panel_chunks[0], frame.buffer_mut());
+
+    if term_too_small {
+        Block::bordered()
+            .fg(Color::White)
+            .title("Warning")
+            .title_alignment(Alignment::Left)
+            .render(left_panel_chunks[1], frame.buffer_mut());
+
+        let warning_chunk = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(100)])
+            .margin(1)
+            .split(left_panel_chunks[1]);
+
+        frame.render_widget(
+            Paragraph::new("Your terminal size is too small to display UI properly.")
+                .wrap(Wrap { trim: true }),
+            warning_chunk[0],
+        )
+    }
 
     let player_chunks = Layout::default()
         .direction(Direction::Vertical)
