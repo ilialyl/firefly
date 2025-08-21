@@ -142,19 +142,27 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Durat
 }
 
 pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) -> Result<()> {
-    let mut temp_path = track.clone();
-    if !is_rodio_supported(&temp_path)? {
-        temp_path = PathBuf::from(CONVERTED_TRACK);
+    let mut path = track.clone();
+    if !is_rodio_supported(&path)? {
+        path = PathBuf::from(CONVERTED_TRACK);
     }
 
     let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
-    let rewinded_pos = current_pos
-        .checked_sub(rewind_dur)
-        .unwrap_or(Duration::new(1, 0));
+    let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
+        Some(dur) => dur,
+        None => {
+            sink.clear();
+            let source = get_source(path).expect("Error obtaining source");
+            sink.append(source);
+            sink.play();
+
+            return Ok(());
+        }
+    };
 
     sink.clear();
-    let source = get_source(temp_path).expect("Error obtaining source");
+    let source = get_source(path).expect("Error obtaining source");
     sink.append(source);
 
     sink.try_seek(rewinded_pos).expect("Error rewinding");
