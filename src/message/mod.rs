@@ -40,8 +40,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                                 "Converting format and normalizing volume...",
                             );
 
-                            terminal::refresh_frame(model, terminal)
-                                .expect("Error refreshing frame");
+                            terminal::refresh(model, terminal).expect("Error refreshing frame");
                             player::convert_format(&path);
                         }
                     }

@@ -230,7 +230,7 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
             if !condition {
                 view::display_info(model, "Converting format and normalizing volume...");
 
-                view::terminal::refresh_frame(model, terminal).expect("Error refreshing frame");
+                view::terminal::refresh(model, terminal).expect("Error refreshing frame");
                 convert_format(&next_track);
             }
         }
