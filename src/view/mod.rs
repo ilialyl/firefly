@@ -1,3 +1,5 @@
+pub mod terminal;
+
 use std::time::Duration;
 
 use ratatui::{
@@ -8,7 +10,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::{player::Status, ui::model::Model};
+use crate::model::{Model, player};
 
 pub fn view(model: &Model, frame: &mut Frame) {
     render(model, frame);
@@ -192,9 +194,9 @@ fn get_track_pos_str(model: &Model) -> String {
 
 fn get_status_str(model: &Model) -> String {
     match model.status {
-        Status::Playing => "Playing".into(),
-        Status::Paused => ("Paused").into(),
-        Status::Idle => ("Idle").into(),
+        player::Status::Playing => "Playing".into(),
+        player::Status::Paused => ("Paused").into(),
+        player::Status::Idle => ("Idle").into(),
     }
 }
 

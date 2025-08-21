@@ -15,7 +15,7 @@ use std::{
 };
 use tokio::runtime::Runtime;
 
-use crate::ui::{self, model::Model, view};
+use crate::{model::Model, view};
 
 pub struct Track {
     pub path: Option<PathBuf>,
@@ -230,7 +230,7 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
             if !condition {
                 view::display_info(model, "Converting format and normalizing volume...");
 
-                ui::refresh_frame(model, terminal).expect("Error refreshing frame");
+                view::terminal::refresh_frame(model, terminal).expect("Error refreshing frame");
                 convert_format(&next_track);
             }
         }

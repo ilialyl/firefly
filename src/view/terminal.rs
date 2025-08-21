@@ -1,7 +1,3 @@
-pub mod message;
-pub mod model;
-pub mod view;
-
 use color_eyre::eyre::Result;
 use ratatui::{
     DefaultTerminal, Terminal,
@@ -16,7 +12,7 @@ use std::{
     panic,
 };
 
-use crate::ui::{
+use crate::{
     message::{Message, update},
     model::Model,
     view::view,

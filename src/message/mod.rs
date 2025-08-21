@@ -5,11 +5,8 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
 
 use crate::{
-    player::{self, Status},
-    ui::{
-        model::{Model, RunningState},
-        refresh_frame, view,
-    },
+    model::{Model, RunningState, player},
+    view::{self, terminal},
 };
 
 #[derive(PartialEq)]
@@ -43,7 +40,8 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                                 "Converting format and normalizing volume...",
                             );
 
-                            refresh_frame(model, terminal).expect("Error refreshing frame");
+                            terminal::refresh_frame(model, terminal)
+                                .expect("Error refreshing frame");
                             player::convert_format(&path);
                         }
                     }
@@ -64,7 +62,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
         }
         Message::PlayPause => {
             let sink = model.sink.lock().unwrap();
-            if model.status == Status::Playing {
+            if model.status == player::Status::Playing {
                 sink.pause();
             } else {
                 sink.play();
@@ -162,13 +160,13 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 // If sink paused, set status to paused
                 // If track_path exists in App and sink isn't empty, set status to playing
                 if sink.is_paused() {
-                    model.status = Status::Paused;
+                    model.status = player::Status::Paused;
                 } else if model.current_track.path.is_some() && !sink.empty() {
-                    model.status = Status::Playing;
+                    model.status = player::Status::Playing;
                 }
 
                 if sink.empty() {
-                    model.status = Status::Idle;
+                    model.status = player::Status::Idle;
                 }
 
                 // Get track position
@@ -193,7 +191,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                             } else {
                                 model.current_track.pos = None;
                                 model.current_track.duration = None;
-                                model.status = Status::Idle;
+                                model.status = player::Status::Idle;
                             }
                         }
                     }
@@ -203,7 +201,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 view::display_info(model, e.to_string().as_str())
             }
 
-            if model.status == Status::Idle && !model.track_queue.is_empty() {
+            if model.status == player::Status::Idle && !model.track_queue.is_empty() {
                 player::play_next_track(model, terminal);
             }
 

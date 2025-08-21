@@ -1,3 +1,5 @@
+pub mod player;
+
 use rodio::{OutputStream, Sink};
 use std::{
     collections::VecDeque,
@@ -5,7 +7,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::player::{self, Status, Track};
+use crate::model::player::Track;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum RunningState {
@@ -37,7 +39,7 @@ impl Default for Model {
             arrange_mode: false,
             _stream: stream,
             sink: Arc::new(Mutex::new(sink)),
-            status: Status::Idle,
+            status: player::Status::Idle,
             info: vec![String::new()],
             current_track: Track {
                 path: None,
