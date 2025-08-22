@@ -1,7 +1,8 @@
 pub mod terminal;
 
-use std::time::Duration;
+use std::{rc::Rc, time::Duration};
 
+use lofty::tag::Accessor;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
@@ -90,13 +91,20 @@ pub fn render(model: &Model, frame: &mut Frame) {
         )
     }
 
+    let player_chunks_const = if model.current_track.tag.is_some() {
+        vec![Constraint::Percentage(60), Constraint::Percentage(40)]
+    } else {
+        vec![Constraint::Percentage(100)]
+    };
+
     let player_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(100)])
-        .margin(2)
+        .direction(Direction::Horizontal)
+        .constraints(player_chunks_const)
+        .margin(0)
         .split(main_chunks[0]);
 
-    draw_player(model, frame, player_chunks[0]);
+
+    draw_player(model, frame, player_chunks);
 
     let control_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -108,7 +116,7 @@ pub fn render(model: &Model, frame: &mut Frame) {
     draw_controls(frame, control_chunks[0]);
 }
 
-fn draw_player(model: &Model, frame: &mut Frame, chunk: Rect) {
+fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     let player_text = vec![
         get_track_name_str(model),
         "".into(),
@@ -120,13 +128,34 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rect) {
         get_volume_str(model),
     ];
 
-    let area = center_vertical(chunk, player_text.len() as u16);
+    if let Some(tag) = model.current_track.tag.clone() {
+        let mut meta_text: Vec<String> = Vec::new();
+        if let Some(title) = tag.title() {
+            meta_text.push(title.to_string());
+        }
+        meta_text.push(String::new());
+        if let Some(artist) = tag.artist() {
+            meta_text.push(artist.to_string());
+        }
+        meta_text.push(String::new());
+        if let (Some(album), Some(year)) = (tag.album(), tag.year()) {
+            meta_text.push(format!("{} ({})", album.to_string(), year.to_string()));
+        }
+
+        let centered_area = center_vertical(chunk[1], meta_text.len() as u16);
+
+        let meta_para = Paragraph::new(meta_text.join("\n"));
+
+        frame.render_widget(meta_para, centered_area);
+    }
+
+    let centered_area = center_vertical(chunk[0], player_text.len() as u16);
 
     let player_para = Paragraph::new(player_text.join("\n"))
         .centered()
         .alignment(Alignment::Center);
 
-    frame.render_widget(player_para, area);
+    frame.render_widget(player_para, centered_area);
 }
 
 fn get_queued_tracks(model: &Model) -> Vec<String> {
