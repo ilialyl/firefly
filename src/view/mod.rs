@@ -97,7 +97,7 @@ pub fn render(model: &Model, frame: &mut Frame) {
         )
     }
 
-    let player_chunks_const = if model.current_track.tag.is_some() {
+    let player_chunks_const = if model.current_track.has_metadata {
         vec![Constraint::Percentage(60), Constraint::Percentage(40)]
     } else {
         vec![Constraint::Percentage(100)]
@@ -133,25 +133,27 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
         get_volume_str(model),
     ];
 
-    if let Some(tag) = model.current_track.tag.clone() {
-        let mut meta_text: Vec<String> = Vec::new();
-        if let Some(title) = tag.title() {
-            meta_text.push(title.to_string());
-        }
-        meta_text.push(String::new());
-        if let Some(artist) = tag.artist() {
-            meta_text.push(artist.to_string());
-        }
-        meta_text.push(String::new());
-        if let (Some(album), Some(year)) = (tag.album(), tag.year()) {
-            meta_text.push(format!("{} ({})", album.to_string(), year.to_string()));
-        }
+    if model.current_track.has_metadata {
+        if let Some(tag) = model.current_track.tag.clone() {
+            let mut meta_text: Vec<String> = Vec::new();
+            if let Some(title) = tag.title() {
+                meta_text.push(title.to_string());
+            }
+            meta_text.push(String::new());
+            if let Some(artist) = tag.artist() {
+                meta_text.push(artist.to_string());
+            }
+            meta_text.push(String::new());
+            if let (Some(album), Some(year)) = (tag.album(), tag.year()) {
+                meta_text.push(format!("{} ({})", album.to_string(), year.to_string()));
+            }
 
-        let centered_area = center_vertical(chunk[1], meta_text.len() as u16);
+            let centered_area = center_vertical(chunk[1], meta_text.len() as u16);
 
-        let meta_para = Paragraph::new(meta_text.join("\n"));
+            let meta_para = Paragraph::new(meta_text.join("\n"));
 
-        frame.render_widget(meta_para, centered_area);
+            frame.render_widget(meta_para, centered_area);
+        }
     }
 
     let centered_area = center_vertical(chunk[0], player_text.len() as u16);
