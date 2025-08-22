@@ -46,9 +46,15 @@ pub fn render(model: &Model, frame: &mut Frame) {
         vec![Constraint::Percentage(100)]
     };
 
+    let left_panel_border = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(100)])
+        .split(inner_layout[0]);
+
     let left_panel_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(queue_panel_constant)
+        .margin(2)
         .split(inner_layout[0]);
 
     draw_queue(model, get_queued_tracks(model), frame, left_panel_chunks[0]);
@@ -69,7 +75,7 @@ pub fn render(model: &Model, frame: &mut Frame) {
         .fg(Color::White)
         .title("Queue")
         .title_alignment(Alignment::Left)
-        .render(left_panel_chunks[0], frame.buffer_mut());
+        .render(left_panel_border[0], frame.buffer_mut());
 
     if term_too_small {
         Block::bordered()
@@ -102,7 +108,6 @@ pub fn render(model: &Model, frame: &mut Frame) {
         .constraints(player_chunks_const)
         .margin(0)
         .split(main_chunks[0]);
-
 
     draw_player(model, frame, player_chunks);
 
