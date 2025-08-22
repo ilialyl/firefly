@@ -2,7 +2,7 @@ use color_eyre::eyre::{Result, eyre};
 use lofty::{
     file::{AudioFile, TaggedFileExt},
     probe::Probe,
-    tag::Tag,
+    tag::{Accessor, Tag},
 };
 use ratatui::DefaultTerminal;
 use rfd::FileDialog;
@@ -26,6 +26,7 @@ pub struct Track {
     pub pos: Option<Duration>,
     pub duration: Option<Duration>,
     pub tag: Option<Tag>,
+    pub has_metadata: bool,
 }
 
 #[derive(PartialEq)]
@@ -255,6 +256,7 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
     };
 
     model.current_track.tag = get_metadata(&next_track).ok().unwrap();
+    model.current_track.has_metadata = model.current_track.tag.as_ref().unwrap().title().is_some();
     model.current_track.path = Some(next_track);
     model.current_track.duration =
         get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
