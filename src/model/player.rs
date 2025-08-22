@@ -1,5 +1,9 @@
 use color_eyre::eyre::{Result, eyre};
-use lofty::{file::AudioFile, probe::Probe};
+use lofty::{
+    file::{AudioFile, TaggedFileExt},
+    probe::Probe,
+    tag::Tag,
+};
 use ratatui::DefaultTerminal;
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
@@ -21,6 +25,7 @@ pub struct Track {
     pub path: Option<PathBuf>,
     pub pos: Option<Duration>,
     pub duration: Option<Duration>,
+    pub tag: Option<Tag>,
 }
 
 #[derive(PartialEq)]
@@ -254,4 +259,18 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
         get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
 
     view::stop_info_display(model);
+}
+
+pub fn get_metadata(track: &PathBuf) -> Result<Option<Tag>> {
+    let mut temp_path = track.clone();
+    if !is_rodio_supported(&temp_path)? {
+        temp_path = PathBuf::from(CONVERTED_TRACK)
+    }
+
+    let tagged_file = Probe::open(temp_path)
+        .expect("ERROR: Bad path provided!")
+        .read()
+        .expect("ERROR: Failed to read file!");
+
+    Ok(tagged_file.primary_tag().cloned())
 }

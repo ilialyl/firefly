@@ -45,6 +45,7 @@ impl Default for Model {
                 path: None,
                 pos: None,
                 duration: None,
+                tag: None,
             },
             track_queue: VecDeque::new(),
             volume: 1.0,
