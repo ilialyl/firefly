@@ -160,6 +160,7 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
 
     let player_para = Paragraph::new(player_text.join("\n"))
         .centered()
+        .wrap(Wrap { trim: true })
         .alignment(Alignment::Center);
 
     frame.render_widget(player_para, centered_area);
