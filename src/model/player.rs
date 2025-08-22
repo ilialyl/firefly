@@ -254,6 +254,7 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
         view::display_info(model, e.to_string().as_str())
     };
 
+    model.current_track.tag = get_metadata(&next_track).ok().unwrap();
     model.current_track.path = Some(next_track);
     model.current_track.duration =
         get_track_duration(model.current_track.path.as_ref().unwrap()).ok();

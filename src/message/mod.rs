@@ -50,6 +50,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 if let Err(e) = player::load_track(&model.sink, &path) {
                     view::display_info(model, e.to_string().as_str())
                 }
+                model.current_track.tag = player::get_metadata(&path).ok().unwrap();
                 model.current_track.path = Some(path);
                 model.current_track.duration =
                     player::get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
