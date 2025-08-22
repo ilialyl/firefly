@@ -61,8 +61,10 @@ pub fn is_rodio_supported(path: &PathBuf) -> Result<bool> {
 }
 
 pub fn get_sink() -> Result<(OutputStream, Sink)> {
-    let stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
+    let mut stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
     let sink = rodio::Sink::connect_new(&stream_handle.mixer());
+
+    stream_handle.log_on_drop(false);
 
     Ok((stream_handle, sink))
 }
