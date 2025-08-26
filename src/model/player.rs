@@ -275,10 +275,16 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
 }
 
 pub fn get_metadata(track: &PathBuf) -> TaggedFile {
-    let tagged_file = Probe::open(track)
+    let tagged_file = match Probe::open(track)
         .expect("ERROR: Bad path provided!")
         .read()
-        .expect("ERROR: Failed to read file!");
+    {
+        Ok(f) => f,
+        Err(_) => Probe::open(CONVERTED_TRACK)
+            .expect("ERROR: Bad path provided!")
+            .read()
+            .expect("ERROR: Failed to read file!"),
+    };
 
     tagged_file
 }
