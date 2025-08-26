@@ -2,7 +2,10 @@ pub mod terminal;
 
 use std::{rc::Rc, time::Duration};
 
-use lofty::tag::{Accessor, Tag};
+use lofty::{
+    file::{TaggedFile, TaggedFileExt},
+    tag::Accessor,
+};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
@@ -134,7 +137,7 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     ];
 
     if model.current_track.has_metadata {
-        if let Some(tag) = model.current_track.tag.clone() {
+        if let Some(tag) = model.current_track.tagged_file.as_ref() {
             let meta_text = get_metadata_text_vec(tag);
 
             let metadata_margin = 2;
@@ -177,30 +180,42 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     frame.render_widget(player_para, centered_area);
 }
 
-fn get_metadata_text_vec(tag: Tag) -> Vec<String> {
+fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
     let mut meta_text: Vec<String> = Vec::new();
 
     let track_num = tag
+        .primary_tag()
+        .unwrap()
         .track()
         .map(|n| format!("#{} ", n))
         .unwrap_or("".to_string());
     let title = tag
+        .primary_tag()
+        .unwrap()
         .title()
         .map(|s| format!("{} ", s))
         .unwrap_or("".to_string());
     let artist = tag
+        .primary_tag()
+        .unwrap()
         .artist()
         .map(|s| format!("{} ", s))
         .unwrap_or("".to_string());
     let album = tag
+        .primary_tag()
+        .unwrap()
         .album()
         .map(|s| format!("{} ", s))
         .unwrap_or("".to_string());
     let year = tag
+        .primary_tag()
+        .unwrap()
         .year()
         .map(|n| format!("{} ", n))
         .unwrap_or("".to_string());
     let disc_num = tag
+        .primary_tag()
+        .unwrap()
         .disk()
         .map(|n| format!("{} ", n))
         .unwrap_or("".to_string());

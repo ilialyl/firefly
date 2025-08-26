@@ -1,8 +1,8 @@
 use color_eyre::eyre::{Result, eyre};
 use lofty::{
-    file::{AudioFile, TaggedFileExt},
+    file::{AudioFile, TaggedFile, TaggedFileExt},
     probe::Probe,
-    tag::{Accessor, Tag},
+    tag::Accessor,
 };
 use ratatui::DefaultTerminal;
 use rfd::FileDialog;
@@ -25,7 +25,7 @@ pub struct Track {
     pub path: Option<PathBuf>,
     pub pos: Option<Duration>,
     pub duration: Option<Duration>,
-    pub tag: Option<Tag>,
+    pub tagged_file: Option<TaggedFile>,
     pub has_metadata: bool,
 }
 
@@ -257,8 +257,16 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
         view::display_info(model, e.to_string().as_str())
     };
 
-    model.current_track.tag = get_metadata(&next_track).ok().unwrap();
-    model.current_track.has_metadata = model.current_track.tag.as_ref().unwrap().title().is_some();
+    model.current_track.tagged_file = Some(get_metadata(&next_track));
+    model.current_track.has_metadata = model
+        .current_track
+        .tagged_file
+        .as_ref()
+        .unwrap()
+        .primary_tag()
+        .unwrap()
+        .title()
+        .is_some();
     model.current_track.path = Some(next_track);
     model.current_track.duration =
         get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
@@ -266,11 +274,11 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
     view::stop_info_display(model);
 }
 
-pub fn get_metadata(track: &PathBuf) -> Result<Option<Tag>> {
+pub fn get_metadata(track: &PathBuf) -> TaggedFile {
     let tagged_file = Probe::open(track)
         .expect("ERROR: Bad path provided!")
         .read()
         .expect("ERROR: Failed to read file!");
 
-    Ok(tagged_file.primary_tag().cloned())
+    tagged_file
 }
