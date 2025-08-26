@@ -1,6 +1,6 @@
 # Terminal Audio Player
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and [Ratatui](https://ratatui.rs/) for interface.
-![example_img](example_img/firefly_v0-3-3.png)
+![example_img](example_img/firefly_v0-4-0.png)
 ## Features
 - Play, Pause, Rewind, and Seek.
 - Volume control from 0-200%
@@ -9,6 +9,7 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Track and Directory queuing
 - Queue arrangement
 - Track Skipping
+- Metadata display (Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
 
 ### Formats supported by Rodio playback backend, [Symphonia](https://github.com/pdeljanov/Symphonia)
 - FLAC
@@ -22,7 +23,24 @@ It can still play other formats by converting formats not supported by Rodio to 
 - OGA
 
 ### Planned Features
-- [x] Metadata display (Implemented, not yet released)
 - [ ] Playlists
 - [ ] YTDLP integration
 - [ ] Music Library
+
+## Usage
+### Windows
+- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
+- Build from source
+
+### Fedora Linux
+Build from source.
+#### Requirements
+- [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+- [wayland-devel](https://packages.fedoraproject.org/pkgs/wayland/wayland-devel/)
+- [alsa-lib-devel](https://packages.fedoraproject.org/pkgs/alsa-lib/alsa-lib-devel/)
+#### Steps
+1. Clone this repository
+2. run `cargo run --release`
+
+### Others
+Building from source is possible but instruction is omitted due to unknown list of dependencies.
