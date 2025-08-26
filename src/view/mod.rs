@@ -3,7 +3,7 @@ pub mod terminal;
 use std::{rc::Rc, time::Duration};
 
 use lofty::{
-    file::{TaggedFile, TaggedFileExt},
+    file::{AudioFile, TaggedFile, TaggedFileExt},
     tag::Accessor,
 };
 use ratatui::{
@@ -219,11 +219,33 @@ fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
         .disk()
         .map(|n| format!("{} ", n))
         .unwrap_or("".to_string());
+    let mut bit_depth = tag
+        .properties()
+        .bit_depth()
+        .map(|s| format!("{}-bit/", s))
+        .unwrap_or("".to_string());
+
+    if bit_depth.is_empty() {
+        bit_depth = "16-bit/".to_string();
+    }
+
+    let sample_rate = tag
+        .properties()
+        .sample_rate()
+        .map(|n| format!("{}kHz ", n / 1000))
+        .unwrap_or("".to_string());
+
+    let bitrate = tag
+        .properties()
+        .audio_bitrate()
+        .map(|n| format!("{}kbps ", n))
+        .unwrap_or("".to_string());
 
     let lines = vec![
         format!("{}{}", track_num, title),
         format!("{}", artist),
         format!("{}{}{}", album, disc_num, year),
+        format!("{}{}{}", bit_depth, sample_rate, bitrate),
     ];
 
     if let Some((last, rest)) = lines.split_last() {
