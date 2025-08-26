@@ -267,12 +267,7 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
 }
 
 pub fn get_metadata(track: &PathBuf) -> Result<Option<Tag>> {
-    let mut temp_path = track.clone();
-    if !is_rodio_supported(&temp_path)? {
-        temp_path = PathBuf::from(CONVERTED_TRACK)
-    }
-
-    let tagged_file = Probe::open(temp_path)
+    let tagged_file = Probe::open(track)
         .expect("ERROR: Bad path provided!")
         .read()
         .expect("ERROR: Failed to read file!");
