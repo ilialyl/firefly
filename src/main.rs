@@ -1,10 +1,10 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 use color_eyre::eyre::Result;
 
 use crate::{
     message::Message,
-    model::{Model, RunningState},
+    model::{Model, RunningState, player::CONVERTED_TRACK},
     view::view,
 };
 
@@ -30,9 +30,9 @@ fn main() -> Result<()> {
         }
     }
 
-    let temp_file = Path::new(model::player::CONVERTED_TRACK);
-    if temp_file.exists() {
-        std::fs::remove_file(temp_file).expect("Error removing temporary file.");
+    let track_temp: PathBuf = CONVERTED_TRACK.clone();
+    if track_temp.exists() {
+        std::fs::remove_file(track_temp).expect("Error removing temporary file.");
     }
 
     view::terminal::restore_terminal()

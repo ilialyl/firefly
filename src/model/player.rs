@@ -4,6 +4,8 @@ use lofty::{
     probe::Probe,
     tag::Accessor,
 };
+use once_cell::sync::Lazy;
+use rand::{Rng, distr::Alphanumeric};
 use ratatui::DefaultTerminal;
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
@@ -12,7 +14,7 @@ use std::{
     collections::VecDeque,
     fs::{self, File},
     ops::{Add, Sub},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
     thread,
     time::Duration,
@@ -42,7 +44,21 @@ const UNTESTED_FORMATS: [&'static str; 5] = ["pcm", "aiff", "aac", "wma", "alac"
 const AUDIO_FORMATS: [&'static str; 11] = [
     "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac",
 ];
-pub const CONVERTED_TRACK: &'static str = "temp.flac";
+const TEMP_FILE: &'static str = "firefly_temp";
+
+pub static CONVERTED_TRACK: Lazy<PathBuf> = Lazy::new(|| {
+    if Path::new(format!("{TEMP_FILE}.flac").as_str()).exists() {
+        let rng = rand::rng();
+        let rand_string: String = rng
+            .sample_iter(&Alphanumeric)
+            .take(8)
+            .map(char::from)
+            .collect();
+        PathBuf::from(format!("{TEMP_FILE}_{rand_string}.flac"))
+    } else {
+        PathBuf::from(format!("{TEMP_FILE}.flac"))
+    }
+});
 
 pub fn is_rodio_supported(path: &PathBuf) -> Result<bool> {
     if path.is_file() {
@@ -105,7 +121,7 @@ pub fn choose_dir() -> Option<PathBuf> {
 pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) -> Result<()> {
     let mut track_temp = track.clone();
     if !is_rodio_supported(&track_temp)? {
-        track_temp = PathBuf::from(CONVERTED_TRACK);
+        track_temp = CONVERTED_TRACK.clone();
     }
 
     let sink = Arc::clone(sink);
@@ -152,7 +168,7 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Durat
 pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) -> Result<()> {
     let mut path = track.clone();
     if !is_rodio_supported(&path)? {
-        path = PathBuf::from(CONVERTED_TRACK);
+        path = PathBuf::from(CONVERTED_TRACK.clone());
     }
 
     let sink = sink.lock().unwrap();
@@ -183,7 +199,7 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) ->
 pub fn get_track_duration(track: &PathBuf) -> Result<Duration> {
     let mut temp_path = track.clone();
     if !is_rodio_supported(&temp_path)? {
-        temp_path = PathBuf::from(CONVERTED_TRACK)
+        temp_path = PathBuf::from(CONVERTED_TRACK.clone())
     }
 
     let tagged_file = Probe::open(temp_path)
@@ -198,7 +214,7 @@ pub fn convert_format(track_path: &PathBuf) {
     let runtime = Runtime::new().unwrap();
 
     runtime.block_on(async {
-        FFmpegBuilder::convert(track_path.clone(), CONVERTED_TRACK)
+        FFmpegBuilder::convert(track_path.clone(), CONVERTED_TRACK.clone())
             .audio_filter(AudioFilter::loudnorm())
             .run()
             .await
@@ -280,7 +296,7 @@ pub fn get_metadata(track: &PathBuf) -> TaggedFile {
         .read()
     {
         Ok(f) => f,
-        Err(_) => Probe::open(CONVERTED_TRACK)
+        Err(_) => Probe::open(CONVERTED_TRACK.clone())
             .expect("ERROR: Bad path provided!")
             .read()
             .expect("ERROR: Failed to read file!"),
