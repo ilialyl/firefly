@@ -44,3 +44,9 @@ Build from source.
 
 ### Others
 Building from source is possible but instruction is omitted due to unknown list of dependencies.
+
+## Known Issue
+- Rewinding can be slow on systems that use [ALSA](https://www.alsa-project.org/wiki/Main_Page).
+
+## Bug Report
+If you find any bugs, you can open an [issue](https://github.com/ilialyl/firefly/issues). I will get to it as soon as possible.
