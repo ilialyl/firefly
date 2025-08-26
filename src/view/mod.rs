@@ -139,12 +139,12 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
             if let Some(title) = tag.title() {
                 meta_text.push(title.to_string());
             }
-            meta_text.push(String::new());
             if let Some(artist) = tag.artist() {
+                meta_text.push(String::new());
                 meta_text.push(artist.to_string());
             }
-            meta_text.push(String::new());
             if let (Some(album), Some(year)) = (tag.album(), tag.year()) {
+                meta_text.push(String::new());
                 meta_text.push(format!("{} ({})", album.to_string(), year.to_string()));
             }
 
