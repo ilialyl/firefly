@@ -106,7 +106,7 @@ pub fn render(model: &Model, frame: &mut Frame) {
     let player_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(player_chunks_const)
-        .margin(0)
+        .margin(2)
         .split(main_chunks[0]);
 
     draw_player(model, frame, player_chunks);
@@ -148,7 +148,29 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
                 meta_text.push(format!("{} ({})", album.to_string(), year.to_string()));
             }
 
-            let centered_area = center_vertical(chunk[1], meta_text.len() as u16);
+            let metadata_margin = 2;
+
+            let metadata_border_area = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Length(
+                    (metadata_margin * 2) + meta_text.len() as u16,
+                )])
+                .margin(1)
+                .split(chunk[1]);
+
+            Block::bordered()
+                .fg(Color::White)
+                .title("Metadata")
+                .title_alignment(Alignment::Right)
+                .render(metadata_border_area[0], frame.buffer_mut());
+
+            let metadata_chunk = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Percentage(100)])
+                .margin(metadata_margin)
+                .split(metadata_border_area[0]);
+
+            let centered_area = center_vertical(metadata_chunk[0], meta_text.len() as u16);
 
             let meta_para = Paragraph::new(meta_text.join("\n"));
 
