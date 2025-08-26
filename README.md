@@ -10,7 +10,7 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Queue arrangement
 - Track Skipping
 
-### Formats supported by Rodio
+### Formats supported by Rodio playback backend, [Symphonia](https://github.com/pdeljanov/Symphonia)
 - FLAC
 - MP3
 - Vorbis (ogg)
@@ -22,6 +22,7 @@ It can still play other formats by converting formats not supported by Rodio to 
 - OGA
 
 ### Planned Features
-- [ ] Metadata display
+- [x] Metadata display (Implemented, not yet released)
 - [ ] Playlists
+- [ ] YTDLP integration
 - [ ] Music Library
