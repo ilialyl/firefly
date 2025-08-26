@@ -2,7 +2,7 @@ pub mod terminal;
 
 use std::{rc::Rc, time::Duration};
 
-use lofty::tag::Accessor;
+use lofty::tag::{Accessor, Tag};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
@@ -135,18 +135,7 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
 
     if model.current_track.has_metadata {
         if let Some(tag) = model.current_track.tag.clone() {
-            let mut meta_text: Vec<String> = Vec::new();
-            if let Some(title) = tag.title() {
-                meta_text.push(title.to_string());
-            }
-            if let Some(artist) = tag.artist() {
-                meta_text.push(String::new());
-                meta_text.push(artist.to_string());
-            }
-            if let (Some(album), Some(year)) = (tag.album(), tag.year()) {
-                meta_text.push(String::new());
-                meta_text.push(format!("{} ({})", album.to_string(), year.to_string()));
-            }
+            let meta_text = get_metadata_text_vec(tag);
 
             let metadata_margin = 2;
 
@@ -186,6 +175,53 @@ fn draw_player(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
         .alignment(Alignment::Center);
 
     frame.render_widget(player_para, centered_area);
+}
+
+fn get_metadata_text_vec(tag: Tag) -> Vec<String> {
+    let mut meta_text: Vec<String> = Vec::new();
+
+    let track_num = tag
+        .track()
+        .map(|n| format!("#{} ", n))
+        .unwrap_or("".to_string());
+    let title = tag
+        .title()
+        .map(|s| format!("{} ", s))
+        .unwrap_or("".to_string());
+    let artist = tag
+        .artist()
+        .map(|s| format!("{} ", s))
+        .unwrap_or("".to_string());
+    let album = tag
+        .album()
+        .map(|s| format!("{} ", s))
+        .unwrap_or("".to_string());
+    let year = tag
+        .year()
+        .map(|n| format!("{} ", n))
+        .unwrap_or("".to_string());
+    let disc_num = tag
+        .disk()
+        .map(|n| format!("{} ", n))
+        .unwrap_or("".to_string());
+
+    let lines = vec![
+        format!("{}{}", track_num, title),
+        format!("{}", artist),
+        format!("{}{}{}", album, disc_num, year),
+    ];
+
+    if let Some((last, rest)) = lines.split_last() {
+        for line in rest {
+            if !line.is_empty() {
+                meta_text.push(line.clone());
+                meta_text.push(String::new());
+            }
+        }
+        meta_text.push(last.clone());
+    }
+
+    meta_text
 }
 
 fn get_queued_tracks(model: &Model) -> Vec<String> {
