@@ -211,7 +211,7 @@ fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
         .primary_tag()
         .unwrap()
         .year()
-        .map(|n| format!("{} ", n))
+        .map(|n| format!("({}) ", n))
         .unwrap_or("".to_string());
     let disc_num = tag
         .primary_tag()
