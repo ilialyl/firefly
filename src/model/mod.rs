@@ -18,6 +18,7 @@ pub enum RunningState {
 
 pub struct Model {
     pub running_state: RunningState,
+    pub busy: Arc<Mutex<bool>>,
     pub selected_track: usize,
     pub arrange_mode: bool,
     pub _stream: OutputStream,
@@ -35,6 +36,7 @@ impl Default for Model {
         let (stream, sink) = player::get_sink().expect("Error creating sink");
         Self {
             running_state: RunningState::Running,
+            busy: Arc::new(Mutex::new(false)),
             selected_track: 0,
             arrange_mode: false,
             _stream: stream,
