@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Result, eyre};
 
 use crate::{
     message::Message,
@@ -20,20 +20,43 @@ fn main() -> Result<()> {
     let mut model = Model::default();
 
     while model.running_state != RunningState::Done {
-        message::update(&mut model, Message::Tick, &mut terminal);
+        let mut result;
+        let mut current_msg;
+
+        (_, result) = message::update(&mut model, Message::Tick, &mut terminal);
+
+        attach_errors(&result)?;
+
         terminal.draw(|f| view(&mut model, f))?;
 
-        let mut current_msg = message::handle_events()?;
+        current_msg = message::handle_events()?;
 
         while current_msg.is_some() {
-            current_msg = message::update(&mut model, current_msg.unwrap(), &mut terminal);
+            (current_msg, result) =
+                message::update(&mut model, current_msg.unwrap(), &mut terminal);
         }
+
+        attach_errors(&result)?;
     }
 
+    clean_up()
+}
+
+fn clean_up() -> Result<()> {
     let track_temp: PathBuf = CONVERTED_TRACK.clone();
     if track_temp.exists() {
-        std::fs::remove_file(track_temp).expect("Error removing temporary file.");
+        std::fs::remove_file(track_temp)?;
     }
 
     view::terminal::restore_terminal()
+}
+
+fn attach_errors(result: &Result<()>) -> Result<()> {
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => match clean_up() {
+            Ok(_) => Err(eyre!(e.to_string())),
+            Err(clean_err) => Err(eyre!("{}\nCleanup also failed: {}", e, clean_err)),
+        },
+    }
 }

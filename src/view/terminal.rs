@@ -19,7 +19,9 @@ use crate::{
 };
 
 pub fn refresh(model: &mut Model, terminal: &mut DefaultTerminal) -> Result<()> {
-    update(model, Message::Tick, terminal);
+    let (_, result) = update(model, Message::Tick, terminal);
+    result?;
+
     terminal.draw(|f| view(model, f))?;
 
     Ok(())
