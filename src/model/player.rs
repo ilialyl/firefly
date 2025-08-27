@@ -222,6 +222,13 @@ pub fn convert_format(track_path: &PathBuf) {
     });
 }
 
+pub fn load_now(model: &mut Model, terminal: &mut DefaultTerminal, path: PathBuf) {
+    if path.is_file() {
+        model.track_queue.push_front(path);
+        play_next_track(model, terminal);
+    }
+}
+
 pub fn enqueue_track(path_vec: Vec<PathBuf>, track_queue: &mut VecDeque<PathBuf>) {
     for path in path_vec {
         if path.is_file() {
