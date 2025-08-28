@@ -10,6 +10,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect) {
         " Load Now <N>",
         " Queue <Q>",
         " Queue Dir <ShiftQ>",
+        " Toggle Q Arrange <A>",
         " Skip <S>",
         " Rewind/Seek <←/→>",
         " Volume <=/->",

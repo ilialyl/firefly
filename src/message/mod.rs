@@ -1,6 +1,6 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Result, eyre};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
 
@@ -31,42 +31,74 @@ pub enum Message {
     Quit,
 }
 
-pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -> Option<Message> {
+pub fn update(
+    model: &mut Model,
+    msg: Message,
+    terminal: &mut DefaultTerminal,
+) -> (Option<Message>, Result<()>) {
     match msg {
         Message::LoadNow => {
+            match model.busy.lock() {
+                Ok(busy) => {
+                    if *busy {
+                        return (None, Ok(()));
+                    }
+                }
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
+
             if let Some(path) = player::choose_file() {
                 load_now(model, terminal, path);
             }
 
-            None
+            (None, Ok(()))
         }
         Message::PlayPause => {
-            let sink = model.sink.lock().unwrap();
+            match model.busy.lock() {
+                Ok(busy) => {
+                    if *busy {
+                        return (None, Ok(()));
+                    }
+                }
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
+
+            let sink = match model.sink.lock() {
+                Ok(s) => s,
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
+
             if model.status == player::Status::Playing {
                 sink.pause();
             } else {
                 sink.play();
             }
 
-            None
+            (None, Ok(()))
         }
         Message::QueueDir => {
             if let Some(dir) = player::choose_dir() {
                 player::enqueue_dir(dir, &mut model.track_queue);
             }
 
-            None
+            (None, Ok(()))
         }
         Message::QueueFile => {
             if let Some(path_vec) = player::choose_multiple_files() {
                 player::enqueue_track(path_vec, &mut model.track_queue);
             }
 
-            None
+            (None, Ok(()))
         }
         Message::QueueUp => {
             if model.selected_track == 0 || model.track_queue.len() == 0 {
-                return None;
+                return (None, Ok(()));
             }
 
             model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
@@ -77,12 +109,12 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                     .swap(model.selected_track, model.selected_track + 1);
             }
 
-            None
+            (None, Ok(()))
         }
 
         Message::QueueDown => {
             if model.track_queue.len() == 0 || model.selected_track == model.track_queue.len() - 1 {
-                return None;
+                return (None, Ok(()));
             }
 
             model.selected_track = (model.selected_track + 1).min(model.track_queue.len() - 1);
@@ -93,16 +125,27 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                     .swap(model.selected_track, model.selected_track - 1);
             }
 
-            None
+            (None, Ok(()))
         }
 
         Message::Quit => {
             model.running_state = RunningState::Done;
 
-            None
+            (None, Ok(()))
         }
 
         Message::Rewind => {
+            match model.busy.lock() {
+                Ok(busy) => {
+                    if *busy {
+                        return (None, Ok(()));
+                    }
+                }
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
+
             if let Some(track) = model.current_track.path.clone() {
                 if model.current_track.path.is_some() {
                     if let Err(e) = player::rewind(&model.sink, &track, Duration::from_secs(5)) {
@@ -112,30 +155,46 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 }
             }
 
-            None
+            (None, Ok(()))
         }
 
         Message::Seek => {
+            match model.busy.lock() {
+                Ok(busy) => {
+                    if *busy {
+                        return (None, Ok(()));
+                    }
+                }
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
+
             if let Some(track_dur) = &model.current_track.duration {
                 if model.current_track.path.is_some() {
                     player::forward(&model.sink, track_dur, Duration::from_secs(5));
                 }
             }
 
-            None
+            (None, Ok(()))
         }
 
         Message::Skip => {
             player::play_next_track(model, terminal);
 
-            None
+            (None, Ok(()))
         }
 
         Message::Tick => {
             let mut err: Option<color_eyre::eyre::ErrReport> = None;
             {
                 // Get sink
-                let sink = model.sink.lock().unwrap();
+                let sink = match model.sink.lock() {
+                    Ok(s) => s,
+                    Err(e) => {
+                        return (None, Err(eyre!(e.to_string())));
+                    }
+                };
 
                 // If sink paused, set status to paused
                 // If track_path exists in App and sink isn't empty, set status to playing
@@ -185,7 +244,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 player::play_next_track(model, terminal);
             }
 
-            None
+            (None, Ok(()))
         }
 
         Message::ToggleArrange => {
@@ -195,7 +254,7 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 model.arrange_mode = true;
             }
 
-            None
+            (None, Ok(()))
         }
 
         Message::ToggleLoop => {
@@ -205,21 +264,57 @@ pub fn update(model: &mut Model, msg: Message, terminal: &mut DefaultTerminal) -
                 model.looping = true;
             }
 
-            None
+            (None, Ok(()))
         }
 
         Message::VolumeDown => {
-            player::decrease_volume(&model.sink, 0.05);
-            model.volume = model.sink.lock().unwrap().volume();
+            match model.busy.lock() {
+                Ok(busy) => {
+                    if *busy {
+                        return (None, Ok(()));
+                    }
+                }
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
 
-            None
+            player::decrease_volume(&model.sink, 0.05);
+            let sink = match model.sink.lock() {
+                Ok(s) => s,
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
+
+            model.volume = sink.volume();
+
+            (None, Ok(()))
         }
 
         Message::VolumeUp => {
-            player::increase_volume(&model.sink, 0.05);
-            model.volume = model.sink.lock().unwrap().volume();
+            match model.busy.lock() {
+                Ok(busy) => {
+                    if *busy {
+                        return (None, Ok(()));
+                    }
+                }
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
 
-            None
+            player::increase_volume(&model.sink, 0.05);
+            let sink = match model.sink.lock() {
+                Ok(s) => s,
+                Err(e) => {
+                    return (None, Err(eyre!(e.to_string())));
+                }
+            };
+
+            model.volume = sink.volume();
+
+            (None, Ok(()))
         }
     }
 }
