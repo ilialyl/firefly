@@ -1,6 +1,7 @@
 pub mod player;
 
 use rodio::{OutputStream, Sink};
+use rust_ffmpeg::FFmpegProcess;
 use std::{
     collections::VecDeque,
     path::PathBuf,
@@ -18,7 +19,7 @@ pub enum RunningState {
 
 pub struct Model {
     pub running_state: RunningState,
-    pub busy: Arc<Mutex<bool>>,
+    pub busy: bool,
     pub selected_track: usize,
     pub arrange_mode: bool,
     pub _stream: OutputStream,
@@ -29,6 +30,7 @@ pub struct Model {
     pub track_queue: VecDeque<PathBuf>,
     pub volume: f32,
     pub looping: bool,
+    pub ffmpeg_handle: Option<FFmpegProcess>,
 }
 
 impl Default for Model {
@@ -36,7 +38,7 @@ impl Default for Model {
         let (stream, sink) = player::get_sink().expect("Error creating sink");
         Self {
             running_state: RunningState::Running,
-            busy: Arc::new(Mutex::new(false)),
+            busy: false,
             selected_track: 0,
             arrange_mode: false,
             _stream: stream,
@@ -53,6 +55,7 @@ impl Default for Model {
             track_queue: VecDeque::new(),
             volume: 1.0,
             looping: false,
+            ffmpeg_handle: None,
         }
     }
 }

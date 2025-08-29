@@ -1,8 +1,9 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use color_eyre::eyre::{Result, eyre};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
+use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     model::{
@@ -12,7 +13,6 @@ use crate::{
     view::{self},
 };
 
-#[derive(PartialEq)]
 pub enum Message {
     Tick,
     LoadNow,
@@ -29,6 +29,9 @@ pub enum Message {
     QueueFile,
     QueueDir,
     Quit,
+    ConversionStarted(FFmpegProcess),
+    ConversionEnded,
+    Busy,
 }
 
 pub fn update(
@@ -38,16 +41,9 @@ pub fn update(
 ) -> (Option<Message>, Result<()>) {
     match msg {
         Message::LoadNow => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             if let Some(path) = player::choose_file() {
                 load_now(model, terminal, path);
@@ -56,16 +52,9 @@ pub fn update(
             (None, Ok(()))
         }
         Message::PlayPause => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             let sink = match model.sink.lock() {
                 Ok(s) => s,
@@ -135,16 +124,9 @@ pub fn update(
         }
 
         Message::Rewind => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             if let Some(track) = model.current_track.path.clone() {
                 if model.current_track.path.is_some() {
@@ -159,16 +141,9 @@ pub fn update(
         }
 
         Message::Seek => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             if let Some(track_dur) = &model.current_track.duration {
                 if model.current_track.path.is_some() {
@@ -268,16 +243,9 @@ pub fn update(
         }
 
         Message::VolumeDown => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             player::decrease_volume(&model.sink, 0.05);
             let sink = match model.sink.lock() {
@@ -293,16 +261,9 @@ pub fn update(
         }
 
         Message::VolumeUp => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             player::increase_volume(&model.sink, 0.05);
             let sink = match model.sink.lock() {
@@ -313,6 +274,24 @@ pub fn update(
             };
 
             model.volume = sink.volume();
+
+            (None, Ok(()))
+        }
+
+        Message::ConversionStarted(handle) => {
+            model.ffmpeg_handle = Some(handle);
+
+            (Some(Message::Busy), Ok(()))
+        }
+
+        Message::Busy => {
+            model.busy = true;
+
+            (None, Ok(()))
+        }
+
+        Message::ConversionEnded => {
+            model.busy = false;
 
             (None, Ok(()))
         }
