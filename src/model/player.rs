@@ -14,13 +14,13 @@ use std::{
     fs::{self, File},
     ops::{Add, Sub},
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, mpsc::Sender},
     thread,
     time::Duration,
 };
 use tokio::runtime::Runtime;
 
-use crate::{model::Model, view};
+use crate::{message::Message, model::Model, view};
 
 pub struct Track {
     pub path: Option<PathBuf>,
@@ -221,10 +221,10 @@ pub fn convert_format(track_path: &PathBuf) {
     });
 }
 
-pub fn load_now(model: &mut Model, path: PathBuf) {
+pub fn load_now(model: &mut Model, path: PathBuf, tx: &Sender<Message>) {
     if path.is_file() {
         model.track_queue.push_front(path);
-        play_next_track(model);
+        play_next_track(model, tx);
     }
 }
 
@@ -255,11 +255,11 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     track_queue.extend(path_vec);
 }
 
-pub fn bg_conversion(path: &PathBuf) {
+pub fn bg_conversion(path: &PathBuf, tx: &Sender<Message>) {
     convert_format(&path);
 }
 
-pub fn play_next_track(model: &mut Model) {
+pub fn play_next_track(model: &mut Model, tx: &Sender<Message>) {
     let next_track = match model.track_queue.pop_front() {
         Some(path) => path,
         None => {
@@ -270,7 +270,7 @@ pub fn play_next_track(model: &mut Model) {
     match is_rodio_supported(&next_track) {
         Ok(condition) => {
             if !condition {
-                bg_conversion(&next_track);
+                bg_conversion(&next_track, tx);
             }
         }
         Err(e) => view::display_info(model, e.to_string().as_str()),

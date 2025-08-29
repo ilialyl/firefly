@@ -45,7 +45,7 @@ pub fn update(
             }
 
             if let Some(path) = player::choose_file() {
-                load_now(model, path);
+                load_now(model, path, tx);
             }
 
             (None, Ok(()))
@@ -154,7 +154,7 @@ pub fn update(
         }
 
         Message::Skip => {
-            player::play_next_track(model);
+            player::play_next_track(model, tx);
 
             (None, Ok(()))
         }
@@ -218,7 +218,7 @@ pub fn update(
             }
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
-                player::play_next_track(model);
+                player::play_next_track(model, tx);
             }
 
             (None, Ok(()))
