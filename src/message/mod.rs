@@ -34,7 +34,8 @@ pub enum Message {
     Quit,
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
-    Busy,
+    Busy(String),
+    Log(String),
 }
 
 pub fn update(
@@ -291,18 +292,29 @@ pub fn update(
         Message::ConversionStarted(handle) => {
             model.ffmpeg_handle = Some(handle);
 
-            (Some(Message::Busy), Ok(()))
+            (
+                Some(Message::Busy(
+                    "Converting format and normalizing volume".to_string(),
+                )),
+                Ok(()),
+            )
         }
 
-        Message::Busy => {
+        Message::Busy(log) => {
             model.busy = true;
 
-            (None, Ok(()))
+            (Some(Message::Log(log)), Ok(()))
         }
 
         Message::ConversionEnded => {
             model.busy = false;
             play_next_track(model, &model.current_track.path.clone().unwrap());
+
+            (Some(Message::Log(String::new())), Ok(()))
+        }
+
+        Message::Log(str) => {
+            model.info.push(str);
 
             (None, Ok(()))
         }
