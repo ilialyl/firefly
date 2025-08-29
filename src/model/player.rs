@@ -4,6 +4,7 @@ use lofty::{
     probe::Probe,
     tag::Accessor,
 };
+use log::info;
 use once_cell::sync::Lazy;
 use rand::{Rng, distr::Alphanumeric};
 use rfd::FileDialog;
@@ -254,6 +255,8 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
 pub fn bg_conversion(path: &PathBuf, tx: &Sender<Message>) {
     let path = path.clone();
     let cloned_tx = tx.clone();
+
+    info!("Converting file {}.", path.display());
 
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
