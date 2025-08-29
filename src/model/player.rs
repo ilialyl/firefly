@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use rand::{Rng, distr::Alphanumeric};
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
-use rust_ffmpeg::prelude::*;
+use rust_ffmpeg::{FFmpegProcess, prelude::*};
 use std::{
     collections::VecDeque,
     fs::{self, File},
@@ -209,22 +209,18 @@ pub fn get_track_duration(track: &PathBuf) -> Result<Duration> {
     Ok(tagged_file.properties().duration())
 }
 
-pub fn convert_format(track_path: &PathBuf) {
-    let runtime = Runtime::new().unwrap();
-
-    runtime.block_on(async {
-        FFmpegBuilder::convert(track_path.clone(), CONVERTED_TRACK.clone())
-            .audio_filter(AudioFilter::loudnorm())
-            .run()
-            .await
-            .unwrap();
-    });
+pub async fn convert_format(track_path: &PathBuf) -> FFmpegProcess {
+    FFmpegBuilder::convert(track_path.clone(), CONVERTED_TRACK.clone())
+        .audio_filter(AudioFilter::loudnorm())
+        .spawn()
+        .await
+        .unwrap()
 }
 
 pub fn load_now(model: &mut Model, path: PathBuf, tx: &Sender<Message>) {
     if path.is_file() {
         model.track_queue.push_front(path);
-        play_next_track(model, tx);
+        try_next_track(model, tx);
     }
 }
 
@@ -256,10 +252,34 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
 }
 
 pub fn bg_conversion(path: &PathBuf, tx: &Sender<Message>) {
-    convert_format(&path);
+    let path = path.clone();
+    let cloned_tx = tx.clone();
+
+    thread::spawn(move || {
+        let runtime = Runtime::new().unwrap();
+        let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(convert_format(&path))));
+        cloned_tx
+            .send(Message::ConversionStarted(ffmpeg_handle.clone()))
+            .unwrap();
+        loop {
+            if ffmpeg_handle.lock().unwrap().try_wait().unwrap().is_some() {
+                if ffmpeg_handle
+                    .lock()
+                    .unwrap()
+                    .try_wait()
+                    .unwrap()
+                    .unwrap()
+                    .success()
+                {
+                    cloned_tx.send(Message::ConversionEnded).unwrap();
+                }
+                break;
+            }
+        }
+    });
 }
 
-pub fn play_next_track(model: &mut Model, tx: &Sender<Message>) {
+pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) {
     let next_track = match model.track_queue.pop_front() {
         Some(path) => path,
         None => {
@@ -267,15 +287,23 @@ pub fn play_next_track(model: &mut Model, tx: &Sender<Message>) {
         }
     };
 
+    model.current_track.path = Some(next_track.clone());
+
     match is_rodio_supported(&next_track) {
         Ok(condition) => {
             if !condition {
                 bg_conversion(&next_track, tx);
+
+                return;
             }
         }
         Err(e) => view::display_info(model, e.to_string().as_str()),
     }
 
+    play_next_track(model, &next_track);
+}
+
+pub fn play_next_track(model: &mut Model, next_track: &PathBuf) {
     if let Err(e) = load_track(&model.sink, &next_track) {
         view::display_info(model, e.to_string().as_str())
     };
@@ -290,11 +318,8 @@ pub fn play_next_track(model: &mut Model, tx: &Sender<Message>) {
         .unwrap()
         .title()
         .is_some();
-    model.current_track.path = Some(next_track);
     model.current_track.duration =
         get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
-
-    view::stop_info_display(model);
 }
 
 pub fn get_metadata(track: &PathBuf) -> TaggedFile {

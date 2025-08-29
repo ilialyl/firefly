@@ -30,7 +30,7 @@ pub struct Model {
     pub track_queue: VecDeque<PathBuf>,
     pub volume: f32,
     pub looping: bool,
-    pub ffmpeg_handle: Option<FFmpegProcess>,
+    pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
 
 impl Default for Model {

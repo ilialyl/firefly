@@ -1,13 +1,17 @@
-use std::{sync::mpsc::Sender, time::Duration};
+use std::{
+    sync::{Arc, Mutex, mpsc::Sender},
+    time::Duration,
+};
 
 use color_eyre::eyre::{Result, eyre};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use rust_ffmpeg::FFmpegProcess;
+use tokio::runtime::Runtime;
 
 use crate::{
     model::{
         Model, RunningState,
-        player::{self, load_now},
+        player::{self, load_now, play_next_track},
     },
     view::{self},
 };
@@ -28,7 +32,7 @@ pub enum Message {
     QueueFile,
     QueueDir,
     Quit,
-    ConversionStarted(FFmpegProcess),
+    ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
     Busy,
 }
@@ -154,7 +158,11 @@ pub fn update(
         }
 
         Message::Skip => {
-            player::play_next_track(model, tx);
+            if let Some(handle) = model.ffmpeg_handle.take() {
+                let runtime = Runtime::new().unwrap();
+                runtime.block_on(handle.lock().unwrap().kill()).unwrap();
+            }
+            player::try_next_track(model, tx);
 
             (None, Ok(()))
         }
@@ -218,7 +226,7 @@ pub fn update(
             }
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
-                player::play_next_track(model, tx);
+                player::try_next_track(model, tx);
             }
 
             (None, Ok(()))
@@ -294,6 +302,7 @@ pub fn update(
 
         Message::ConversionEnded => {
             model.busy = false;
+            play_next_track(model, &model.current_track.path.clone().unwrap());
 
             (None, Ok(()))
         }
