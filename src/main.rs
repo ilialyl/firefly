@@ -1,6 +1,11 @@
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::mpsc::{self, Receiver, Sender},
+    time::SystemTime,
+};
 
 use color_eyre::eyre::{Result, eyre};
+use log::info;
 
 use crate::{
     message::Message,
@@ -15,15 +20,18 @@ pub mod view;
 fn main() -> Result<()> {
     view::terminal::install_panic_hook();
     color_eyre::install()?;
+    setup_logger()?;
+    info!("\n\n\nStarting a new session.");
 
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
+    let (tx, rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
 
     while model.running_state != RunningState::Done {
         let mut result;
         let mut current_msg;
 
-        (_, result) = message::update(&mut model, Message::Tick, &mut terminal);
+        (_, result) = message::update(&mut model, Message::Tick, &tx);
 
         attach_errors(&result)?;
 
@@ -32,11 +40,17 @@ fn main() -> Result<()> {
         current_msg = message::handle_events()?;
 
         while current_msg.is_some() {
-            (current_msg, result) =
-                message::update(&mut model, current_msg.unwrap(), &mut terminal);
+            (current_msg, result) = message::update(&mut model, current_msg.unwrap(), &tx);
+            attach_errors(&result)?;
         }
 
-        attach_errors(&result)?;
+        if let Ok(msg) = rx.try_recv() {
+            (current_msg, result) = message::update(&mut model, msg, &tx);
+            while current_msg.is_some() {
+                (current_msg, result) = message::update(&mut model, current_msg.unwrap(), &tx);
+            }
+            attach_errors(&result)?;
+        }
     }
 
     clean_up()
@@ -47,6 +61,8 @@ fn clean_up() -> Result<()> {
     if track_temp.exists() {
         std::fs::remove_file(track_temp)?;
     }
+
+    info!("Cleaned up, restoring terminal.");
 
     view::terminal::restore_terminal()
 }
@@ -59,4 +75,21 @@ fn attach_errors(result: &Result<()>) -> Result<()> {
             Err(clean_err) => Err(eyre!("{}\nCleanup also failed: {}", e, clean_err)),
         },
     }
+}
+
+fn setup_logger() -> Result<()> {
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {} {}] {}",
+                humantime::format_rfc3339_seconds(SystemTime::now()),
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .chain(fern::log_file("output.log")?)
+        .apply()?;
+    Ok(())
 }

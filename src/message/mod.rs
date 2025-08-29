@@ -1,18 +1,21 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, Mutex, mpsc::Sender},
+    time::Duration,
+};
 
 use color_eyre::eyre::{Result, eyre};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::DefaultTerminal;
+use rust_ffmpeg::FFmpegProcess;
+use tokio::runtime::Runtime;
 
 use crate::{
     model::{
         Model, RunningState,
-        player::{self, load_now},
+        player::{self, load_now, play_next_track},
     },
     view::{self},
 };
 
-#[derive(PartialEq)]
 pub enum Message {
     Tick,
     LoadNow,
@@ -29,43 +32,33 @@ pub enum Message {
     QueueFile,
     QueueDir,
     Quit,
+    ConversionStarted(Arc<Mutex<FFmpegProcess>>),
+    ConversionEnded,
+    Busy(String),
+    Log(String),
 }
 
 pub fn update(
     model: &mut Model,
     msg: Message,
-    terminal: &mut DefaultTerminal,
+    tx: &Sender<Message>,
 ) -> (Option<Message>, Result<()>) {
     match msg {
         Message::LoadNow => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             if let Some(path) = player::choose_file() {
-                load_now(model, terminal, path);
+                load_now(model, path, tx);
             }
 
             (None, Ok(()))
         }
         Message::PlayPause => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             let sink = match model.sink.lock() {
                 Ok(s) => s,
@@ -135,16 +128,9 @@ pub fn update(
         }
 
         Message::Rewind => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             if let Some(track) = model.current_track.path.clone() {
                 if model.current_track.path.is_some() {
@@ -159,16 +145,9 @@ pub fn update(
         }
 
         Message::Seek => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             if let Some(track_dur) = &model.current_track.duration {
                 if model.current_track.path.is_some() {
@@ -180,12 +159,19 @@ pub fn update(
         }
 
         Message::Skip => {
-            player::play_next_track(model, terminal);
+            if let Some(handle) = model.ffmpeg_handle.take() {
+                let runtime = Runtime::new().unwrap();
+                runtime.block_on(handle.lock().unwrap().kill()).unwrap();
+            }
+            player::try_next_track(model, tx);
 
             (None, Ok(()))
         }
 
         Message::Tick => {
+            if model.busy {
+                return (None, Ok(()));
+            }
             let mut err: Option<color_eyre::eyre::ErrReport> = None;
             {
                 // Get sink
@@ -241,7 +227,7 @@ pub fn update(
             }
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
-                player::play_next_track(model, terminal);
+                player::try_next_track(model, tx);
             }
 
             (None, Ok(()))
@@ -268,16 +254,9 @@ pub fn update(
         }
 
         Message::VolumeDown => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             player::decrease_volume(&model.sink, 0.05);
             let sink = match model.sink.lock() {
@@ -293,16 +272,9 @@ pub fn update(
         }
 
         Message::VolumeUp => {
-            match model.busy.lock() {
-                Ok(busy) => {
-                    if *busy {
-                        return (None, Ok(()));
-                    }
-                }
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            if model.busy {
+                return (None, Ok(()));
+            }
 
             player::increase_volume(&model.sink, 0.05);
             let sink = match model.sink.lock() {
@@ -313,6 +285,36 @@ pub fn update(
             };
 
             model.volume = sink.volume();
+
+            (None, Ok(()))
+        }
+
+        Message::ConversionStarted(handle) => {
+            model.ffmpeg_handle = Some(handle);
+
+            (
+                Some(Message::Busy(
+                    "Converting format and normalizing volume".to_string(),
+                )),
+                Ok(()),
+            )
+        }
+
+        Message::Busy(log) => {
+            model.busy = true;
+
+            (Some(Message::Log(log)), Ok(()))
+        }
+
+        Message::ConversionEnded => {
+            model.busy = false;
+            play_next_track(model, &model.current_track.path.clone().unwrap());
+
+            (Some(Message::Log(String::new())), Ok(()))
+        }
+
+        Message::Log(str) => {
+            model.info.push(str);
 
             (None, Ok(()))
         }

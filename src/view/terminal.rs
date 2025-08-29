@@ -1,6 +1,5 @@
-use color_eyre::eyre::Result;
 use ratatui::{
-    DefaultTerminal, Terminal,
+    Terminal,
     backend::CrosstermBackend,
     crossterm::{
         ExecutableCommand,
@@ -12,20 +11,20 @@ use std::{
     panic,
 };
 
-use crate::{
-    message::{Message, update},
-    model::Model,
-    view::view,
-};
+// use crate::{
+//     message::{Message, update},
+//     model::Model,
+//     view::view,
+// };
 
-pub fn refresh(model: &mut Model, terminal: &mut DefaultTerminal) -> Result<()> {
-    let (_, result) = update(model, Message::Tick, terminal);
-    result?;
+// pub fn refresh(model: &mut Model, terminal: &mut DefaultTerminal) -> Result<()> {
+//     let (_, result) = update(model, Message::Tick, terminal);
+//     result?;
 
-    terminal.draw(|f| view(model, f))?;
+//     terminal.draw(|f| view(model, f))?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
