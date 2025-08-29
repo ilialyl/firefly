@@ -1,8 +1,7 @@
-use std::time::Duration;
+use std::{sync::mpsc::Sender, time::Duration};
 
 use color_eyre::eyre::{Result, eyre};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::DefaultTerminal;
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
@@ -37,7 +36,7 @@ pub enum Message {
 pub fn update(
     model: &mut Model,
     msg: Message,
-    terminal: &mut DefaultTerminal,
+    tx: &Sender<Message>,
 ) -> (Option<Message>, Result<()>) {
     match msg {
         Message::LoadNow => {
@@ -46,7 +45,7 @@ pub fn update(
             }
 
             if let Some(path) = player::choose_file() {
-                load_now(model, terminal, path);
+                load_now(model, path);
             }
 
             (None, Ok(()))
@@ -155,12 +154,15 @@ pub fn update(
         }
 
         Message::Skip => {
-            player::play_next_track(model, terminal);
+            player::play_next_track(model);
 
             (None, Ok(()))
         }
 
         Message::Tick => {
+            if model.busy {
+                return (None, Ok(()));
+            }
             let mut err: Option<color_eyre::eyre::ErrReport> = None;
             {
                 // Get sink
@@ -216,7 +218,7 @@ pub fn update(
             }
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
-                player::play_next_track(model, terminal);
+                player::play_next_track(model);
             }
 
             (None, Ok(()))

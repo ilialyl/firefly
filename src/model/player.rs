@@ -6,7 +6,6 @@ use lofty::{
 };
 use once_cell::sync::Lazy;
 use rand::{Rng, distr::Alphanumeric};
-use ratatui::DefaultTerminal;
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::prelude::*;
@@ -222,10 +221,10 @@ pub fn convert_format(track_path: &PathBuf) {
     });
 }
 
-pub fn load_now(model: &mut Model, terminal: &mut DefaultTerminal, path: PathBuf) {
+pub fn load_now(model: &mut Model, path: PathBuf) {
     if path.is_file() {
         model.track_queue.push_front(path);
-        play_next_track(model, terminal);
+        play_next_track(model);
     }
 }
 
@@ -256,7 +255,11 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     track_queue.extend(path_vec);
 }
 
-pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
+pub fn bg_conversion(path: &PathBuf) {
+    convert_format(&path);
+}
+
+pub fn play_next_track(model: &mut Model) {
     let next_track = match model.track_queue.pop_front() {
         Some(path) => path,
         None => {
@@ -267,10 +270,7 @@ pub fn play_next_track(model: &mut Model, terminal: &mut DefaultTerminal) {
     match is_rodio_supported(&next_track) {
         Ok(condition) => {
             if !condition {
-                view::display_info(model, "Converting format and normalizing volume...");
-
-                view::terminal::refresh(model, terminal).expect("Error refreshing frame");
-                convert_format(&next_track);
+                bg_conversion(&next_track);
             }
         }
         Err(e) => view::display_info(model, e.to_string().as_str()),
