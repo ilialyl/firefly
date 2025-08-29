@@ -21,6 +21,7 @@ fn main() -> Result<()> {
     view::terminal::install_panic_hook();
     color_eyre::install()?;
     setup_logger()?;
+    info!("\n\n\nStarting a new session.");
 
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
