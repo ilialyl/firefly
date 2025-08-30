@@ -253,9 +253,11 @@ pub fn update(
 
         Message::ConversionEnded => {
             model.busy = false;
-            if let Err(e) = play_next_track(model, &model.current_track.path.clone().unwrap()) {
-                log::error!("{}", e);
-            };
+            if let Some(path) = model.current_track.path.clone() {
+                if let Err(e) = play_next_track(model, &path) {
+                    log::error!("{}", e);
+                };
+            }
 
             (Some(Message::Log(String::new())), Ok(()))
         }

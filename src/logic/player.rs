@@ -291,12 +291,12 @@ pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) -> Result<()> {
     Ok(())
 }
 
-pub fn play_next_track(model: &mut Model, next_track: &PathBuf) -> Result<()> {
+pub fn play_next_track(model: &mut Model, next_track: &Path) -> Result<()> {
     if let Err(e) = load_track(&mut model.sink, next_track) {
         view::display_info(model, e.to_string().as_str())
     };
 
-    model.current_track.tagged_file = Some(get_metadata(next_track)?);
+    model.current_track.tagged_file = Some(get_metadata(&next_track.to_path_buf())?);
     model.current_track.has_metadata = model
         .current_track
         .tagged_file
