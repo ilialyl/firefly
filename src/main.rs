@@ -35,7 +35,7 @@ fn main() -> Result<()> {
 
         attach_errors(&result)?;
 
-        terminal.draw(|f| view(&mut model, f))?;
+        terminal.draw(|f| view(&model, f))?;
 
         current_msg = message::handle_events()?;
 
