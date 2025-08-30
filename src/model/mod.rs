@@ -1,5 +1,3 @@
-pub mod player;
-
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
@@ -8,7 +6,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::model::player::Track;
+use crate::logic::player::{self, Track};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum RunningState {

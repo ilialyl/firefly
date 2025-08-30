@@ -9,10 +9,8 @@ use rust_ffmpeg::FFmpegProcess;
 use tokio::runtime::Runtime;
 
 use crate::{
-    model::{
-        Model, RunningState,
-        player::{self, load_now, play_next_track},
-    },
+    logic::player::{self, load_now, play_next_track},
+    model::{Model, RunningState},
     view::{self},
 };
 

@@ -11,10 +11,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::{
-    model::{Model, player},
-    view::center_vertical,
-};
+use crate::{logic::player, model::Model, view::center_vertical};
 
 pub fn draw(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     let player_text = [

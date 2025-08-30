@@ -8,11 +8,13 @@ use color_eyre::eyre::{Result, eyre};
 use log::info;
 
 use crate::{
+    logic::player,
     message::Message,
-    model::{Model, RunningState, player::CONVERTED_TRACK},
+    model::{Model, RunningState},
     view::view,
 };
 
+pub mod logic;
 pub mod message;
 pub mod model;
 pub mod view;
@@ -57,7 +59,7 @@ fn main() -> Result<()> {
 }
 
 fn clean_up() -> Result<()> {
-    let track_temp: PathBuf = CONVERTED_TRACK.clone();
+    let track_temp: PathBuf = player::CONVERTED_TRACK.clone();
     if track_temp.exists() {
         std::fs::remove_file(track_temp)?;
     }
