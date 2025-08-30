@@ -259,6 +259,7 @@ pub fn bg_conversion(path: &Path, tx: &Sender<Message>) {
                 {
                     cloned_tx.send(Message::ConversionEnded).unwrap();
                 }
+                info!("Conversion killed.");
                 break;
             }
         }
