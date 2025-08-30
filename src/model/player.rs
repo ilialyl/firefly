@@ -155,7 +155,7 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Durat
         && track_dur.sub(current_pos) > Duration::from_secs(1)
     {
         sink.try_seek(track_dur.sub(Duration::from_secs(1)))
-            .expect("Error forwarding");
+            .expect("Error seeking");
     }
 }
 
@@ -171,7 +171,7 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &Path, rewind_dur: Duration) -> Re
         Some(dur) => dur,
         None => {
             sink.clear();
-            let source = get_source(path).expect("Error obtaining source");
+            let source = get_source(path)?;
             sink.append(source);
             sink.play();
 
@@ -180,7 +180,7 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &Path, rewind_dur: Duration) -> Re
     };
 
     sink.clear();
-    let source = get_source(path).expect("Error obtaining source");
+    let source = get_source(path)?;
     sink.append(source);
 
     sink.try_seek(rewinded_pos).expect("Error rewinding");
@@ -196,10 +196,7 @@ pub fn get_track_duration(track: &Path) -> Result<Duration> {
         temp_path = CONVERTED_TRACK.clone();
     }
 
-    let tagged_file = Probe::open(temp_path)
-        .expect("ERROR: Bad path provided!")
-        .read()
-        .expect("ERROR: Failed to read file!");
+    let tagged_file = Probe::open(temp_path)?.read()?;
 
     Ok(tagged_file.properties().duration())
 }
@@ -212,11 +209,13 @@ pub async fn convert_format(track_path: &Path) -> FFmpegProcess {
         .unwrap()
 }
 
-pub fn load_now(model: &mut Model, path: PathBuf, tx: &Sender<Message>) {
+pub fn load_now(model: &mut Model, path: PathBuf, tx: &Sender<Message>) -> Result<()> {
     if path.is_file() {
         model.track_queue.push_front(path);
-        try_next_track(model, tx);
+        try_next_track(model, tx)?;
     }
+
+    Ok(())
 }
 
 pub fn enqueue_track(path_vec: Vec<PathBuf>, track_queue: &mut VecDeque<PathBuf>) {
