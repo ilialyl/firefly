@@ -50,7 +50,9 @@ pub fn update(
             }
 
             if let Some(path) = player::choose_file() {
-                load_now(model, path, tx);
+                if let Err(e) = load_now(model, path, tx) {
+                    log::error!("{}", e);
+                }
             }
 
             (None, Ok(()))
@@ -163,7 +165,9 @@ pub fn update(
                 let runtime = Runtime::new().unwrap();
                 runtime.block_on(handle.lock().unwrap().kill()).unwrap();
             }
-            player::try_next_track(model, tx);
+            if let Err(e) = player::try_next_track(model, tx) {
+                log::error!("{}", e);
+            };
 
             (None, Ok(()))
         }
@@ -223,11 +227,13 @@ pub fn update(
                 }
             }
             if let Some(e) = err {
-                view::display_info(model, e.to_string().as_str())
+                view::display_info(model, &e.to_string())
             }
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
-                player::try_next_track(model, tx);
+                if let Err(e) = player::try_next_track(model, tx) {
+                    log::error!("{}", e);
+                };
             }
 
             (None, Ok(()))
@@ -300,7 +306,9 @@ pub fn update(
 
         Message::ConversionEnded => {
             model.busy = false;
-            play_next_track(model, &model.current_track.path.clone().unwrap());
+            if let Err(e) = play_next_track(model, &model.current_track.path.clone().unwrap()) {
+                log::error!("{}", e);
+            };
 
             (Some(Message::Log(String::new())), Ok(()))
         }
