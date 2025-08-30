@@ -23,10 +23,10 @@ It can still play other formats by converting formats not supported by Rodio to 
 - OGA
 
 ### Planned Features
-- [ ] Better UI layouts
 - [ ] Playlists
 - [ ] YTDLP integration
 - [ ] Music Library
+- [ ] Graphical user interface (GUI)
 
 ## Usage
 ### Windows
