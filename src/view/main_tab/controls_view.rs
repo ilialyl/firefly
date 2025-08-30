@@ -11,7 +11,12 @@ use crate::model::Model;
 pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     let mut controls: Vec<Span<'_>> = Vec::new();
 
-    controls.push(Span::from(" Play/Pause <Space>"));
+    let mut toggle_play = Span::from(" Play/Pause <Space>");
+    if model.busy {
+        toggle_play = toggle_play.crossed_out();
+    }
+    controls.push(toggle_play);
+
     controls.push(Span::from(" Load Now <N>"));
     controls.push(Span::from(" Queue <Q>"));
     controls.push(Span::from(" Queue Dir <ShiftQ>"));
@@ -19,10 +24,16 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     if model.arrange_mode {
         toggle_arrange = toggle_arrange.bold().italic();
     }
-
     controls.push(toggle_arrange);
+
     controls.push(Span::from(" Skip <S>"));
-    controls.push(Span::from(" Rewind/Seek <←/→>"));
+
+    let mut rewind_seek = Span::from(" Rewind/Seek <←/→>");
+    if model.busy {
+        rewind_seek = rewind_seek.crossed_out();
+    }
+    controls.push(rewind_seek);
+
     controls.push(Span::from(" Volume <=/->"));
     controls.push(Span::from(" Loop <L>"));
     controls.push(Span::from(" Quit <Esc>"));
