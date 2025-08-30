@@ -274,36 +274,38 @@ pub fn bg_conversion(path: &Path, tx: &Sender<Message>) {
     });
 }
 
-pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) {
+pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) -> Result<()> {
     let next_track = match model.track_queue.pop_front() {
         Some(path) => path,
-        None => {
-            return;
-        }
+        None => return Ok(()),
     };
 
     model.current_track.path = Some(next_track.clone());
 
     match is_rodio_supported(&next_track) {
-        Ok(condition) => {
-            if !condition {
-                bg_conversion(&next_track, tx);
+        Ok(false) => {
+            bg_conversion(&next_track, tx);
 
-                return;
-            }
+            return Ok(());
         }
-        Err(e) => view::display_info(model, e.to_string().as_str()),
+        Ok(true) => {}
+        Err(e) => {
+            view::display_info(model, &e.to_string());
+            return Err(e.into());
+        }
     }
 
-    play_next_track(model, &next_track);
+    play_next_track(model, &next_track)?;
+
+    Ok(())
 }
 
-pub fn play_next_track(model: &mut Model, next_track: &PathBuf) {
+pub fn play_next_track(model: &mut Model, next_track: &PathBuf) -> Result<()> {
     if let Err(e) = load_track(&model.sink, next_track) {
         view::display_info(model, e.to_string().as_str())
     };
 
-    model.current_track.tagged_file = Some(get_metadata(next_track));
+    model.current_track.tagged_file = Some(get_metadata(next_track)?);
     model.current_track.has_metadata = model
         .current_track
         .tagged_file
@@ -316,17 +318,13 @@ pub fn play_next_track(model: &mut Model, next_track: &PathBuf) {
         .path
         .as_ref()
         .and_then(|p| get_track_duration(p).ok());
+
+    Ok(())
 }
 
-pub fn get_metadata(track: &PathBuf) -> TaggedFile {
-    match Probe::open(track)
-        .expect("ERROR: Bad path provided!")
-        .read()
-    {
-        Ok(f) => f,
-        Err(_) => Probe::open(CONVERTED_TRACK.clone())
-            .expect("ERROR: Bad path provided!")
-            .read()
-            .expect("ERROR: Failed to read file!"),
+pub fn get_metadata(track: &PathBuf) -> Result<TaggedFile> {
+    match Probe::open(track)?.read() {
+        Ok(f) => Ok(f),
+        Err(_) => Ok(Probe::open(CONVERTED_TRACK.clone())?.read()?),
     }
 }
