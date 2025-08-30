@@ -23,7 +23,7 @@ pub struct Model {
     pub selected_track: usize,
     pub arrange_mode: bool,
     pub _stream: OutputStream,
-    pub sink: Arc<Mutex<Sink>>,
+    pub sink: Sink,
     pub status: player::Status,
     pub info: Vec<String>,
     pub current_track: Track,
@@ -42,7 +42,7 @@ impl Default for Model {
             selected_track: 0,
             arrange_mode: false,
             _stream: stream,
-            sink: Arc::new(Mutex::new(sink)),
+            sink: sink,
             status: player::Status::Idle,
             info: vec![String::new()],
             current_track: Track {

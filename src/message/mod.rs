@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use rust_ffmpeg::FFmpegProcess;
 use tokio::runtime::Runtime;
@@ -62,17 +62,10 @@ pub fn update(
                 return (None, Ok(()));
             }
 
-            let sink = match model.sink.lock() {
-                Ok(s) => s,
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
-
             if model.status == player::Status::Playing {
-                sink.pause();
+                model.sink.pause();
             } else {
-                sink.play();
+                model.sink.play();
             }
 
             (None, Ok(()))
@@ -136,7 +129,8 @@ pub fn update(
 
             if let Some(track) = model.current_track.path.clone() {
                 if model.current_track.path.is_some() {
-                    if let Err(e) = player::rewind(&model.sink, &track, Duration::from_secs(5)) {
+                    if let Err(e) = player::rewind(&mut model.sink, &track, Duration::from_secs(5))
+                    {
                         view::display_info(model, e.to_string().as_str())
                     };
                     model.current_track.duration = player::get_track_duration(&track).ok();
@@ -153,7 +147,7 @@ pub fn update(
 
             if let Some(track_dur) = &model.current_track.duration {
                 if model.current_track.path.is_some() {
-                    player::forward(&model.sink, track_dur, Duration::from_secs(5));
+                    player::forward(&mut model.sink, track_dur, Duration::from_secs(5));
                 }
             }
 
@@ -178,28 +172,20 @@ pub fn update(
             }
             let mut err: Option<color_eyre::eyre::ErrReport> = None;
             {
-                // Get sink
-                let sink = match model.sink.lock() {
-                    Ok(s) => s,
-                    Err(e) => {
-                        return (None, Err(eyre!(e.to_string())));
-                    }
-                };
-
                 // If sink paused, set status to paused
                 // If track_path exists in App and sink isn't empty, set status to playing
-                if sink.is_paused() {
+                if model.sink.is_paused() {
                     model.status = player::Status::Paused;
-                } else if model.current_track.path.is_some() && !sink.empty() {
+                } else if model.current_track.path.is_some() && !model.sink.empty() {
                     model.status = player::Status::Playing;
                 }
 
-                if sink.empty() {
+                if model.sink.empty() {
                     model.status = player::Status::Idle;
                 }
 
                 // Get track position
-                model.current_track.pos = Some(sink.get_pos());
+                model.current_track.pos = Some(model.sink.get_pos());
 
                 // If path, duration, and position are not None,
                 // If sink is empty or the track is within 3 seconds away from ending
@@ -212,9 +198,9 @@ pub fn update(
                         model.current_track.duration,
                         model.current_track.pos,
                     ) {
-                        if sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
+                        if model.sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
                             if model.looping {
-                                if let Err(e) = player::load_track(&model.sink, path) {
+                                if let Err(e) = player::load_track(&mut model.sink, path) {
                                     err = Some(e);
                                 }
                             } else {
@@ -256,15 +242,9 @@ pub fn update(
                 return (None, Ok(()));
             }
 
-            player::decrease_volume(&model.sink, 0.05);
-            let sink = match model.sink.lock() {
-                Ok(s) => s,
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            player::decrease_volume(&mut model.sink, 0.05);
 
-            model.volume = sink.volume();
+            model.volume = model.sink.volume();
 
             (None, Ok(()))
         }
@@ -274,15 +254,9 @@ pub fn update(
                 return (None, Ok(()));
             }
 
-            player::increase_volume(&model.sink, 0.05);
-            let sink = match model.sink.lock() {
-                Ok(s) => s,
-                Err(e) => {
-                    return (None, Err(eyre!(e.to_string())));
-                }
-            };
+            player::increase_volume(&mut model.sink, 0.05);
 
-            model.volume = sink.volume();
+            model.volume = model.sink.volume();
 
             (None, Ok(()))
         }

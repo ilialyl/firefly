@@ -112,41 +112,34 @@ pub fn choose_dir() -> Option<PathBuf> {
     FileDialog::new().pick_folder()
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &Path) -> Result<()> {
+pub fn load_track(sink: &mut Sink, track: &Path) -> Result<()> {
     let mut track_temp = track.to_path_buf();
     if !is_rodio_supported(&track_temp)? {
         track_temp = CONVERTED_TRACK.clone();
     }
 
-    let sink = Arc::clone(sink);
-    thread::spawn(move || {
-        let source = get_source(track_temp).expect("Error obtaining source");
+    let source = get_source(track_temp).expect("Error obtaining source");
 
-        let sink = sink.lock().unwrap();
-        sink.clear();
-        sink.append(source);
-        sink.play();
-    });
+    sink.clear();
+    sink.append(source);
+    sink.play();
 
     Ok(())
 }
 
-pub fn increase_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
-    let sink = sink.lock().unwrap();
+pub fn increase_volume(sink: &mut Sink, amount: f32) {
     let current_vol = sink.volume();
     let increased_vol = f32::min(current_vol + amount, 2.0);
     sink.set_volume(increased_vol);
 }
 
-pub fn decrease_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
-    let sink = sink.lock().unwrap();
+pub fn decrease_volume(sink: &mut Sink, amount: f32) {
     let current_vol = sink.volume();
     let decreased_vol = f32::max(current_vol - amount, 0.0);
     sink.set_volume(decreased_vol);
 }
 
-pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Duration) {
-    let sink = sink.lock().unwrap();
+pub fn forward(sink: &mut Sink, track_dur: &Duration, forward_dur: Duration) {
     let current_pos = sink.get_pos();
     if current_pos.add(forward_dur) < *track_dur {
         sink.try_seek(current_pos.add(forward_dur))
@@ -159,13 +152,12 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Durat
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &Path, rewind_dur: Duration) -> Result<()> {
+pub fn rewind(sink: &mut Sink, track: &Path, rewind_dur: Duration) -> Result<()> {
     let mut path = track.to_path_buf();
     if !is_rodio_supported(&path)? {
         path = CONVERTED_TRACK.clone();
     }
 
-    let sink = sink.lock().unwrap();
     let current_pos = sink.get_pos();
     let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
         Some(dur) => dur,
@@ -300,7 +292,7 @@ pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) -> Result<()> {
 }
 
 pub fn play_next_track(model: &mut Model, next_track: &PathBuf) -> Result<()> {
-    if let Err(e) = load_track(&model.sink, next_track) {
+    if let Err(e) = load_track(&mut model.sink, next_track) {
         view::display_info(model, e.to_string().as_str())
     };
 
