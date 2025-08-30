@@ -38,13 +38,13 @@ pub enum Status {
     Idle,
 }
 
-const RODIO_SUPPORTED_FORMATS: [&'static str; 4] = ["flac", "mp3", "ogg", "wav"];
-const TESTED_FORMATS: [&'static str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
-const UNTESTED_FORMATS: [&'static str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
-const AUDIO_FORMATS: [&'static str; 11] = [
+const RODIO_SUPPORTED_FORMATS: [&str; 4] = ["flac", "mp3", "ogg", "wav"];
+const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
+const UNTESTED_FORMATS: [&str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
+const AUDIO_FORMATS: [&str; 11] = [
     "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac",
 ];
-const TEMP_FILE: &'static str = "firefly_temp";
+const TEMP_FILE: &str = "firefly_temp";
 
 pub static CONVERTED_TRACK: Lazy<PathBuf> = Lazy::new(|| {
     if Path::new(format!("{TEMP_FILE}.flac").as_str()).exists() {
