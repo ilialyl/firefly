@@ -40,7 +40,7 @@ impl Default for Model {
             selected_track: 0,
             arrange_mode: false,
             _stream: stream,
-            sink: sink,
+            sink,
             status: player::Status::Idle,
             info: vec![String::new()],
             current_track: Track {

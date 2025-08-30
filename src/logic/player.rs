@@ -282,7 +282,7 @@ pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) -> Result<()> {
         Ok(true) => {}
         Err(e) => {
             view::display_info(model, &e.to_string());
-            return Err(e.into());
+            return Err(e);
         }
     }
 
