@@ -308,13 +308,14 @@ pub fn play_next_track(model: &mut Model, next_track: &PathBuf) {
         .current_track
         .tagged_file
         .as_ref()
-        .unwrap()
-        .primary_tag()
-        .unwrap()
-        .title()
+        .and_then(|f| f.primary_tag())
+        .and_then(|t| t.title())
         .is_some();
-    model.current_track.duration =
-        get_track_duration(model.current_track.path.as_ref().unwrap()).ok();
+    model.current_track.duration = model
+        .current_track
+        .path
+        .as_ref()
+        .and_then(|p| get_track_duration(p).ok());
 }
 
 pub fn get_metadata(track: &PathBuf) -> TaggedFile {
