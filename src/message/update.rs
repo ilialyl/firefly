@@ -18,11 +18,11 @@ pub fn update(
 ) -> (Option<Message>, Result<()>) {
     match msg {
         Message::LoadNow => {
-            if model.busy {
-                return (None, Ok(()));
-            }
-
             if let Some(path) = player::choose_file() {
+                if let Some(handle) = model.ffmpeg_handle.take() {
+                    let runtime = Runtime::new().unwrap();
+                    runtime.block_on(handle.lock().unwrap().kill()).unwrap();
+                }
                 if let Err(e) = load_now(model, path, tx) {
                     log::error!("{}", e);
                 }
@@ -128,10 +128,14 @@ pub fn update(
         }
 
         Message::Skip => {
+            if model.track_queue.is_empty() {
+                return (None, Ok(()));
+            }
             if let Some(handle) = model.ffmpeg_handle.take() {
                 let runtime = Runtime::new().unwrap();
                 runtime.block_on(handle.lock().unwrap().kill()).unwrap();
             }
+
             if let Err(e) = player::try_next_track(model, tx) {
                 log::error!("{}", e);
             };
