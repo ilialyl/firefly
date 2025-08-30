@@ -21,7 +21,7 @@ use std::{
 };
 use tokio::runtime::Runtime;
 
-use crate::{message::Message, model::Model, view};
+use crate::{message::Message, model::Model};
 
 pub struct Track {
     pub path: Option<PathBuf>,
@@ -201,10 +201,15 @@ pub async fn convert_format(track_path: &Path) -> FFmpegProcess {
         .unwrap()
 }
 
-pub fn load_now(model: &mut Model, path: PathBuf, tx: &Sender<Message>) -> Result<()> {
+pub fn load_now(
+    model: &mut Model,
+    path: PathBuf,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<&str>,
+) -> Result<()> {
     if path.is_file() {
         model.track_queue.push_front(path);
-        try_next_track(model, tx)?;
+        try_next_track(model, msg_tx, info_tx)?;
     }
 
     Ok(())
@@ -235,9 +240,9 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     track_queue.extend(path_vec);
 }
 
-pub fn bg_conversion(path: &Path, tx: &Sender<Message>) {
+pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<&str>) {
     let path = path.to_path_buf();
-    let cloned_tx = tx.clone();
+    let cloned_tx = msg_tx.clone();
 
     info!("Converting file {}.", path.display());
 
@@ -266,7 +271,11 @@ pub fn bg_conversion(path: &Path, tx: &Sender<Message>) {
     });
 }
 
-pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) -> Result<()> {
+pub fn try_next_track(
+    model: &mut Model,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<&str>,
+) -> Result<()> {
     let next_track = match model.track_queue.pop_front() {
         Some(path) => path,
         None => return Ok(()),
@@ -276,13 +285,13 @@ pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) -> Result<()> {
 
     match is_rodio_supported(&next_track) {
         Ok(false) => {
-            bg_conversion(&next_track, tx);
+            bg_conversion(&next_track, msg_tx, info_tx);
 
             return Ok(());
         }
         Ok(true) => {}
         Err(e) => {
-            view::display_info(model, &e.to_string());
+            log::error!("{}", e);
             return Err(e);
         }
     }
@@ -294,7 +303,8 @@ pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) -> Result<()> {
 
 pub fn play_next_track(model: &mut Model, next_track: &Path) -> Result<()> {
     if let Err(e) = load_track(&mut model.sink, next_track) {
-        view::display_info(model, e.to_string().as_str())
+        log::error!("{}", e);
+        return Err(e);
     };
 
     model.current_track.tagged_file = Some(get_metadata(&next_track.to_path_buf())?);

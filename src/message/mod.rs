@@ -23,6 +23,5 @@ pub enum Message {
     Quit,
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
-    Busy(String),
-    Log(String),
+    Busy,
 }

@@ -27,13 +27,14 @@ fn main() -> Result<()> {
 
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
-    let (tx, rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
+    let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
+    let (info_tx, info_rx): (Sender<&str>, Receiver<&str>) = mpsc::channel();
 
     while model.running_state != RunningState::Done {
         let mut result;
         let mut current_msg;
 
-        (_, result) = update(&mut model, Message::Tick, &tx);
+        (_, result) = update(&mut model, Message::Tick, &msg_tx, &info_tx);
 
         attach_errors(&result)?;
 
@@ -42,16 +43,20 @@ fn main() -> Result<()> {
         current_msg = message::handle::events()?;
 
         while current_msg.is_some() {
-            (current_msg, result) = update(&mut model, current_msg.unwrap(), &tx);
+            (current_msg, result) = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
             attach_errors(&result)?;
         }
 
-        if let Ok(msg) = rx.try_recv() {
-            (current_msg, result) = update(&mut model, msg, &tx);
+        if let Ok(msg) = msg_rx.try_recv() {
+            (current_msg, result) = update(&mut model, msg, &msg_tx, &info_tx);
             while current_msg.is_some() {
-                (current_msg, result) = update(&mut model, current_msg.unwrap(), &tx);
+                (current_msg, result) = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
             }
             attach_errors(&result)?;
+        }
+
+        if let Ok(info) = info_rx.try_recv() {
+            model.info.push(info.to_string());
         }
     }
 

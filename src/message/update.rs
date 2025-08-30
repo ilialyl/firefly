@@ -14,7 +14,8 @@ use color_eyre::eyre::Result;
 pub fn update(
     model: &mut Model,
     msg: Message,
-    tx: &Sender<Message>,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<&str>,
 ) -> (Option<Message>, Result<()>) {
     match msg {
         Message::LoadNow => {
@@ -23,7 +24,7 @@ pub fn update(
                     let runtime = Runtime::new().unwrap();
                     runtime.block_on(handle.lock().unwrap().kill()).unwrap();
                 }
-                if let Err(e) = load_now(model, path, tx) {
+                if let Err(e) = load_now(model, path, msg_tx, info_tx) {
                     log::error!("{}", e);
                 }
             }
@@ -104,7 +105,7 @@ pub fn update(
                 if model.current_track.path.is_some() {
                     if let Err(e) = player::rewind(&mut model.sink, &track, Duration::from_secs(5))
                     {
-                        view::display_info(model, e.to_string().as_str())
+                        // view::display_info(model, e.to_string().as_str())
                     };
                     model.current_track.duration = player::get_track_duration(&track).ok();
                 }
@@ -136,7 +137,7 @@ pub fn update(
                 runtime.block_on(handle.lock().unwrap().kill()).unwrap();
             }
 
-            if let Err(e) = player::try_next_track(model, tx) {
+            if let Err(e) = player::try_next_track(model, msg_tx, info_tx) {
                 log::error!("{}", e);
             };
 
@@ -190,11 +191,11 @@ pub fn update(
                 }
             }
             if let Some(e) = err {
-                view::display_info(model, &e.to_string())
+                // view::display_info(model, &e.to_string())
             }
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
-                if let Err(e) = player::try_next_track(model, tx) {
+                if let Err(e) = player::try_next_track(model, msg_tx, info_tx) {
                     log::error!("{}", e);
                 };
             }
@@ -241,18 +242,13 @@ pub fn update(
         Message::ConversionStarted(handle) => {
             model.ffmpeg_handle = Some(handle);
 
-            (
-                Some(Message::Busy(
-                    "Converting format and normalizing volume".to_string(),
-                )),
-                Ok(()),
-            )
+            (None, Ok(()))
         }
 
-        Message::Busy(log) => {
+        Message::Busy => {
             model.busy = true;
 
-            (Some(Message::Log(log)), Ok(()))
+            (None, Ok(()))
         }
 
         Message::ConversionEnded => {
@@ -262,12 +258,6 @@ pub fn update(
                     log::error!("{}", e);
                 };
             }
-
-            (Some(Message::Log(String::new())), Ok(()))
-        }
-
-        Message::Log(str) => {
-            model.info.push(str);
 
             (None, Ok(()))
         }

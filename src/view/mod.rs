@@ -35,11 +35,3 @@ fn center_vertical(area: Rect, height: u16) -> Rect {
         .areas(area);
     area
 }
-
-pub fn stop_info_display(model: &mut Model) {
-    model.info.push(String::new());
-}
-
-pub fn display_info(model: &mut Model, info: &str) {
-    model.info.push(info.to_string());
-}
