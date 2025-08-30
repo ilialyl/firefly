@@ -60,7 +60,7 @@ pub static CONVERTED_TRACK: Lazy<PathBuf> = Lazy::new(|| {
     }
 });
 
-pub fn is_rodio_supported(path: &PathBuf) -> Result<bool> {
+pub fn is_rodio_supported(path: &Path) -> Result<bool> {
     if path.is_file() {
         if let Some(extension) = path.extension().and_then(|e| e.to_str()) {
             if RODIO_SUPPORTED_FORMATS.contains(&extension) {
@@ -78,7 +78,7 @@ pub fn is_rodio_supported(path: &PathBuf) -> Result<bool> {
 
 pub fn get_sink() -> Result<(OutputStream, Sink)> {
     let mut stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
-    let sink = rodio::Sink::connect_new(&stream_handle.mixer());
+    let sink = rodio::Sink::connect_new(stream_handle.mixer());
 
     stream_handle.log_on_drop(false);
 
@@ -93,33 +93,27 @@ pub fn get_source(track: PathBuf) -> Result<Decoder<File>> {
 }
 
 pub fn choose_file() -> Option<PathBuf> {
-    let file = FileDialog::new()
+    FileDialog::new()
         .add_filter("Tested audio formats", &TESTED_FORMATS)
         .add_filter("Untested audio formats", &UNTESTED_FORMATS)
         .set_directory("~/")
-        .pick_file();
-
-    file
+        .pick_file()
 }
 
 pub fn choose_multiple_files() -> Option<Vec<PathBuf>> {
-    let file = FileDialog::new()
+    FileDialog::new()
         .add_filter("Tested audio formats", &TESTED_FORMATS)
         .add_filter("Untested audio formats", &UNTESTED_FORMATS)
         .set_directory("~/")
-        .pick_files();
-
-    file
+        .pick_files()
 }
 
 pub fn choose_dir() -> Option<PathBuf> {
-    let dir = FileDialog::new().pick_folder();
-
-    dir
+    FileDialog::new().pick_folder()
 }
 
-pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) -> Result<()> {
-    let mut track_temp = track.clone();
+pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &Path) -> Result<()> {
+    let mut track_temp = track.to_path_buf();
     if !is_rodio_supported(&track_temp)? {
         track_temp = CONVERTED_TRACK.clone();
     }
@@ -139,14 +133,14 @@ pub fn load_track(sink: &Arc<Mutex<Sink>>, track: &PathBuf) -> Result<()> {
 
 pub fn increase_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
     let sink = sink.lock().unwrap();
-    let current_vol = sink.volume().clone();
+    let current_vol = sink.volume();
     let increased_vol = f32::min(current_vol + amount, 2.0);
     sink.set_volume(increased_vol);
 }
 
 pub fn decrease_volume(sink: &Arc<Mutex<Sink>>, amount: f32) {
     let sink = sink.lock().unwrap();
-    let current_vol = sink.volume().clone();
+    let current_vol = sink.volume();
     let decreased_vol = f32::max(current_vol - amount, 0.0);
     sink.set_volume(decreased_vol);
 }
@@ -165,10 +159,10 @@ pub fn forward(sink: &Arc<Mutex<Sink>>, track_dur: &Duration, forward_dur: Durat
     }
 }
 
-pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) -> Result<()> {
-    let mut path = track.clone();
+pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &Path, rewind_dur: Duration) -> Result<()> {
+    let mut path = track.to_path_buf();
     if !is_rodio_supported(&path)? {
-        path = PathBuf::from(CONVERTED_TRACK.clone());
+        path = CONVERTED_TRACK.clone();
     }
 
     let sink = sink.lock().unwrap();
@@ -196,10 +190,10 @@ pub fn rewind(sink: &Arc<Mutex<Sink>>, track: &PathBuf, rewind_dur: Duration) ->
     Ok(())
 }
 
-pub fn get_track_duration(track: &PathBuf) -> Result<Duration> {
-    let mut temp_path = track.clone();
+pub fn get_track_duration(track: &Path) -> Result<Duration> {
+    let mut temp_path = track.to_path_buf();
     if !is_rodio_supported(&temp_path)? {
-        temp_path = PathBuf::from(CONVERTED_TRACK.clone())
+        temp_path = CONVERTED_TRACK.clone();
     }
 
     let tagged_file = Probe::open(temp_path)
@@ -210,8 +204,8 @@ pub fn get_track_duration(track: &PathBuf) -> Result<Duration> {
     Ok(tagged_file.properties().duration())
 }
 
-pub async fn convert_format(track_path: &PathBuf) -> FFmpegProcess {
-    FFmpegBuilder::convert(track_path.clone(), CONVERTED_TRACK.clone())
+pub async fn convert_format(track_path: &Path) -> FFmpegProcess {
+    FFmpegBuilder::convert(track_path.to_path_buf(), CONVERTED_TRACK.clone())
         .audio_filter(AudioFilter::loudnorm())
         .spawn()
         .await
@@ -236,13 +230,11 @@ pub fn enqueue_track(path_vec: Vec<PathBuf>, track_queue: &mut VecDeque<PathBuf>
 pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     let mut path_vec: Vec<PathBuf> = Vec::new();
     if let Ok(entries) = fs::read_dir(dir) {
-        for entry_result in entries {
-            if let Ok(entry) = entry_result {
-                if entry.path().is_file() {
-                    if let Some(extension) = entry.path().extension().and_then(|e| e.to_str()) {
-                        if AUDIO_FORMATS.contains(&extension) {
-                            path_vec.push(entry.path());
-                        }
+        for entry in entries.flatten() {
+            if entry.path().is_file() {
+                if let Some(extension) = entry.path().extension().and_then(|e| e.to_str()) {
+                    if AUDIO_FORMATS.contains(&extension) {
+                        path_vec.push(entry.path());
                     }
                 }
             }
@@ -252,8 +244,8 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     track_queue.extend(path_vec);
 }
 
-pub fn bg_conversion(path: &PathBuf, tx: &Sender<Message>) {
-    let path = path.clone();
+pub fn bg_conversion(path: &Path, tx: &Sender<Message>) {
+    let path = path.to_path_buf();
     let cloned_tx = tx.clone();
 
     info!("Converting file {}.", path.display());
@@ -307,11 +299,11 @@ pub fn try_next_track(model: &mut Model, tx: &Sender<Message>) {
 }
 
 pub fn play_next_track(model: &mut Model, next_track: &PathBuf) {
-    if let Err(e) = load_track(&model.sink, &next_track) {
+    if let Err(e) = load_track(&model.sink, next_track) {
         view::display_info(model, e.to_string().as_str())
     };
 
-    model.current_track.tagged_file = Some(get_metadata(&next_track));
+    model.current_track.tagged_file = Some(get_metadata(next_track));
     model.current_track.has_metadata = model
         .current_track
         .tagged_file
@@ -326,7 +318,7 @@ pub fn play_next_track(model: &mut Model, next_track: &PathBuf) {
 }
 
 pub fn get_metadata(track: &PathBuf) -> TaggedFile {
-    let tagged_file = match Probe::open(track)
+    match Probe::open(track)
         .expect("ERROR: Bad path provided!")
         .read()
     {
@@ -335,7 +327,5 @@ pub fn get_metadata(track: &PathBuf) -> TaggedFile {
             .expect("ERROR: Bad path provided!")
             .read()
             .expect("ERROR: Failed to read file!"),
-    };
-
-    tagged_file
+    }
 }

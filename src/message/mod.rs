@@ -90,11 +90,11 @@ pub fn update(
             (None, Ok(()))
         }
         Message::QueueUp => {
-            if model.selected_track == 0 || model.track_queue.len() == 0 {
+            if model.selected_track == 0 || model.track_queue.is_empty() {
                 return (None, Ok(()));
             }
 
-            model.selected_track = model.selected_track.checked_sub(1).unwrap_or(0);
+            model.selected_track = model.selected_track.saturating_sub(1);
 
             if model.arrange_mode && model.track_queue.len() > model.selected_track {
                 model
@@ -106,7 +106,7 @@ pub fn update(
         }
 
         Message::QueueDown => {
-            if model.track_queue.len() == 0 || model.selected_track == model.track_queue.len() - 1 {
+            if model.track_queue.is_empty() || model.selected_track == model.track_queue.len() - 1 {
                 return (None, Ok(()));
             }
 
@@ -234,21 +234,13 @@ pub fn update(
         }
 
         Message::ToggleArrange => {
-            if model.arrange_mode {
-                model.arrange_mode = false;
-            } else {
-                model.arrange_mode = true;
-            }
+            model.arrange_mode = !model.arrange_mode;
 
             (None, Ok(()))
         }
 
         Message::ToggleLoop => {
-            if model.looping {
-                model.looping = false;
-            } else {
-                model.looping = true;
-            }
+            model.looping = !model.looping;
 
             (None, Ok(()))
         }
