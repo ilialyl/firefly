@@ -104,5 +104,5 @@ pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
         .horizontal_margin(3)
         .split(main_chunks[1]);
 
-    controls_view::draw(frame, control_chunks[0]);
+    controls_view::draw(frame, control_chunks[0], model);
 }

@@ -1,22 +1,31 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
+    style::Stylize,
+    text::{Span, Text},
     widgets::Paragraph,
 };
 
-pub fn draw(frame: &mut Frame, chunk: Rect) {
-    let controls = [
-        " Play/Pause <Space>",
-        " Load Now <N>",
-        " Queue <Q>",
-        " Queue Dir <ShiftQ>",
-        " Toggle Q Arrange <A>",
-        " Skip <S>",
-        " Rewind/Seek <←/→>",
-        " Volume <=/->",
-        " Loop <L>",
-        " Quit <Esc>",
-    ];
+use crate::model::Model;
+
+pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
+    let mut controls: Vec<Span<'_>> = Vec::new();
+
+    controls.push(Span::from(" Play/Pause <Space>"));
+    controls.push(Span::from(" Load Now <N>"));
+    controls.push(Span::from(" Queue <Q>"));
+    controls.push(Span::from(" Queue Dir <ShiftQ>"));
+    let mut toggle_arrange = Span::from(" Toggle Q Arrange <A>");
+    if model.arrange_mode {
+        toggle_arrange = toggle_arrange.bold().italic();
+    }
+
+    controls.push(toggle_arrange);
+    controls.push(Span::from(" Skip <S>"));
+    controls.push(Span::from(" Rewind/Seek <←/→>"));
+    controls.push(Span::from(" Volume <=/->"));
+    controls.push(Span::from(" Loop <L>"));
+    controls.push(Span::from(" Quit <Esc>"));
 
     let rows = Layout::default()
         .direction(Direction::Vertical)
@@ -37,6 +46,6 @@ pub fn draw(frame: &mut Frame, chunk: Rect) {
         .collect();
 
     for (idx, control) in controls.iter().enumerate() {
-        frame.render_widget(Paragraph::new(*control), grid[idx])
+        frame.render_widget(Paragraph::new(Text::from(control.clone())), grid[idx])
     }
 }
