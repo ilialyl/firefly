@@ -9,7 +9,7 @@ use log::info;
 
 use crate::{
     logic::player,
-    message::Message,
+    message::{Message, update::update},
     model::{Model, RunningState},
     view::view,
 };
@@ -33,23 +33,23 @@ fn main() -> Result<()> {
         let mut result;
         let mut current_msg;
 
-        (_, result) = message::update(&mut model, Message::Tick, &tx);
+        (_, result) = update(&mut model, Message::Tick, &tx);
 
         attach_errors(&result)?;
 
         terminal.draw(|f| view(&model, f))?;
 
-        current_msg = message::handle_events()?;
+        current_msg = message::handle::events()?;
 
         while current_msg.is_some() {
-            (current_msg, result) = message::update(&mut model, current_msg.unwrap(), &tx);
+            (current_msg, result) = update(&mut model, current_msg.unwrap(), &tx);
             attach_errors(&result)?;
         }
 
         if let Ok(msg) = rx.try_recv() {
-            (current_msg, result) = message::update(&mut model, msg, &tx);
+            (current_msg, result) = update(&mut model, msg, &tx);
             while current_msg.is_some() {
-                (current_msg, result) = message::update(&mut model, current_msg.unwrap(), &tx);
+                (current_msg, result) = update(&mut model, current_msg.unwrap(), &tx);
             }
             attach_errors(&result)?;
         }
