@@ -5,7 +5,7 @@ use ratatui::{
 };
 
 pub fn draw(frame: &mut Frame, chunk: Rect) {
-    let controls = vec![
+    let controls = [
         " Play/Pause <Space>",
         " Load Now <N>",
         " Queue <Q>",

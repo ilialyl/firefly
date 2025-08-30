@@ -17,7 +17,7 @@ use crate::{
 };
 
 pub fn draw(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
-    let player_text = vec![
+    let player_text = [
         get_track_name_str(model),
         "".into(),
         get_track_pos_str(model),
@@ -133,9 +133,9 @@ fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
         .map(|n| format!("{}kbps ", n))
         .unwrap_or("".to_string());
 
-    let lines = vec![
+    let lines = [
         format!("{}{}", track_num, title),
-        format!("{}", artist),
+        artist.to_string(),
         format!("{}{}{}", album, disc_num, year),
         format!("{}{}{}", bit_depth, sample_rate, bitrate),
     ];
@@ -201,11 +201,7 @@ fn get_info_str(model: &Model) -> String {
 }
 
 fn track_pos_as_str(model: &Model) -> String {
-    let track_pos = model
-        .current_track
-        .pos
-        .clone()
-        .unwrap_or(Duration::from_secs(0));
+    let track_pos = model.current_track.pos.unwrap_or(Duration::from_secs(0));
     let sec = track_pos.as_secs() % 60;
     let min = track_pos.as_secs() / 60;
 
