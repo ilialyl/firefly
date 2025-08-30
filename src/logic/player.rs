@@ -205,7 +205,7 @@ pub fn load_now(
     model: &mut Model,
     path: PathBuf,
     msg_tx: &Sender<Message>,
-    info_tx: &Sender<&str>,
+    info_tx: &Sender<String>,
 ) -> Result<()> {
     if path.is_file() {
         model.track_queue.push_front(path);
@@ -240,16 +240,20 @@ pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
     track_queue.extend(path_vec);
 }
 
-pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<&str>) {
+pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) {
     let path = path.to_path_buf();
-    let cloned_tx = msg_tx.clone();
+    let cloned_msg_tx = msg_tx.clone();
+    let cloned_info_tx = info_tx.clone();
 
     info!("Converting file {}.", path.display());
+    cloned_info_tx
+        .send("Converting format and normalizing volume...".to_string())
+        .unwrap();
 
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
         let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(convert_format(&path))));
-        cloned_tx
+        cloned_msg_tx
             .send(Message::ConversionStarted(ffmpeg_handle.clone()))
             .unwrap();
         loop {
@@ -262,8 +266,10 @@ pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<&st
                     .unwrap()
                     .success()
                 {
-                    cloned_tx.send(Message::ConversionEnded).unwrap();
+                    cloned_info_tx.send("".to_string()).unwrap();
+                    cloned_msg_tx.send(Message::ConversionEnded).unwrap();
                 }
+                cloned_info_tx.send("".to_string()).unwrap();
                 info!("Conversion killed.");
                 break;
             }
@@ -274,7 +280,7 @@ pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<&st
 pub fn try_next_track(
     model: &mut Model,
     msg_tx: &Sender<Message>,
-    info_tx: &Sender<&str>,
+    info_tx: &Sender<String>,
 ) -> Result<()> {
     let next_track = match model.track_queue.pop_front() {
         Some(path) => path,

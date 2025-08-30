@@ -28,7 +28,7 @@ fn main() -> Result<()> {
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
     let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
-    let (info_tx, info_rx): (Sender<&str>, Receiver<&str>) = mpsc::channel();
+    let (info_tx, info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     while model.running_state != RunningState::Done {
         let mut result;

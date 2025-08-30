@@ -1,10 +1,9 @@
-use std::{sync::mpsc::Sender, time::Duration};
+use std::{sync::mpsc::Sender, thread, time::Duration};
 
 use crate::{
     logic::player::{self, load_now, play_next_track},
     message::Message,
     model::{Model, RunningState},
-    view::{self},
 };
 
 use tokio::runtime::Runtime;
@@ -15,7 +14,7 @@ pub fn update(
     model: &mut Model,
     msg: Message,
     msg_tx: &Sender<Message>,
-    info_tx: &Sender<&str>,
+    info_tx: &Sender<String>,
 ) -> (Option<Message>, Result<()>) {
     match msg {
         Message::LoadNow => {
@@ -103,11 +102,20 @@ pub fn update(
 
             if let Some(track) = model.current_track.path.clone() {
                 if model.current_track.path.is_some() {
+                    info_tx.send("Rewinding...".to_string()).unwrap();
                     if let Err(e) = player::rewind(&mut model.sink, &track, Duration::from_secs(5))
                     {
-                        // view::display_info(model, e.to_string().as_str())
+                        let cloned_info_tx = info_tx.clone();
+
+                        log::error!("{}", e);
+                        thread::spawn(move || {
+                            cloned_info_tx.send(e.to_string()).unwrap();
+                            thread::sleep(Duration::from_secs(2));
+                            cloned_info_tx.send("".to_string()).unwrap();
+                        });
                     };
                     model.current_track.duration = player::get_track_duration(&track).ok();
+                    info_tx.send("".to_string()).unwrap();
                 }
             }
 
@@ -191,6 +199,7 @@ pub fn update(
                 }
             }
             if let Some(e) = err {
+                log::error!("{}", e);
                 // view::display_info(model, &e.to_string())
             }
 
