@@ -124,6 +124,8 @@ pub fn update(
             if model.track_queue.is_empty() {
                 return (None, Ok(()));
             }
+            log::info!("Skipping...");
+
             if let Some(handle) = model.ffmpeg_handle.take() {
                 let runtime = Runtime::new().unwrap();
                 runtime.block_on(handle.lock().unwrap().kill()).unwrap();
@@ -184,10 +186,13 @@ pub fn update(
             }
             if let Some(e) = err {
                 log::error!("{}", e);
-                // view::display_info(model, &e.to_string())
             }
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
+                log::info!(
+                    "Trying to load {:?}.",
+                    model.track_queue.front().clone().take()
+                );
                 if let Err(e) = player::try_next_track(model, msg_tx, info_tx) {
                     log::error!("{}", e);
                 };

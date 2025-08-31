@@ -23,6 +23,10 @@ impl TrackQueue {
         &self.queue
     }
 
+    pub fn front(&self) -> Option<&PathBuf> {
+        self.queue.front()
+    }
+
     pub fn get_selected(&self) -> usize {
         self.selected_index
     }
@@ -57,6 +61,7 @@ impl TrackQueue {
                         .filter(|e| AUDIO_FORMATS.contains(e))
                         .map(|_| p)
                 })
+                .take(50)
                 .collect();
             self.queue.extend(path_vec);
         }
