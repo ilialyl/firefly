@@ -190,7 +190,7 @@ pub fn update(
 
             if model.status == player::Status::Idle && !model.track_queue.is_empty() {
                 log::info!(
-                    "Trying to load {:?}.",
+                    "[TICK] Trying to load {:?}.",
                     model.track_queue.front().clone().take()
                 );
                 if let Err(e) = player::try_next_track(model, msg_tx, info_tx) {
@@ -236,7 +236,7 @@ pub fn update(
         Message::ConversionStarted(handle) => {
             model.ffmpeg_handle = Some(handle);
 
-            (None, Ok(()))
+            (Some(Message::Busy), Ok(()))
         }
 
         Message::Busy => {

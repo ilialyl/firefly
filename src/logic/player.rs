@@ -30,7 +30,7 @@ pub struct Track {
     pub has_metadata: bool,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Status {
     Playing,
     Paused,
