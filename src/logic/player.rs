@@ -11,8 +11,7 @@ use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::{FFmpegProcess, prelude::*};
 use std::{
-    collections::VecDeque,
-    fs::{self, File},
+    fs::File,
     ops::{Add, Sub},
     path::{Path, PathBuf},
     sync::{Arc, Mutex, mpsc::Sender},
@@ -41,7 +40,7 @@ pub enum Status {
 const RODIO_SUPPORTED_FORMATS: [&str; 4] = ["flac", "mp3", "ogg", "wav"];
 const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
 const UNTESTED_FORMATS: [&str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
-const AUDIO_FORMATS: [&str; 11] = [
+pub const AUDIO_FORMATS: [&str; 11] = [
     "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac",
 ];
 const TEMP_FILE: &str = "firefly_temp";
@@ -208,36 +207,11 @@ pub fn load_now(
     info_tx: &Sender<String>,
 ) -> Result<()> {
     if path.is_file() {
-        model.track_queue.push_front(path);
+        model.track_queue.prepend_track(path);
         try_next_track(model, msg_tx, info_tx)?;
     }
 
     Ok(())
-}
-
-pub fn enqueue_track(path_vec: Vec<PathBuf>, track_queue: &mut VecDeque<PathBuf>) {
-    for path in path_vec {
-        if path.is_file() {
-            track_queue.push_back(path);
-        }
-    }
-}
-
-pub fn enqueue_dir(dir: PathBuf, track_queue: &mut VecDeque<PathBuf>) {
-    let mut path_vec: Vec<PathBuf> = Vec::new();
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            if entry.path().is_file() {
-                if let Some(extension) = entry.path().extension().and_then(|e| e.to_str()) {
-                    if AUDIO_FORMATS.contains(&extension) {
-                        path_vec.push(entry.path());
-                    }
-                }
-            }
-        }
-    }
-
-    track_queue.extend(path_vec);
 }
 
 pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) {
@@ -282,7 +256,7 @@ pub fn try_next_track(
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Result<()> {
-    let next_track = match model.track_queue.pop_front() {
+    let next_track = match model.track_queue.dequeue() {
         Some(path) => path,
         None => return Ok(()),
     };

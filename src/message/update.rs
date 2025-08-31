@@ -45,46 +45,30 @@ pub fn update(
         }
         Message::QueueDir => {
             if let Some(dir) = player::choose_dir() {
-                player::enqueue_dir(dir, &mut model.track_queue);
+                model.track_queue.enqueue_dir(dir);
             }
 
             (None, Ok(()))
         }
         Message::QueueFile => {
             if let Some(path_vec) = player::choose_multiple_files() {
-                player::enqueue_track(path_vec, &mut model.track_queue);
+                model.track_queue.enqueue_tracks(path_vec);
             }
 
             (None, Ok(()))
         }
         Message::QueueUp => {
-            if model.selected_track == 0 || model.track_queue.is_empty() {
-                return (None, Ok(()));
-            }
-
-            model.selected_track = model.selected_track.saturating_sub(1);
-
-            if model.arrange_mode && model.track_queue.len() > model.selected_track {
-                model
-                    .track_queue
-                    .swap(model.selected_track, model.selected_track + 1);
-            }
+            if let Err(e) = model.track_queue.move_selected_up() {
+                log::info!("{}", e);
+            };
 
             (None, Ok(()))
         }
 
         Message::QueueDown => {
-            if model.track_queue.is_empty() || model.selected_track == model.track_queue.len() - 1 {
-                return (None, Ok(()));
-            }
-
-            model.selected_track = (model.selected_track + 1).min(model.track_queue.len() - 1);
-
-            if model.arrange_mode {
-                model
-                    .track_queue
-                    .swap(model.selected_track, model.selected_track - 1);
-            }
+            if let Err(e) = model.track_queue.move_selected_down() {
+                log::info!("{}", e);
+            };
 
             (None, Ok(()))
         }
@@ -213,7 +197,7 @@ pub fn update(
         }
 
         Message::ToggleArrange => {
-            model.arrange_mode = !model.arrange_mode;
+            model.track_queue.toggle_arrange();
 
             (None, Ok(()))
         }
