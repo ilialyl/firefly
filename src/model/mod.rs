@@ -26,7 +26,6 @@ pub struct Model {
     pub info: Vec<String>,
     pub current_track: Track,
     pub track_queue: VecDeque<PathBuf>,
-    pub volume: f32,
     pub looping: bool,
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
@@ -50,7 +49,6 @@ impl Default for Model {
                 has_metadata: false,
             },
             track_queue: VecDeque::new(),
-            volume: 1.0,
             looping: false,
             ffmpeg_handle: None,
         }

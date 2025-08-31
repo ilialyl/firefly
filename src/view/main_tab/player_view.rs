@@ -186,7 +186,7 @@ fn get_loop_status_str(model: &Model) -> String {
 }
 
 fn get_volume_str(model: &Model) -> String {
-    format!("Volume: {}%", (model.volume * 100.00).ceil() as i32)
+    format!("Volume: {}%", (model.sink.volume() * 100.00).ceil() as i32)
 }
 
 fn get_info_str(model: &Model) -> String {

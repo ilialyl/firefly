@@ -231,8 +231,6 @@ pub fn update(
 
             player::decrease_volume(&mut model.sink, 0.05);
 
-            model.volume = model.sink.volume();
-
             (None, Ok(()))
         }
 
@@ -242,8 +240,6 @@ pub fn update(
             }
 
             player::increase_volume(&mut model.sink, 0.05);
-
-            model.volume = model.sink.volume();
 
             (None, Ok(()))
         }
