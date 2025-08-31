@@ -30,7 +30,7 @@ It can still play other formats by converting formats not supported by Rodio to 
 
 ## Usage
 ### Windows
-- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
+- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) (Extract first)
 - Build from source
 
 ### Fedora Linux
