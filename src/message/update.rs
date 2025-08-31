@@ -31,7 +31,7 @@ pub fn update(
             (None, Ok(()))
         }
         Message::PlayPause => {
-            if model.busy {
+            if model.running_state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
@@ -96,7 +96,7 @@ pub fn update(
         }
 
         Message::Rewind => {
-            if model.busy {
+            if model.running_state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
@@ -123,7 +123,7 @@ pub fn update(
         }
 
         Message::Seek => {
-            if model.busy {
+            if model.running_state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
@@ -153,7 +153,7 @@ pub fn update(
         }
 
         Message::Tick => {
-            if model.busy {
+            if model.running_state == RunningState::Busy {
                 return (None, Ok(()));
             }
             let mut err: Option<color_eyre::eyre::ErrReport> = None;
@@ -225,7 +225,7 @@ pub fn update(
         }
 
         Message::VolumeDown => {
-            if model.busy {
+            if model.running_state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
@@ -237,7 +237,7 @@ pub fn update(
         }
 
         Message::VolumeUp => {
-            if model.busy {
+            if model.running_state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
@@ -255,13 +255,13 @@ pub fn update(
         }
 
         Message::Busy => {
-            model.busy = true;
+            model.running_state = RunningState::Busy;
 
             (None, Ok(()))
         }
 
         Message::ConversionEnded => {
-            model.busy = false;
+            model.running_state = RunningState::Running;
             if let Some(path) = model.current_track.path.clone() {
                 if let Err(e) = play_next_track(model, &path) {
                     log::error!("{}", e);
