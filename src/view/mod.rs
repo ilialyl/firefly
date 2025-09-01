@@ -26,6 +26,15 @@ pub fn render(model: &Model, frame: &mut Frame) {
         .title("Firefly Player".to_span().into_centered_line())
         .render(outer_layout[0], frame.buffer_mut());
 
+    Block::new()
+        .fg(Color::White)
+        .title(
+            format!("SESSION: {}", model.session.get_code())
+                .to_span()
+                .into_right_aligned_line(),
+        )
+        .render(outer_layout[0], frame.buffer_mut());
+
     main_tab::draw(model, frame, outer_layout[1]);
 }
 
