@@ -6,13 +6,13 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-use crate::model::{Model, RunningState};
+use crate::{logic::session_state::RunningState, model::Model};
 
 pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     let mut controls: Vec<Span<'_>> = Vec::new();
 
     let mut toggle_play = Span::from(" Play/Pause <Space>");
-    if model.running_state == RunningState::Busy {
+    if model.session.state == RunningState::Busy {
         toggle_play = toggle_play.crossed_out();
     }
     controls.push(toggle_play);
@@ -21,7 +21,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     controls.push(Span::from(" Queue <Q>"));
     controls.push(Span::from(" Queue Dir <ShiftQ>"));
     let mut toggle_arrange = Span::from(" Toggle Q Arrange <A>");
-    if model.track_queue.is_arrange() {
+    if model.playback.queue.is_arrange() {
         toggle_arrange = toggle_arrange.bold().italic();
     }
     controls.push(toggle_arrange);
@@ -29,7 +29,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     controls.push(Span::from(" Skip <S>"));
 
     let mut rewind_seek = Span::from(" Rewind/Seek <←/→>");
-    if model.running_state == RunningState::Busy {
+    if model.session.state == RunningState::Busy {
         rewind_seek = rewind_seek.crossed_out();
     }
     controls.push(rewind_seek);

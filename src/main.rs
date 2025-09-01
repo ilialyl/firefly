@@ -6,13 +6,11 @@ use std::{
 
 use color_eyre::eyre::{Result, eyre};
 use log::info;
-use once_cell::sync::Lazy;
-use rand::{Rng, distr::Alphanumeric};
 
 use crate::{
-    logic::player,
+    logic::session_state::{RunningState, Session},
     message::{Message, update::update},
-    model::{Model, RunningState},
+    model::Model,
     view::view,
 };
 
@@ -21,35 +19,25 @@ pub mod message;
 pub mod model;
 pub mod view;
 
-pub static SESSION_CODE: Lazy<String> = Lazy::new(|| {
-    let rng = rand::rng();
-    let rand_string: String = rng
-        .sample_iter(&Alphanumeric)
-        .take(8)
-        .map(char::from)
-        .collect();
-
-    rand_string
-});
-
 fn main() -> Result<()> {
     view::terminal::install_panic_hook();
     color_eyre::install()?;
     setup_logger()?;
-    info!("\n\n\nStarting session {}.", SESSION_CODE.as_str());
 
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
     let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
     let (info_tx, info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
-    while model.running_state != RunningState::Done {
+    info!("\n\n\nStarting session {}.", model.session.get_code());
+
+    while model.session.state != RunningState::Done {
         let mut result;
         let mut current_msg;
 
         (_, result) = update(&mut model, Message::Tick, &msg_tx, &info_tx);
 
-        attach_errors(&result)?;
+        attach_errors(&result, &model.session)?;
 
         terminal.draw(|f| view(&model, f))?;
 
@@ -57,7 +45,7 @@ fn main() -> Result<()> {
 
         while current_msg.is_some() {
             (current_msg, result) = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
-            attach_errors(&result)?;
+            attach_errors(&result, &model.session)?;
         }
 
         if let Ok(msg) = msg_rx.try_recv() {
@@ -65,7 +53,7 @@ fn main() -> Result<()> {
             while current_msg.is_some() {
                 (current_msg, result) = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
             }
-            attach_errors(&result)?;
+            attach_errors(&result, &model.session)?;
         }
 
         if let Ok(info) = info_rx.try_recv() {
@@ -73,11 +61,11 @@ fn main() -> Result<()> {
         }
     }
 
-    clean_up()
+    clean_up(&model.session)
 }
 
-fn clean_up() -> Result<()> {
-    let track_temp: PathBuf = player::TEMP_FILE.clone();
+fn clean_up(session: &Session) -> Result<()> {
+    let track_temp: PathBuf = session.get_temp();
     if track_temp.exists() {
         std::fs::remove_file(track_temp)?;
     }
@@ -87,10 +75,10 @@ fn clean_up() -> Result<()> {
     view::terminal::restore_terminal()
 }
 
-fn attach_errors(result: &Result<()>) -> Result<()> {
+fn attach_errors(result: &Result<()>, session: &Session) -> Result<()> {
     match result {
         Ok(_) => Ok(()),
-        Err(e) => match clean_up() {
+        Err(e) => match clean_up(session) {
             Ok(_) => Err(eyre!(e.to_string())),
             Err(clean_err) => Err(eyre!("{}\nCleanup also failed: {}", e, clean_err)),
         },

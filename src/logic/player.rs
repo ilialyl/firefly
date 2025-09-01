@@ -5,7 +5,6 @@ use lofty::{
     tag::Accessor,
 };
 use log::info;
-use once_cell::sync::Lazy;
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::{FFmpegProcess, prelude::*};
@@ -19,22 +18,7 @@ use std::{
 };
 use tokio::runtime::Runtime;
 
-use crate::{SESSION_CODE, message::Message, model::Model};
-
-pub struct Track {
-    pub path: Option<PathBuf>,
-    pub pos: Option<Duration>,
-    pub duration: Option<Duration>,
-    pub tagged_file: Option<TaggedFile>,
-    pub has_metadata: bool,
-}
-
-#[derive(PartialEq, Debug)]
-pub enum Status {
-    Playing,
-    Paused,
-    Idle,
-}
+use crate::{logic::playback_state::PlaybackState, message::Message};
 
 const RODIO_SUPPORTED_FORMATS: [&str; 4] = ["flac", "mp3", "ogg", "wav"];
 const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
@@ -42,9 +26,6 @@ const UNTESTED_FORMATS: [&str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
 pub const AUDIO_FORMATS: [&str; 11] = [
     "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac",
 ];
-
-pub static TEMP_FILE: Lazy<PathBuf> =
-    Lazy::new(|| PathBuf::from(format!("firefly_temp_{}.flac", SESSION_CODE.to_string())));
 
 pub fn is_rodio_supported(path: &Path) -> Result<bool> {
     if path.is_file() {
@@ -98,17 +79,17 @@ pub fn choose_dir() -> Option<PathBuf> {
     FileDialog::new().pick_folder()
 }
 
-pub fn load_track(sink: &mut Sink, track: &Path) -> Result<()> {
+pub fn load_track(track: &Path, playback_st: &mut PlaybackState) -> Result<()> {
     let mut track_temp = track.to_path_buf();
     if !is_rodio_supported(&track_temp)? {
-        track_temp = TEMP_FILE.clone();
+        track_temp = playback_st.current.get_temp();
     }
 
     let source = get_source(track_temp).expect("Error obtaining source");
 
-    sink.clear();
-    sink.append(source);
-    sink.play();
+    playback_st.sink.clear();
+    playback_st.sink.append(source);
+    playback_st.sink.play();
 
     Ok(())
 }
@@ -138,40 +119,43 @@ pub fn forward(sink: &mut Sink, track_dur: &Duration, forward_dur: Duration) {
     }
 }
 
-pub fn rewind(sink: &mut Sink, track: &Path, rewind_dur: Duration) -> Result<()> {
-    let mut path = track.to_path_buf();
+pub fn rewind(rewind_dur: Duration, playback_st: &PlaybackState) -> Result<()> {
+    let mut path = playback_st.current.path.clone().unwrap().to_path_buf();
     if !is_rodio_supported(&path)? {
-        path = TEMP_FILE.clone();
+        path = playback_st.current.get_temp();
     }
 
-    let current_pos = sink.get_pos();
+    let current_pos = playback_st.sink.get_pos();
     let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
         Some(dur) => dur,
         None => {
-            sink.clear();
+            playback_st.sink.clear();
             let source = get_source(path)?;
-            sink.append(source);
-            sink.play();
+            playback_st.sink.append(source);
+            playback_st.sink.play();
 
             return Ok(());
         }
     };
 
-    sink.clear();
+    playback_st.sink.clear();
     let source = get_source(path)?;
-    sink.append(source);
+    playback_st.sink.append(source);
 
-    sink.try_seek(rewinded_pos).expect("Error rewinding");
+    playback_st
+        .sink
+        .try_seek(rewinded_pos)
+        .expect("Error rewinding");
 
-    sink.play();
+    playback_st.sink.play();
 
     Ok(())
 }
 
-pub fn get_track_duration(track: &Path) -> Result<Duration> {
+pub fn get_track_duration(track: &Path, playback_st: &mut PlaybackState) -> Result<Duration> {
     let mut temp_path = track.to_path_buf();
     if !is_rodio_supported(&temp_path)? {
-        temp_path = TEMP_FILE.clone();
+        temp_path = playback_st.current.get_temp();
     }
 
     let tagged_file = Probe::open(temp_path)?.read()?;
@@ -179,8 +163,8 @@ pub fn get_track_duration(track: &Path) -> Result<Duration> {
     Ok(tagged_file.properties().duration())
 }
 
-pub async fn convert_format(track_path: &Path) -> FFmpegProcess {
-    FFmpegBuilder::convert(track_path.to_path_buf(), TEMP_FILE.clone())
+pub async fn convert_format(track_path: &Path, temp_path: &Path) -> FFmpegProcess {
+    FFmpegBuilder::convert(track_path.to_path_buf(), temp_path.to_path_buf())
         .audio_filter(AudioFilter::loudnorm())
         .spawn()
         .await
@@ -188,21 +172,27 @@ pub async fn convert_format(track_path: &Path) -> FFmpegProcess {
 }
 
 pub fn load_now(
-    model: &mut Model,
     path: PathBuf,
+    playback_st: &mut PlaybackState,
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Result<()> {
     if path.is_file() {
-        model.track_queue.prepend_track(path);
-        try_next_track(model, msg_tx, info_tx)?;
+        playback_st.queue.prepend_track(path);
+        try_next_track(playback_st, msg_tx, info_tx)?;
     }
 
     Ok(())
 }
 
-pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) {
+pub fn bg_conversion(
+    path: &Path,
+    temp_path: &Path,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<String>,
+) {
     let path = path.to_path_buf();
+    let temp = temp_path.to_path_buf();
     let cloned_msg_tx = msg_tx.clone();
     let cloned_info_tx = info_tx.clone();
 
@@ -213,7 +203,7 @@ pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<Str
 
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
-        let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(convert_format(&path))));
+        let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(convert_format(&path, &temp))));
         cloned_msg_tx
             .send(Message::ConversionStarted(ffmpeg_handle.clone()))
             .unwrap();
@@ -239,20 +229,25 @@ pub fn bg_conversion(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<Str
 }
 
 pub fn try_next_track(
-    model: &mut Model,
+    playback_st: &mut PlaybackState,
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Result<()> {
-    let next_track = match model.track_queue.dequeue() {
+    let next_track = match playback_st.queue.dequeue() {
         Some(path) => path,
         None => return Ok(()),
     };
 
-    model.current_track.path = Some(next_track.clone());
+    playback_st.current.path = Some(next_track.clone());
 
     match is_rodio_supported(&next_track) {
         Ok(false) => {
-            bg_conversion(&next_track, msg_tx, info_tx);
+            bg_conversion(
+                &next_track,
+                &playback_st.current.get_temp(),
+                msg_tx,
+                info_tx,
+            );
 
             return Ok(());
         }
@@ -263,37 +258,40 @@ pub fn try_next_track(
         }
     }
 
-    play_next_track(model, &next_track)?;
+    play_next_track(&next_track, playback_st)?;
 
     Ok(())
 }
 
-pub fn play_next_track(model: &mut Model, next_track: &Path) -> Result<()> {
-    if let Err(e) = load_track(&mut model.sink, next_track) {
+pub fn play_next_track(track: &Path, playback_st: &mut PlaybackState) -> Result<()> {
+    if let Err(e) = load_track(track, playback_st) {
         log::error!("{}", e);
         return Err(e);
     };
 
-    model.current_track.tagged_file = Some(get_metadata(&next_track.to_path_buf())?);
-    model.current_track.has_metadata = model
-        .current_track
+    playback_st.current.tagged_file = Some(get_metadata(
+        &track.to_path_buf(),
+        &playback_st.current.get_temp(),
+    )?);
+    playback_st.current.has_metadata = playback_st
+        .current
         .tagged_file
         .as_ref()
         .and_then(|f| f.primary_tag())
         .and_then(|t| t.title())
         .is_some();
-    model.current_track.duration = model
-        .current_track
+    playback_st.current.duration = playback_st
+        .current
         .path
-        .as_ref()
-        .and_then(|p| get_track_duration(p).ok());
+        .clone()
+        .and_then(|p| get_track_duration(&p, playback_st).ok());
 
     Ok(())
 }
 
-pub fn get_metadata(track: &PathBuf) -> Result<TaggedFile> {
+pub fn get_metadata(track: &PathBuf, temp_path: &Path) -> Result<TaggedFile> {
     match Probe::open(track)?.read() {
         Ok(f) => Ok(f),
-        Err(_) => Ok(Probe::open(TEMP_FILE.clone())?.read()?),
+        Err(_) => Ok(Probe::open(temp_path)?.read()?),
     }
 }

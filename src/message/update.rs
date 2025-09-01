@@ -1,9 +1,13 @@
 use std::{sync::mpsc::Sender, thread, time::Duration};
 
 use crate::{
-    logic::player::{self, load_now, play_next_track},
+    logic::{
+        playback_state::PlaybackStatus,
+        player::{self, load_now, play_next_track},
+        session_state::RunningState,
+    },
     message::Message,
-    model::{Model, RunningState},
+    model::Model,
 };
 
 use tokio::runtime::Runtime;
@@ -23,7 +27,7 @@ pub fn update(
                     let runtime = Runtime::new().unwrap();
                     runtime.block_on(handle.lock().unwrap().kill()).unwrap();
                 }
-                if let Err(e) = load_now(model, path, msg_tx, info_tx) {
+                if let Err(e) = load_now(path, &mut model.playback, msg_tx, info_tx) {
                     log::error!("{}", e);
                 }
             }
@@ -31,34 +35,34 @@ pub fn update(
             (None, Ok(()))
         }
         Message::PlayPause => {
-            if model.running_state == RunningState::Busy {
+            if model.session.state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
-            if model.status == player::Status::Playing {
-                model.sink.pause();
+            if model.playback.status == PlaybackStatus::Playing {
+                model.playback.sink.pause();
             } else {
-                model.sink.play();
+                model.playback.sink.play();
             }
 
             (None, Ok(()))
         }
         Message::QueueDir => {
             if let Some(dir) = player::choose_dir() {
-                model.track_queue.enqueue_dir(dir);
+                model.playback.queue.enqueue_dir(dir);
             }
 
             (None, Ok(()))
         }
         Message::QueueFile => {
             if let Some(path_vec) = player::choose_multiple_files() {
-                model.track_queue.enqueue_tracks(path_vec);
+                model.playback.queue.enqueue_tracks(path_vec);
             }
 
             (None, Ok(()))
         }
         Message::QueueUp => {
-            if let Err(e) = model.track_queue.move_selected_up() {
+            if let Err(e) = model.playback.queue.move_selected_up() {
                 log::info!("{}", e);
             };
 
@@ -66,7 +70,7 @@ pub fn update(
         }
 
         Message::QueueDown => {
-            if let Err(e) = model.track_queue.move_selected_down() {
+            if let Err(e) = model.playback.queue.move_selected_down() {
                 log::info!("{}", e);
             };
 
@@ -74,21 +78,20 @@ pub fn update(
         }
 
         Message::Quit => {
-            model.running_state = RunningState::Done;
+            model.session.state = RunningState::Done;
 
             (None, Ok(()))
         }
 
         Message::Rewind => {
-            if model.running_state == RunningState::Busy {
+            if model.session.state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
-            if let Some(track) = model.current_track.path.clone() {
-                if model.current_track.path.is_some() {
+            if let Some(track) = model.playback.current.path.clone() {
+                if model.playback.current.path.is_some() {
                     info_tx.send("Rewinding...".to_string()).unwrap();
-                    if let Err(e) = player::rewind(&mut model.sink, &track, Duration::from_secs(5))
-                    {
+                    if let Err(e) = player::rewind(Duration::from_secs(5), &model.playback) {
                         let cloned_info_tx = info_tx.clone();
 
                         log::error!("{}", e);
@@ -98,7 +101,8 @@ pub fn update(
                             cloned_info_tx.send("".to_string()).unwrap();
                         });
                     };
-                    model.current_track.duration = player::get_track_duration(&track).ok();
+                    model.playback.current.duration =
+                        player::get_track_duration(&track, &mut model.playback).ok();
                     info_tx.send("".to_string()).unwrap();
                 }
             }
@@ -107,13 +111,13 @@ pub fn update(
         }
 
         Message::Seek => {
-            if model.running_state == RunningState::Busy {
+            if model.session.state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
-            if let Some(track_dur) = &model.current_track.duration {
-                if model.current_track.path.is_some() {
-                    player::forward(&mut model.sink, track_dur, Duration::from_secs(5));
+            if let Some(track_dur) = &model.playback.current.duration {
+                if model.playback.current.path.is_some() {
+                    player::forward(&mut model.playback.sink, track_dur, Duration::from_secs(5));
                 }
             }
 
@@ -121,7 +125,9 @@ pub fn update(
         }
 
         Message::Skip => {
-            if model.track_queue.is_empty() {
+            model.session.state = RunningState::Running;
+
+            if model.playback.queue.is_empty() {
                 return (None, Ok(()));
             }
             log::info!("Skipping...");
@@ -131,7 +137,7 @@ pub fn update(
                 runtime.block_on(handle.lock().unwrap().kill()).unwrap();
             }
 
-            if let Err(e) = player::try_next_track(model, msg_tx, info_tx) {
+            if let Err(e) = player::try_next_track(&mut model.playback, msg_tx, info_tx) {
                 log::error!("{}", e);
             };
 
@@ -139,25 +145,25 @@ pub fn update(
         }
 
         Message::Tick => {
-            if model.running_state == RunningState::Busy {
+            if model.session.state == RunningState::Busy {
                 return (None, Ok(()));
             }
             let mut err: Option<color_eyre::eyre::ErrReport> = None;
             {
                 // If sink paused, set status to paused
                 // If track_path exists in App and sink isn't empty, set status to playing
-                if model.sink.is_paused() {
-                    model.status = player::Status::Paused;
-                } else if model.current_track.path.is_some() && !model.sink.empty() {
-                    model.status = player::Status::Playing;
+                if model.playback.sink.is_paused() {
+                    model.playback.status = PlaybackStatus::Paused;
+                } else if model.playback.current.path.is_some() && !model.playback.sink.empty() {
+                    model.playback.status = PlaybackStatus::Playing;
                 }
 
-                if model.sink.empty() {
-                    model.status = player::Status::Idle;
+                if model.playback.sink.empty() {
+                    model.playback.status = PlaybackStatus::Idle;
                 }
 
                 // Get track position
-                model.current_track.pos = Some(model.sink.get_pos());
+                model.playback.current.pos = Some(model.playback.sink.get_pos());
 
                 // If path, duration, and position are not None,
                 // If sink is empty or the track is within 3 seconds away from ending
@@ -166,19 +172,21 @@ pub fn update(
 
                 {
                     if let (Some(path), Some(dur), Some(pos)) = (
-                        &model.current_track.path,
-                        model.current_track.duration,
-                        model.current_track.pos,
+                        model.playback.current.path.clone(),
+                        model.playback.current.duration,
+                        model.playback.current.pos,
                     ) {
-                        if model.sink.empty() && dur.saturating_sub(pos) < Duration::from_secs(3) {
-                            if model.looping {
-                                if let Err(e) = player::load_track(&mut model.sink, path) {
+                        if model.playback.sink.empty()
+                            && dur.saturating_sub(pos) < Duration::from_secs(3)
+                        {
+                            if model.playback.looping {
+                                if let Err(e) = player::load_track(&path, &mut model.playback) {
                                     err = Some(e);
                                 }
                             } else {
-                                model.current_track.pos = None;
-                                model.current_track.duration = None;
-                                model.status = player::Status::Idle;
+                                model.playback.current.pos = None;
+                                model.playback.current.duration = None;
+                                model.playback.status = PlaybackStatus::Idle;
                             }
                         }
                     }
@@ -188,12 +196,12 @@ pub fn update(
                 log::error!("{}", e);
             }
 
-            if model.status == player::Status::Idle && !model.track_queue.is_empty() {
+            if model.playback.status == PlaybackStatus::Idle && !model.playback.queue.is_empty() {
                 log::info!(
                     "[TICK] Trying to load {:?}.",
-                    model.track_queue.front().clone().take()
+                    model.playback.queue.front().clone().take()
                 );
-                if let Err(e) = player::try_next_track(model, msg_tx, info_tx) {
+                if let Err(e) = player::try_next_track(&mut model.playback, msg_tx, info_tx) {
                     log::error!("{}", e);
                 };
             }
@@ -202,33 +210,33 @@ pub fn update(
         }
 
         Message::ToggleArrange => {
-            model.track_queue.toggle_arrange();
+            model.playback.queue.toggle_arrange();
 
             (None, Ok(()))
         }
 
         Message::ToggleLoop => {
-            model.looping = !model.looping;
+            model.playback.looping = !model.playback.looping;
 
             (None, Ok(()))
         }
 
         Message::VolumeDown => {
-            if model.running_state == RunningState::Busy {
+            if model.session.state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
-            player::decrease_volume(&mut model.sink, 0.05);
+            player::decrease_volume(&mut model.playback.sink, 0.05);
 
             (None, Ok(()))
         }
 
         Message::VolumeUp => {
-            if model.running_state == RunningState::Busy {
+            if model.session.state == RunningState::Busy {
                 return (None, Ok(()));
             }
 
-            player::increase_volume(&mut model.sink, 0.05);
+            player::increase_volume(&mut model.playback.sink, 0.05);
 
             (None, Ok(()))
         }
@@ -240,15 +248,15 @@ pub fn update(
         }
 
         Message::Busy => {
-            model.running_state = RunningState::Busy;
+            model.session.state = RunningState::Busy;
 
             (None, Ok(()))
         }
 
         Message::ConversionEnded => {
-            model.running_state = RunningState::Running;
-            if let Some(path) = model.current_track.path.clone() {
-                if let Err(e) = play_next_track(model, &path) {
+            model.session.state = RunningState::Running;
+            if let Some(path) = model.playback.current.path.clone() {
+                if let Err(e) = play_next_track(&path, &mut model.playback) {
                     log::error!("{}", e);
                 };
             }

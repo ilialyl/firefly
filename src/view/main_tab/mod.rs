@@ -83,7 +83,7 @@ pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
         )
     }
 
-    let player_chunks_const = if model.current_track.has_metadata {
+    let player_chunks_const = if model.playback.current.has_metadata {
         vec![Constraint::Percentage(60), Constraint::Percentage(40)]
     } else {
         vec![Constraint::Percentage(100)]

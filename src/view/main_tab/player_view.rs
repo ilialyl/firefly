@@ -11,22 +11,26 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::{logic::player, model::Model, view::center_vertical};
+use crate::{
+    logic::playback_state::{PlaybackState, PlaybackStatus},
+    model::Model,
+    view::center_vertical,
+};
 
 pub fn draw(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     let player_text = [
-        get_track_name_str(model),
+        get_track_name_str(&model.playback),
         "".into(),
-        get_track_pos_str(model),
+        get_track_pos_str(&model.playback),
         "".into(),
-        get_status_str(model),
-        get_loop_status_str(model),
+        get_status_str(&model.playback),
+        get_loop_status_str(&model.playback),
         model.info_display.clone(),
-        get_volume_str(model),
+        get_volume_str(&model.playback),
     ];
 
-    if model.current_track.has_metadata {
-        if let Some(tag) = model.current_track.tagged_file.as_ref() {
+    if model.playback.current.has_metadata {
+        if let Some(tag) = model.playback.current.tagged_file.as_ref() {
             let meta_text = get_metadata_text_vec(tag);
 
             let metadata_margin = 2;
@@ -149,8 +153,8 @@ fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
     meta_text
 }
 
-fn get_track_name_str(model: &Model) -> String {
-    match model.current_track.path.clone() {
+fn get_track_name_str(playback_st: &PlaybackState) -> String {
+    match playback_st.current.path.clone() {
         Some(path) => {
             if let Some(os_name) = path.file_name() {
                 if let Some(name) = os_name.to_str() {
@@ -166,31 +170,34 @@ fn get_track_name_str(model: &Model) -> String {
     }
 }
 
-fn get_track_pos_str(model: &Model) -> String {
-    track_pos_as_str(model)
+fn get_track_pos_str(playback_st: &PlaybackState) -> String {
+    track_pos_as_str(playback_st)
 }
 
-fn get_status_str(model: &Model) -> String {
-    match model.status {
-        player::Status::Playing => "Playing".into(),
-        player::Status::Paused => ("Paused").into(),
-        player::Status::Idle => ("Idle").into(),
+fn get_status_str(playback_st: &PlaybackState) -> String {
+    match playback_st.status {
+        PlaybackStatus::Playing => "Playing".into(),
+        PlaybackStatus::Paused => ("Paused").into(),
+        PlaybackStatus::Idle => ("Idle").into(),
     }
 }
 
-fn get_loop_status_str(model: &Model) -> String {
-    match model.looping {
+fn get_loop_status_str(playback_st: &PlaybackState) -> String {
+    match playback_st.looping {
         true => "[Looped]".into(),
         false => "".into(),
     }
 }
 
-fn get_volume_str(model: &Model) -> String {
-    format!("Volume: {}%", (model.sink.volume() * 100.00).ceil() as i32)
+fn get_volume_str(playback_st: &PlaybackState) -> String {
+    format!(
+        "Volume: {}%",
+        (playback_st.sink.volume() * 100.00).ceil() as i32
+    )
 }
 
-fn track_pos_as_str(model: &Model) -> String {
-    let track_pos = model.current_track.pos.unwrap_or(Duration::from_secs(0));
+fn track_pos_as_str(playback_st: &PlaybackState) -> String {
+    let track_pos = playback_st.current.pos.unwrap_or(Duration::from_secs(0));
     let sec = track_pos.as_secs() % 60;
     let min = track_pos.as_secs() / 60;
 
