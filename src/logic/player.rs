@@ -298,8 +298,8 @@ mod tests {
     #[test]
     fn is_rodio_supported() {
         let path = [
-            PathBuf::from("src/test/test.flac"),
-            PathBuf::from("src/test/test.opus"),
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
         ];
         let result: Vec<bool> = path
             .iter()
@@ -317,17 +317,17 @@ mod tests {
 
     #[test]
     fn get_source() {
-        let result = super::get_source(PathBuf::from("src/test/test.flac"));
+        let result = super::get_source(PathBuf::from("test_assets/test.flac"));
         assert!(result.is_ok())
     }
 
     #[test]
     fn load_track() {
         let path = [
-            PathBuf::from("src/test/test.flac"),
-            PathBuf::from("src/test/test.opus"),
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
         ];
-        let mut playback = PlaybackState::new(PathBuf::from("src/test/test_temp.flac"));
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
 
         path.iter()
             .for_each(|p| assert!(super::load_track(p, &mut playback).is_ok()));
