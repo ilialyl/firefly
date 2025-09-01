@@ -20,7 +20,7 @@ pub struct Model {
     pub _stream: OutputStream,
     pub sink: Sink,
     pub status: player::Status,
-    pub info: Vec<String>,
+    pub info_display: String,
     pub current_track: Track,
     pub track_queue: TrackQueue,
     pub looping: bool,
@@ -35,7 +35,7 @@ impl Default for Model {
             _stream: stream,
             sink,
             status: player::Status::Idle,
-            info: vec![String::new()],
+            info_display: String::new(),
             current_track: Track {
                 path: None,
                 pos: None,

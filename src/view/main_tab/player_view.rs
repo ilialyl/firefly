@@ -21,7 +21,7 @@ pub fn draw(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
         "".into(),
         get_status_str(model),
         get_loop_status_str(model),
-        get_info_str(model),
+        model.info_display.clone(),
         get_volume_str(model),
     ];
 
@@ -187,13 +187,6 @@ fn get_loop_status_str(model: &Model) -> String {
 
 fn get_volume_str(model: &Model) -> String {
     format!("Volume: {}%", (model.sink.volume() * 100.00).ceil() as i32)
-}
-
-fn get_info_str(model: &Model) -> String {
-    match model.info.last() {
-        Some(str) => str.clone(),
-        None => "".into(),
-    }
 }
 
 fn track_pos_as_str(model: &Model) -> String {

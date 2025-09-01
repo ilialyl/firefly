@@ -56,7 +56,7 @@ fn main() -> Result<()> {
         }
 
         if let Ok(info) = info_rx.try_recv() {
-            model.info.push(info.to_string());
+            model.info_display = info;
         }
     }
 
