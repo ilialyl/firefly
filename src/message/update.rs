@@ -102,7 +102,7 @@ pub fn update(
                         });
                     };
                     model.playback.current.duration =
-                        player::get_track_duration(&track, &mut model.playback).ok();
+                        player::read_track_duration(&track, &mut model.playback).ok();
                     info_tx.send("".to_string()).unwrap();
                 }
             }
@@ -117,7 +117,7 @@ pub fn update(
 
             if let Some(track_dur) = &model.playback.current.duration {
                 if model.playback.current.path.is_some() {
-                    player::forward(&mut model.playback.sink, track_dur, Duration::from_secs(5));
+                    player::seek(&mut model.playback.sink, track_dur, Duration::from_secs(5));
                 }
             }
 

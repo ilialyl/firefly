@@ -106,7 +106,7 @@ pub fn decrease_volume(sink: &mut Sink, amount: f32) {
     sink.set_volume(decreased_vol);
 }
 
-pub fn forward(sink: &mut Sink, track_dur: &Duration, forward_dur: Duration) {
+pub fn seek(sink: &mut Sink, track_dur: &Duration, forward_dur: Duration) {
     let current_pos = sink.get_pos();
     if current_pos.add(forward_dur) < *track_dur {
         sink.try_seek(current_pos.add(forward_dur))
@@ -119,43 +119,43 @@ pub fn forward(sink: &mut Sink, track_dur: &Duration, forward_dur: Duration) {
     }
 }
 
-pub fn rewind(rewind_dur: Duration, playback_st: &PlaybackState) -> Result<()> {
-    let mut path = playback_st.current.path.clone().unwrap().to_path_buf();
+pub fn rewind(rewind_dur: Duration, playback: &PlaybackState) -> Result<()> {
+    let mut path = playback.current.path.clone().unwrap().to_path_buf();
     if !is_rodio_supported(&path)? {
-        path = playback_st.current.get_temp();
+        path = playback.current.get_temp();
     }
 
-    let current_pos = playback_st.sink.get_pos();
+    let current_pos = playback.sink.get_pos();
     let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
         Some(dur) => dur,
         None => {
-            playback_st.sink.clear();
+            playback.sink.clear();
             let source = get_source(path)?;
-            playback_st.sink.append(source);
-            playback_st.sink.play();
+            playback.sink.append(source);
+            playback.sink.play();
 
             return Ok(());
         }
     };
 
-    playback_st.sink.clear();
+    playback.sink.clear();
     let source = get_source(path)?;
-    playback_st.sink.append(source);
+    playback.sink.append(source);
 
-    playback_st
+    playback
         .sink
         .try_seek(rewinded_pos)
         .expect("Error rewinding");
 
-    playback_st.sink.play();
+    playback.sink.play();
 
     Ok(())
 }
 
-pub fn get_track_duration(track: &Path, playback_st: &mut PlaybackState) -> Result<Duration> {
+pub fn read_track_duration(track: &Path, playback: &mut PlaybackState) -> Result<Duration> {
     let mut temp_path = track.to_path_buf();
     if !is_rodio_supported(&temp_path)? {
-        temp_path = playback_st.current.get_temp();
+        temp_path = playback.current.get_temp();
     }
 
     let tagged_file = Probe::open(temp_path)?.read()?;
@@ -173,26 +173,26 @@ pub async fn convert_format(track_path: &Path, temp_path: &Path) -> FFmpegProces
 
 pub fn load_now(
     path: PathBuf,
-    playback_st: &mut PlaybackState,
+    playback: &mut PlaybackState,
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Result<()> {
     if path.is_file() {
-        playback_st.queue.prepend_track(path);
-        try_next_track(playback_st, msg_tx, info_tx)?;
+        playback.queue.prepend_track(path);
+        try_next_track(playback, msg_tx, info_tx)?;
     }
 
     Ok(())
 }
 
-pub fn bg_conversion(
-    path: &Path,
-    temp_path: &Path,
+pub fn convert_format_in_bg(
+    to_convert: &Path,
+    output: &Path,
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) {
-    let path = path.to_path_buf();
-    let temp = temp_path.to_path_buf();
+    let path = to_convert.to_path_buf();
+    let temp = output.to_path_buf();
     let cloned_msg_tx = msg_tx.clone();
     let cloned_info_tx = info_tx.clone();
 
@@ -229,25 +229,20 @@ pub fn bg_conversion(
 }
 
 pub fn try_next_track(
-    playback_st: &mut PlaybackState,
+    playback: &mut PlaybackState,
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Result<()> {
-    let next_track = match playback_st.queue.dequeue() {
+    let next_track = match playback.queue.dequeue() {
         Some(path) => path,
         None => return Ok(()),
     };
 
-    playback_st.current.path = Some(next_track.clone());
+    playback.current.path = Some(next_track.clone());
 
     match is_rodio_supported(&next_track) {
         Ok(false) => {
-            bg_conversion(
-                &next_track,
-                &playback_st.current.get_temp(),
-                msg_tx,
-                info_tx,
-            );
+            convert_format_in_bg(&next_track, &playback.current.get_temp(), msg_tx, info_tx);
 
             return Ok(());
         }
@@ -258,33 +253,33 @@ pub fn try_next_track(
         }
     }
 
-    play_next_track(&next_track, playback_st)?;
+    play_next_track(&next_track, playback)?;
 
     Ok(())
 }
 
-pub fn play_next_track(track: &Path, playback_st: &mut PlaybackState) -> Result<()> {
-    if let Err(e) = load_track(track, playback_st) {
+pub fn play_next_track(track: &Path, playback: &mut PlaybackState) -> Result<()> {
+    if let Err(e) = load_track(track, playback) {
         log::error!("{}", e);
         return Err(e);
     };
 
-    playback_st.current.tagged_file = Some(get_metadata(
+    playback.current.tagged_file = Some(get_metadata(
         &track.to_path_buf(),
-        &playback_st.current.get_temp(),
+        &playback.current.get_temp(),
     )?);
-    playback_st.current.has_metadata = playback_st
+    playback.current.has_metadata = playback
         .current
         .tagged_file
         .as_ref()
         .and_then(|f| f.primary_tag())
         .and_then(|t| t.title())
         .is_some();
-    playback_st.current.duration = playback_st
+    playback.current.duration = playback
         .current
         .path
         .clone()
-        .and_then(|p| get_track_duration(&p, playback_st).ok());
+        .and_then(|p| read_track_duration(&p, playback).ok());
 
     Ok(())
 }
