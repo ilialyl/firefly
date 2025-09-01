@@ -106,17 +106,19 @@ pub fn decrease_volume(sink: &mut Sink, amount: f32) {
     sink.set_volume(decreased_vol);
 }
 
-pub fn seek(sink: &mut Sink, track_dur: &Duration, forward_dur: Duration) {
+pub fn seek(sink: &mut Sink, track_dur: &Duration, seek_dur: Duration) -> Result<()> {
     let current_pos = sink.get_pos();
-    if current_pos.add(forward_dur) < *track_dur {
-        sink.try_seek(current_pos.add(forward_dur))
-            .expect("Error forwarding");
-    } else if track_dur.sub(current_pos) < forward_dur
+    if current_pos.add(seek_dur) < *track_dur {
+        sink.try_seek(current_pos.add(seek_dur))
+            .expect("Error seeking");
+    } else if track_dur.sub(current_pos) < seek_dur
         && track_dur.sub(current_pos) > Duration::from_secs(1)
     {
         sink.try_seek(track_dur.sub(Duration::from_secs(1)))
             .expect("Error seeking");
     }
+
+    Ok(())
 }
 
 pub fn rewind(rewind_dur: Duration, playback: &PlaybackState) -> Result<()> {
@@ -293,6 +295,8 @@ pub fn get_metadata(track: &PathBuf, temp_path: &Path) -> Result<TaggedFile> {
 
 #[cfg(test)]
 mod tests {
+    use float_cmp::ApproxEq;
+
     use super::*;
 
     #[test]
@@ -331,5 +335,75 @@ mod tests {
 
         path.iter()
             .for_each(|p| assert!(super::load_track(p, &mut playback).is_ok()));
+    }
+
+    #[test]
+    fn increase_volume() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+
+        super::increase_volume(&mut playback.sink, 0.05);
+
+        assert!(playback.sink.volume().approx_eq(1.05, (0.0, 2)));
+    }
+
+    #[test]
+    fn decrease_volume() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+
+        super::decrease_volume(&mut playback.sink, 0.05);
+
+        assert!(playback.sink.volume().approx_eq(0.95, (0.0, 2)));
+    }
+
+    #[test]
+    fn seek() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+        let tracks = [
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
+        ];
+        for track in tracks {
+            let duration = super::read_track_duration(&track, &mut playback)
+                .ok()
+                .unwrap();
+            super::load_track(&track, &mut playback).unwrap();
+            playback.sink.pause();
+
+            super::seek(&mut playback.sink, &duration, Duration::from_secs(5)).ok();
+
+            assert_eq!(playback.sink.get_pos(), Duration::from_secs(5));
+        }
+    }
+
+    #[test]
+    fn rewind() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+        let tracks = [
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
+        ];
+        for track in tracks {
+            let duration = super::read_track_duration(&track, &mut playback).unwrap();
+            super::load_track(&track, &mut playback).unwrap();
+            playback.current.path = Some(track.clone());
+
+            playback.sink.pause();
+
+            super::seek(&mut playback.sink, &duration, Duration::from_secs(10)).ok();
+            super::rewind(Duration::from_secs(5), &playback).ok();
+
+            assert_eq!(playback.sink.get_pos(), Duration::from_secs(5));
+        }
+    }
+
+    #[test]
+    fn read_track_duration() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+        let path = [
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
+        ];
+        path.iter()
+            .for_each(|p| assert!(super::read_track_duration(&p, &mut playback).is_ok()));
     }
 }

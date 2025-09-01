@@ -117,7 +117,18 @@ pub fn update(
 
             if let Some(track_dur) = &model.playback.current.duration {
                 if model.playback.current.path.is_some() {
-                    player::seek(&mut model.playback.sink, track_dur, Duration::from_secs(5));
+                    if let Err(e) =
+                        player::seek(&mut model.playback.sink, track_dur, Duration::from_secs(5))
+                    {
+                        let cloned_info_tx = info_tx.clone();
+
+                        log::error!("{}", e);
+                        thread::spawn(move || {
+                            cloned_info_tx.send(e.to_string()).unwrap();
+                            thread::sleep(Duration::from_secs(2));
+                            cloned_info_tx.send("".to_string()).unwrap();
+                        });
+                    }
                 }
             }
 
