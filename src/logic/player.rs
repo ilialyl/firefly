@@ -6,7 +6,6 @@ use lofty::{
 };
 use log::info;
 use once_cell::sync::Lazy;
-use rand::{Rng, distr::Alphanumeric};
 use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::{FFmpegProcess, prelude::*};
@@ -20,7 +19,7 @@ use std::{
 };
 use tokio::runtime::Runtime;
 
-use crate::{message::Message, model::Model};
+use crate::{SESSION_CODE, message::Message, model::Model};
 
 pub struct Track {
     pub path: Option<PathBuf>,
@@ -43,21 +42,9 @@ const UNTESTED_FORMATS: [&str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
 pub const AUDIO_FORMATS: [&str; 11] = [
     "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac",
 ];
-const TEMP_FILE: &str = "firefly_temp";
 
-pub static CONVERTED_TRACK: Lazy<PathBuf> = Lazy::new(|| {
-    if Path::new(format!("{TEMP_FILE}.flac").as_str()).exists() {
-        let rng = rand::rng();
-        let rand_string: String = rng
-            .sample_iter(&Alphanumeric)
-            .take(8)
-            .map(char::from)
-            .collect();
-        PathBuf::from(format!("{TEMP_FILE}_{rand_string}.flac"))
-    } else {
-        PathBuf::from(format!("{TEMP_FILE}.flac"))
-    }
-});
+pub static TEMP_FILE: Lazy<PathBuf> =
+    Lazy::new(|| PathBuf::from(format!("firefly_temp_{}.flac", SESSION_CODE.to_string())));
 
 pub fn is_rodio_supported(path: &Path) -> Result<bool> {
     if path.is_file() {
@@ -114,7 +101,7 @@ pub fn choose_dir() -> Option<PathBuf> {
 pub fn load_track(sink: &mut Sink, track: &Path) -> Result<()> {
     let mut track_temp = track.to_path_buf();
     if !is_rodio_supported(&track_temp)? {
-        track_temp = CONVERTED_TRACK.clone();
+        track_temp = TEMP_FILE.clone();
     }
 
     let source = get_source(track_temp).expect("Error obtaining source");
@@ -154,7 +141,7 @@ pub fn forward(sink: &mut Sink, track_dur: &Duration, forward_dur: Duration) {
 pub fn rewind(sink: &mut Sink, track: &Path, rewind_dur: Duration) -> Result<()> {
     let mut path = track.to_path_buf();
     if !is_rodio_supported(&path)? {
-        path = CONVERTED_TRACK.clone();
+        path = TEMP_FILE.clone();
     }
 
     let current_pos = sink.get_pos();
@@ -184,7 +171,7 @@ pub fn rewind(sink: &mut Sink, track: &Path, rewind_dur: Duration) -> Result<()>
 pub fn get_track_duration(track: &Path) -> Result<Duration> {
     let mut temp_path = track.to_path_buf();
     if !is_rodio_supported(&temp_path)? {
-        temp_path = CONVERTED_TRACK.clone();
+        temp_path = TEMP_FILE.clone();
     }
 
     let tagged_file = Probe::open(temp_path)?.read()?;
@@ -193,7 +180,7 @@ pub fn get_track_duration(track: &Path) -> Result<Duration> {
 }
 
 pub async fn convert_format(track_path: &Path) -> FFmpegProcess {
-    FFmpegBuilder::convert(track_path.to_path_buf(), CONVERTED_TRACK.clone())
+    FFmpegBuilder::convert(track_path.to_path_buf(), TEMP_FILE.clone())
         .audio_filter(AudioFilter::loudnorm())
         .spawn()
         .await
@@ -307,6 +294,6 @@ pub fn play_next_track(model: &mut Model, next_track: &Path) -> Result<()> {
 pub fn get_metadata(track: &PathBuf) -> Result<TaggedFile> {
     match Probe::open(track)?.read() {
         Ok(f) => Ok(f),
-        Err(_) => Ok(Probe::open(CONVERTED_TRACK.clone())?.read()?),
+        Err(_) => Ok(Probe::open(TEMP_FILE.clone())?.read()?),
     }
 }

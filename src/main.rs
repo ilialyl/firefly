@@ -6,6 +6,8 @@ use std::{
 
 use color_eyre::eyre::{Result, eyre};
 use log::info;
+use once_cell::sync::Lazy;
+use rand::{Rng, distr::Alphanumeric};
 
 use crate::{
     logic::player,
@@ -19,11 +21,22 @@ pub mod message;
 pub mod model;
 pub mod view;
 
+pub static SESSION_CODE: Lazy<String> = Lazy::new(|| {
+    let rng = rand::rng();
+    let rand_string: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(8)
+        .map(char::from)
+        .collect();
+
+    rand_string
+});
+
 fn main() -> Result<()> {
     view::terminal::install_panic_hook();
     color_eyre::install()?;
     setup_logger()?;
-    info!("\n\n\nStarting a new session.");
+    info!("\n\n\nStarting session {}.", SESSION_CODE.as_str());
 
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
@@ -64,7 +77,7 @@ fn main() -> Result<()> {
 }
 
 fn clean_up() -> Result<()> {
-    let track_temp: PathBuf = player::CONVERTED_TRACK.clone();
+    let track_temp: PathBuf = player::TEMP_FILE.clone();
     if track_temp.exists() {
         std::fs::remove_file(track_temp)?;
     }
