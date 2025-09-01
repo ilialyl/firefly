@@ -295,6 +295,8 @@ pub fn get_metadata(track: &PathBuf, temp_path: &Path) -> Result<TaggedFile> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::mpsc::{self, Receiver};
+
     use float_cmp::ApproxEq;
 
     use super::*;
@@ -405,5 +407,77 @@ mod tests {
         ];
         path.iter()
             .for_each(|p| assert!(super::read_track_duration(&p, &mut playback).is_ok()));
+    }
+
+    #[test]
+    fn convert_format() {
+        let converted_path = PathBuf::from("test_assets/conversion_test.flac");
+        if converted_path.exists() {
+            std::fs::remove_file(&converted_path).unwrap();
+        }
+
+        let path = [PathBuf::from("test_assets/test.opus")];
+
+        let runtime = Runtime::new().unwrap();
+
+        for p in path {
+            runtime.block_on(async {
+                super::convert_format(&p, &converted_path)
+                    .await
+                    .wait()
+                    .await
+                    .unwrap();
+            })
+        }
+
+        assert!(converted_path.exists());
+        if converted_path.exists() {
+            std::fs::remove_file(&converted_path).unwrap();
+        }
+    }
+
+    #[test]
+    fn load_now() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+        let path = [
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
+        ];
+        let (msg_tx, _msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
+        let (info_tx, _info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+        path.into_iter()
+            .for_each(|p| assert!(super::load_now(p, &mut playback, &msg_tx, &info_tx).is_ok()));
+    }
+
+    #[test]
+    fn convert_format_in_bg() {
+        let converted_path = PathBuf::from("test_assets/bg_conversion_test.flac");
+        if converted_path.exists() {
+            std::fs::remove_file(&converted_path).unwrap();
+        }
+
+        let path = [PathBuf::from("test_assets/test.opus")];
+        let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
+        let (info_tx, _info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+        for p in path {
+            super::convert_format_in_bg(&p, &converted_path, &msg_tx, &info_tx);
+
+            let mut finished = false;
+            while !finished {
+                if let Ok(msg) = msg_rx.try_recv() {
+                    match msg {
+                        Message::ConversionEnded => {
+                            if converted_path.exists() {
+                                finished = true;
+                                std::fs::remove_file(&converted_path).unwrap();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
     }
 }
