@@ -85,7 +85,7 @@ pub fn load_track(track: &Path, playback_st: &mut PlaybackState) -> Result<()> {
         track_temp = playback_st.current.get_temp();
     }
 
-    let source = get_source(track_temp).expect("Error obtaining source");
+    let source = get_source(track_temp)?;
 
     playback_st.sink.clear();
     playback_st.sink.append(source);
@@ -288,5 +288,48 @@ pub fn get_metadata(track: &PathBuf, temp_path: &Path) -> Result<TaggedFile> {
     match Probe::open(track)?.read() {
         Ok(f) => Ok(f),
         Err(_) => Ok(Probe::open(temp_path)?.read()?),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_rodio_supported() {
+        let path = [
+            PathBuf::from("src/test/test.flac"),
+            PathBuf::from("src/test/test.opus"),
+        ];
+        let result: Vec<bool> = path
+            .iter()
+            .map(|p| super::is_rodio_supported(&p).unwrap())
+            .collect();
+        assert_eq!(result[0], true);
+        assert_eq!(result[1], false);
+    }
+
+    #[test]
+    fn get_sink() {
+        let result = super::get_sink();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn get_source() {
+        let result = super::get_source(PathBuf::from("src/test/test.flac"));
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn load_track() {
+        let path = [
+            PathBuf::from("src/test/test.flac"),
+            PathBuf::from("src/test/test.opus"),
+        ];
+        let mut playback = PlaybackState::new(PathBuf::from("src/test/test_temp.flac"));
+
+        path.iter()
+            .for_each(|p| assert!(super::load_track(p, &mut playback).is_ok()));
     }
 }
