@@ -11,7 +11,7 @@ use crate::{
     logic::session_state::{RunningState, Session},
     message::{Message, update::update},
     model::Model,
-    view::view,
+    view::{terminal, view},
 };
 
 pub mod logic;
@@ -41,7 +41,7 @@ fn main() -> Result<()> {
 
         terminal.draw(|f| view(&model, f))?;
 
-        current_msg = message::handle::events()?;
+        current_msg = terminal::handle_events()?;
 
         while current_msg.is_some() {
             (current_msg, result) = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
