@@ -237,7 +237,7 @@ pub fn try_next_track(
 ) -> Result<()> {
     let next_track = match playback.queue.dequeue() {
         Some(path) => path,
-        None => return Ok(()),
+        None => return Err(eyre!("Queue is empty.")),
     };
 
     playback.current.path = Some(next_track.clone());
@@ -479,5 +479,46 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn try_next_track() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+        let (msg_tx, _msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
+        let (info_tx, _info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+        assert!(super::try_next_track(&mut playback, &msg_tx, &info_tx).is_err());
+
+        playback.queue.enqueue_tracks(vec![
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
+        ]);
+
+        assert!(super::try_next_track(&mut playback, &msg_tx, &info_tx).is_ok());
+        assert!(super::try_next_track(&mut playback, &msg_tx, &info_tx).is_ok());
+    }
+
+    #[test]
+    fn play_next_track() {
+        let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+        let path = [
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
+        ];
+
+        path.iter()
+            .for_each(|p| assert!(super::play_next_track(p, &mut playback).is_ok()));
+    }
+
+    #[test]
+    fn get_metadata() {
+        let playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
+        let path = [
+            PathBuf::from("test_assets/test.flac"),
+            PathBuf::from("test_assets/test.opus"),
+        ];
+
+        path.iter()
+            .for_each(|p| assert!(super::get_metadata(p, &playback.current.get_temp()).is_ok()));
     }
 }
