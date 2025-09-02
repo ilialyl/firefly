@@ -52,19 +52,17 @@ pub fn update(
                         model.playback.current.path.clone(),
                         model.playback.current.duration,
                         model.playback.current.pos,
-                    ) {
-                        if model.playback.sink.empty()
-                            && dur.saturating_sub(pos) < Duration::from_secs(3)
-                        {
-                            if model.playback.looping {
-                                if let Err(e) = player::load_track(&path, &mut model.playback) {
-                                    err = Some(e);
-                                }
-                            } else {
-                                model.playback.current.pos = None;
-                                model.playback.current.duration = None;
-                                model.playback.status = PlaybackStatus::Idle;
+                    ) && model.playback.sink.empty()
+                        && dur.saturating_sub(pos) < Duration::from_secs(3)
+                    {
+                        if model.playback.looping {
+                            if let Err(e) = player::load_track(&path, &mut model.playback) {
+                                err = Some(e);
                             }
+                        } else {
+                            model.playback.current.pos = None;
+                            model.playback.current.duration = None;
+                            model.playback.status = PlaybackStatus::Idle;
                         }
                     }
                 }
@@ -74,10 +72,7 @@ pub fn update(
             }
 
             if model.playback.status == PlaybackStatus::Idle && !model.playback.queue.is_empty() {
-                log::info!(
-                    "[TICK] Trying to load {:?}.",
-                    model.playback.queue.front().clone().take()
-                );
+                log::info!("[TICK] Trying to load {:?}.", model.playback.queue.front());
                 if let Err(e) = player::try_next_track(&mut model.playback, msg_tx, info_tx) {
                     log::error!("{}", e);
                 };
@@ -144,23 +139,23 @@ pub fn update(
                 return (None, Ok(()));
             }
 
-            if let Some(track) = model.playback.current.path.clone() {
-                if model.playback.current.path.is_some() {
-                    info_tx.send("Rewinding...".to_string()).unwrap();
-                    if let Err(e) = player::rewind(Duration::from_secs(5), &model.playback) {
-                        let cloned_info_tx = info_tx.clone();
+            if let Some(track) = model.playback.current.path.clone()
+                && model.playback.current.path.is_some()
+            {
+                info_tx.send("Rewinding...".to_string()).unwrap();
+                if let Err(e) = player::rewind(Duration::from_secs(5), &model.playback) {
+                    let cloned_info_tx = info_tx.clone();
 
-                        log::error!("{}", e);
-                        thread::spawn(move || {
-                            cloned_info_tx.send(e.to_string()).unwrap();
-                            thread::sleep(Duration::from_secs(2));
-                            cloned_info_tx.send("".to_string()).unwrap();
-                        });
-                    };
-                    model.playback.current.duration =
-                        player::read_track_duration(&track, &mut model.playback).ok();
-                    info_tx.send("".to_string()).unwrap();
-                }
+                    log::error!("{}", e);
+                    thread::spawn(move || {
+                        cloned_info_tx.send(e.to_string()).unwrap();
+                        thread::sleep(Duration::from_secs(2));
+                        cloned_info_tx.send("".to_string()).unwrap();
+                    });
+                };
+                model.playback.current.duration =
+                    player::read_track_duration(&track, &mut model.playback).ok();
+                info_tx.send("".to_string()).unwrap();
             }
 
             (None, Ok(()))
@@ -170,21 +165,19 @@ pub fn update(
                 return (None, Ok(()));
             }
 
-            if let Some(track_dur) = &model.playback.current.duration {
-                if model.playback.current.path.is_some() {
-                    if let Err(e) =
-                        player::seek(&mut model.playback.sink, track_dur, Duration::from_secs(5))
-                    {
-                        let cloned_info_tx = info_tx.clone();
+            if let Some(track_dur) = &model.playback.current.duration
+                && model.playback.current.path.is_some()
+                && let Err(e) =
+                    player::seek(&mut model.playback.sink, track_dur, Duration::from_secs(5))
+            {
+                let cloned_info_tx = info_tx.clone();
 
-                        log::error!("{}", e);
-                        thread::spawn(move || {
-                            cloned_info_tx.send(e.to_string()).unwrap();
-                            thread::sleep(Duration::from_secs(2));
-                            cloned_info_tx.send("".to_string()).unwrap();
-                        });
-                    }
-                }
+                log::error!("{}", e);
+                thread::spawn(move || {
+                    cloned_info_tx.send(e.to_string()).unwrap();
+                    thread::sleep(Duration::from_secs(2));
+                    cloned_info_tx.send("".to_string()).unwrap();
+                });
             }
 
             (None, Ok(()))
@@ -248,11 +241,11 @@ pub fn update(
         }
         Message::ConversionEnded => {
             model.session.state = RunningState::Running;
-            if let Some(path) = model.playback.current.path.clone() {
-                if let Err(e) = play_next_track(&path, &mut model.playback) {
-                    log::error!("{}", e);
-                };
-            }
+            if let Some(path) = model.playback.current.path.clone()
+                && let Err(e) = play_next_track(&path, &mut model.playback)
+            {
+                log::error!("{}", e);
+            };
 
             (None, Ok(()))
         }

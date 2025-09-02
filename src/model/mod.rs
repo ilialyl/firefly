@@ -12,7 +12,7 @@ pub struct Model {
 
 impl Default for Model {
     fn default() -> Self {
-        let session = Session::new();
+        let session = Session::default();
         Self {
             playback: PlaybackState::new(session.get_temp()),
             session,

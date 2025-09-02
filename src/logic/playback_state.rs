@@ -20,11 +20,11 @@ impl PlaybackState {
         let (stream, sink) = player::get_sink().expect("Error creating sink");
         PlaybackState {
             current: Track::new(temp),
-            queue: TrackQueue::new(),
+            queue: TrackQueue::default(),
             looping: false,
             status: PlaybackStatus::default(),
             _stream: stream,
-            sink: sink,
+            sink,
         }
     }
 }
@@ -46,7 +46,7 @@ impl Track {
             duration: None,
             tagged_file: None,
             has_metadata: false,
-            temp: temp,
+            temp,
         }
     }
 
@@ -69,15 +69,17 @@ pub struct TrackQueue {
     arrange_mode: bool,
 }
 
-impl TrackQueue {
-    pub fn new() -> TrackQueue {
-        TrackQueue {
+impl Default for TrackQueue {
+    fn default() -> Self {
+        Self {
             queue: VecDeque::new() as VecDeque<PathBuf>,
             selected_index: 0,
             arrange_mode: false,
         }
     }
+}
 
+impl TrackQueue {
     pub fn get(&self) -> &VecDeque<PathBuf> {
         &self.queue
     }

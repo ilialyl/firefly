@@ -29,38 +29,38 @@ pub fn draw(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
         get_volume_str(&model.playback),
     ];
 
-    if model.playback.current.has_metadata {
-        if let Some(tag) = model.playback.current.tagged_file.as_ref() {
-            let meta_text = get_metadata_text_vec(tag);
+    if model.playback.current.has_metadata
+        && let Some(tag) = model.playback.current.tagged_file.as_ref()
+    {
+        let meta_text = get_metadata_text_vec(tag);
 
-            let metadata_margin = 2;
+        let metadata_margin = 2;
 
-            let metadata_border_area = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(vec![Constraint::Length(
-                    (metadata_margin * 2) + meta_text.len() as u16,
-                )])
-                .margin(1)
-                .split(chunk[1]);
+        let metadata_border_area = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Length(
+                (metadata_margin * 2) + meta_text.len() as u16,
+            )])
+            .margin(1)
+            .split(chunk[1]);
 
-            Block::bordered()
-                .fg(Color::White)
-                .title("Metadata")
-                .title_alignment(Alignment::Right)
-                .render(metadata_border_area[0], frame.buffer_mut());
+        Block::bordered()
+            .fg(Color::White)
+            .title("Metadata")
+            .title_alignment(Alignment::Right)
+            .render(metadata_border_area[0], frame.buffer_mut());
 
-            let metadata_chunk = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(vec![Constraint::Percentage(100)])
-                .margin(metadata_margin)
-                .split(metadata_border_area[0]);
+        let metadata_chunk = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(100)])
+            .margin(metadata_margin)
+            .split(metadata_border_area[0]);
 
-            let centered_area = center_vertical(metadata_chunk[0], meta_text.len() as u16);
+        let centered_area = center_vertical(metadata_chunk[0], meta_text.len() as u16);
 
-            let meta_para = Paragraph::new(meta_text.join("\n"));
+        let meta_para = Paragraph::new(meta_text.join("\n"));
 
-            frame.render_widget(meta_para, centered_area);
-        }
+        frame.render_widget(meta_para, centered_area);
     }
 
     let centered_area = center_vertical(chunk[0], player_text.len() as u16);

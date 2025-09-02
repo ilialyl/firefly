@@ -15,14 +15,17 @@ pub struct Session {
     pub state: RunningState,
 }
 
-impl Session {
-    const TEMP_NAME: &str = "firefly_temp";
-    pub fn new() -> Session {
-        Session {
+impl Default for Session {
+    fn default() -> Self {
+        Self {
             code: Self::randomize_code(),
             state: RunningState::default(),
         }
     }
+}
+
+impl Session {
+    const TEMP_NAME: &str = "firefly_temp";
 
     fn randomize_code() -> String {
         let rng = rand::rng();
