@@ -1,3 +1,4 @@
+pub mod cmd;
 pub mod update;
 
 use std::sync::{Arc, Mutex};
