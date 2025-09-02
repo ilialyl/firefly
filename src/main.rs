@@ -4,7 +4,7 @@ use std::{
     time::SystemTime,
 };
 
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::Result;
 use log::info;
 
 use crate::{
@@ -35,28 +35,28 @@ fn main() -> Result<()> {
     info!("\n\n\nStarting session {}.", model.session.get_code());
 
     while model.session.state != RunningState::Done {
-        let mut result;
+        // let mut result;
         let mut current_msg;
 
-        (_, result) = update(&mut model, Message::Tick, &msg_tx, &info_tx);
+        update(&mut model, Message::Tick, &msg_tx, &info_tx);
 
-        attach_errors(&result, &model.session)?;
+        // attach_errors(&result, &model.session)?;
 
         terminal.draw(|f| view(&model, f))?;
 
         current_msg = terminal::handle_events()?;
 
         while current_msg.is_some() {
-            (current_msg, result) = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
-            attach_errors(&result, &model.session)?;
+            current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+            // attach_errors(&result, &model.session)?;
         }
 
         if let Ok(msg) = msg_rx.try_recv() {
-            (current_msg, result) = update(&mut model, msg, &msg_tx, &info_tx);
+            current_msg = update(&mut model, msg, &msg_tx, &info_tx);
             while current_msg.is_some() {
-                (current_msg, result) = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+                current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
             }
-            attach_errors(&result, &model.session)?;
+            // attach_errors(&result, &model.session)?;
         }
 
         if let Ok(info) = info_rx.try_recv() {
@@ -78,15 +78,15 @@ fn clean_up(session: &Session) -> Result<()> {
     view::terminal::restore_terminal()
 }
 
-fn attach_errors(result: &Result<()>, session: &Session) -> Result<()> {
-    match result {
-        Ok(_) => Ok(()),
-        Err(e) => match clean_up(session) {
-            Ok(_) => Err(eyre!(e.to_string())),
-            Err(clean_err) => Err(eyre!("{}\nCleanup also failed: {}", e, clean_err)),
-        },
-    }
-}
+// fn attach_errors(result: &Result<()>, session: &Session) -> Result<()> {
+//     match result {
+//         Ok(_) => Ok(()),
+//         Err(e) => match clean_up(session) {
+//             Ok(_) => Err(eyre!(e.to_string())),
+//             Err(clean_err) => Err(eyre!("{}\nCleanup also failed: {}", e, clean_err)),
+//         },
+//     }
+// }
 
 fn setup_logger() -> Result<()> {
     fern::Dispatch::new()

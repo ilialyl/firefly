@@ -17,11 +17,13 @@ use crate::{
 use rust_ffmpeg::FFmpegProcess;
 use tokio::runtime::Runtime;
 
-use color_eyre::eyre::Result;
-
-pub fn tick(model: &mut Model, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<()> {
+pub fn tick(
+    model: &mut Model,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<String>,
+) -> Option<Message> {
     if model.session.state == RunningState::Busy {
-        return Ok(());
+        return None;
     }
     let mut err: Option<color_eyre::eyre::ErrReport> = None;
     {
@@ -76,14 +78,14 @@ pub fn tick(model: &mut Model, msg_tx: &Sender<Message>, info_tx: &Sender<String
         };
     }
 
-    Ok(())
+    None
 }
 
 pub fn load_now(
     model: &mut Model,
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
-) -> Result<()> {
+) -> Option<Message> {
     if let Some(path) = player::choose_file() {
         if let Some(handle) = model.ffmpeg_handle.take() {
             let runtime = Runtime::new().unwrap();
@@ -94,12 +96,12 @@ pub fn load_now(
         }
     }
 
-    Ok(())
+    None
 }
 
-pub fn toggle_play(model: &mut Model) -> Result<()> {
+pub fn toggle_play(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::Busy {
-        return Ok(());
+        return None;
     }
 
     if model.playback.status == PlaybackStatus::Playing {
@@ -108,44 +110,44 @@ pub fn toggle_play(model: &mut Model) -> Result<()> {
         model.playback.sink.play();
     }
 
-    Ok(())
+    None
 }
 
-pub fn queue_dir(model: &mut Model) -> Result<()> {
+pub fn queue_dir(model: &mut Model) -> Option<Message> {
     if let Some(dir) = player::choose_dir() {
         model.playback.queue.enqueue_dir(dir);
     }
 
-    Ok(())
+    None
 }
 
-pub fn queue_file(model: &mut Model) -> Result<()> {
+pub fn queue_file(model: &mut Model) -> Option<Message> {
     if let Some(path_vec) = player::choose_multiple_files() {
         model.playback.queue.enqueue_tracks(path_vec);
     }
 
-    Ok(())
+    None
 }
 
-pub fn queue_up(model: &mut Model) -> Result<()> {
+pub fn queue_up(model: &mut Model) -> Option<Message> {
     if let Err(e) = model.playback.queue.move_selected_up() {
         log::info!("{}", e);
     };
 
-    Ok(())
+    None
 }
 
-pub fn queue_down(model: &mut Model) -> Result<()> {
+pub fn queue_down(model: &mut Model) -> Option<Message> {
     if let Err(e) = model.playback.queue.move_selected_down() {
         log::info!("{}", e);
     };
 
-    Ok(())
+    None
 }
 
-pub fn rewind(model: &mut Model, info_tx: &Sender<String>) -> Result<()> {
+pub fn rewind(model: &mut Model, info_tx: &Sender<String>) -> Option<Message> {
     if model.session.state == RunningState::Busy {
-        return Ok(());
+        return None;
     }
 
     if let Some(track) = model.playback.current.path.clone()
@@ -167,12 +169,12 @@ pub fn rewind(model: &mut Model, info_tx: &Sender<String>) -> Result<()> {
         info_tx.send("".to_string()).unwrap();
     }
 
-    Ok(())
+    None
 }
 
-pub fn seek(model: &mut Model, info_tx: &Sender<String>) -> Result<()> {
+pub fn seek(model: &mut Model, info_tx: &Sender<String>) -> Option<Message> {
     if model.session.state == RunningState::Busy {
-        return Ok(());
+        return None;
     }
 
     if let Some(track_dur) = &model.playback.current.duration
@@ -189,14 +191,18 @@ pub fn seek(model: &mut Model, info_tx: &Sender<String>) -> Result<()> {
         });
     }
 
-    Ok(())
+    None
 }
 
-pub fn skip(model: &mut Model, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<()> {
+pub fn skip(
+    model: &mut Model,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<String>,
+) -> Option<Message> {
     model.session.state = RunningState::Running;
 
     if model.playback.queue.is_empty() {
-        return Ok(());
+        return None;
     }
     log::info!("Skipping...");
 
@@ -209,54 +215,54 @@ pub fn skip(model: &mut Model, msg_tx: &Sender<Message>, info_tx: &Sender<String
         log::error!("{}", e);
     };
 
-    Ok(())
+    None
 }
 
-pub fn toggle_arrange(model: &mut Model) -> Result<()> {
+pub fn toggle_arrange(model: &mut Model) -> Option<Message> {
     model.playback.queue.toggle_arrange();
 
-    Ok(())
+    None
 }
 
-pub fn toggle_loop(model: &mut Model) -> Result<()> {
+pub fn toggle_loop(model: &mut Model) -> Option<Message> {
     model.playback.looping = !model.playback.looping;
 
-    Ok(())
+    None
 }
 
-pub fn volume_down(model: &mut Model) -> Result<()> {
+pub fn volume_down(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::Busy {
-        return Ok(());
+        return None;
     }
 
     player::decrease_volume(&mut model.playback.sink, 0.05);
 
-    Ok(())
+    None
 }
 
-pub fn volume_up(model: &mut Model) -> Result<()> {
+pub fn volume_up(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::Busy {
-        return Ok(());
+        return None;
     }
 
     player::increase_volume(&mut model.playback.sink, 0.05);
 
-    Ok(())
+    None
 }
 
-pub fn busy(model: &mut Model) -> Result<()> {
+pub fn busy(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Busy;
 
-    Ok(())
+    None
 }
 
-pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Result<()> {
+pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
     model.ffmpeg_handle = Some(handle);
 
-    Ok(())
+    Some(Message::Busy)
 }
 
-pub fn conversion_ended(model: &mut Model) -> Result<()> {
+pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
     if let Some(path) = model.playback.current.path.clone()
         && let Err(e) = player::play_next_track(&path, &mut model.playback)
@@ -264,11 +270,11 @@ pub fn conversion_ended(model: &mut Model) -> Result<()> {
         log::error!("{}", e);
     };
 
-    Ok(())
+    None
 }
 
-pub fn quit(model: &mut Model) -> Result<()> {
+pub fn quit(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Done;
 
-    Ok(())
+    None
 }
