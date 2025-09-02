@@ -9,7 +9,7 @@ fn keys(key_event: KeyEvent) -> Option<Message> {
     match key_event.code {
         KeyCode::Esc => Some(Message::Quit),
         KeyCode::Char('n') => Some(Message::LoadNow),
-        KeyCode::Char(' ') => Some(Message::PlayPause),
+        KeyCode::Char(' ') => Some(Message::TogglePlay),
         KeyCode::Char('s') => Some(Message::Skip),
         KeyCode::Char('=') => Some(Message::VolumeUp),
         KeyCode::Char('-') => Some(Message::VolumeDown),

@@ -8,7 +8,7 @@ use rust_ffmpeg::FFmpegProcess;
 pub enum Message {
     Tick,
     LoadNow,
-    PlayPause,
+    TogglePlay,
     Skip,
     VolumeUp,
     VolumeDown,
