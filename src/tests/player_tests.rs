@@ -1,8 +1,16 @@
-use std::sync::mpsc::{self, Receiver};
+use std::{
+    path::PathBuf,
+    sync::mpsc::{self, Receiver, Sender},
+    time::Duration,
+};
 
 use float_cmp::ApproxEq;
+use tokio::runtime::Runtime;
 
-use super::*;
+use crate::{
+    logic::{playback_state::PlaybackState, player},
+    message::Message,
+};
 
 #[test]
 fn is_rodio_supported() {
@@ -12,7 +20,7 @@ fn is_rodio_supported() {
     ];
     let result: Vec<bool> = path
         .iter()
-        .map(|p| super::is_rodio_supported(&p).unwrap())
+        .map(|p| player::is_rodio_supported(&p).unwrap())
         .collect();
     assert_eq!(result[0], true);
     assert_eq!(result[1], false);
@@ -20,13 +28,13 @@ fn is_rodio_supported() {
 
 #[test]
 fn get_sink() {
-    let result = super::get_sink();
+    let result = player::get_sink();
     assert!(result.is_ok());
 }
 
 #[test]
 fn get_source() {
-    let result = super::get_source(PathBuf::from("test_assets/test.flac"));
+    let result = player::get_source(PathBuf::from("test_assets/test.flac"));
     assert!(result.is_ok())
 }
 
@@ -39,14 +47,14 @@ fn load_track() {
     let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
 
     path.iter()
-        .for_each(|p| assert!(super::load_track(p, &mut playback).is_ok()));
+        .for_each(|p| assert!(player::load_track(p, &mut playback).is_ok()));
 }
 
 #[test]
 fn increase_volume() {
     let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
 
-    super::increase_volume(&mut playback.sink, 0.05);
+    player::increase_volume(&mut playback.sink, 0.05);
 
     assert!(playback.sink.volume().approx_eq(1.05, (0.0, 2)));
 }
@@ -55,7 +63,7 @@ fn increase_volume() {
 fn decrease_volume() {
     let mut playback = PlaybackState::new(PathBuf::from("test_assets/test_temp.flac"));
 
-    super::decrease_volume(&mut playback.sink, 0.05);
+    player::decrease_volume(&mut playback.sink, 0.05);
 
     assert!(playback.sink.volume().approx_eq(0.95, (0.0, 2)));
 }
@@ -68,13 +76,13 @@ fn seek() {
         PathBuf::from("test_assets/test.opus"),
     ];
     for track in tracks {
-        let duration = super::read_track_duration(&track, &mut playback)
+        let duration = player::read_track_duration(&track, &mut playback)
             .ok()
             .unwrap();
-        super::load_track(&track, &mut playback).unwrap();
+        player::load_track(&track, &mut playback).unwrap();
         playback.sink.pause();
 
-        super::seek(&mut playback.sink, &duration, Duration::from_secs(5)).ok();
+        player::seek(&mut playback.sink, &duration, Duration::from_secs(5)).ok();
 
         assert_eq!(playback.sink.get_pos(), Duration::from_secs(5));
     }
@@ -88,14 +96,14 @@ fn rewind() {
         PathBuf::from("test_assets/test.opus"),
     ];
     for track in tracks {
-        let duration = super::read_track_duration(&track, &mut playback).unwrap();
-        super::load_track(&track, &mut playback).unwrap();
+        let duration = player::read_track_duration(&track, &mut playback).unwrap();
+        player::load_track(&track, &mut playback).unwrap();
         playback.current.path = Some(track.clone());
 
         playback.sink.pause();
 
-        super::seek(&mut playback.sink, &duration, Duration::from_secs(10)).ok();
-        super::rewind(Duration::from_secs(5), &playback).ok();
+        player::seek(&mut playback.sink, &duration, Duration::from_secs(10)).ok();
+        player::rewind(Duration::from_secs(5), &playback).ok();
 
         assert_eq!(playback.sink.get_pos(), Duration::from_secs(5));
     }
@@ -109,7 +117,7 @@ fn read_track_duration() {
         PathBuf::from("test_assets/test.opus"),
     ];
     path.iter()
-        .for_each(|p| assert!(super::read_track_duration(&p, &mut playback).is_ok()));
+        .for_each(|p| assert!(player::read_track_duration(&p, &mut playback).is_ok()));
 }
 
 #[test]
@@ -125,7 +133,7 @@ fn convert_format() {
 
     for p in path {
         runtime.block_on(async {
-            super::convert_format(&p, &converted_path)
+            player::convert_format(&p, &converted_path)
                 .await
                 .wait()
                 .await
@@ -150,7 +158,7 @@ fn load_now() {
     let (info_tx, _info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     path.into_iter()
-        .for_each(|p| assert!(super::load_now(p, &mut playback, &msg_tx, &info_tx).is_ok()));
+        .for_each(|p| assert!(player::load_now(p, &mut playback, &msg_tx, &info_tx).is_ok()));
 }
 
 #[test]
@@ -165,7 +173,7 @@ fn convert_format_in_bg() {
     let (info_tx, _info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     for p in path {
-        super::convert_format_in_bg(&p, &converted_path, &msg_tx, &info_tx);
+        player::convert_format_in_bg(&p, &converted_path, &msg_tx, &info_tx);
 
         let mut finished = false;
         while !finished {
@@ -190,15 +198,15 @@ fn try_next_track() {
     let (msg_tx, _msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
     let (info_tx, _info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
-    assert!(super::try_next_track(&mut playback, &msg_tx, &info_tx).is_err());
+    assert!(player::try_next_track(&mut playback, &msg_tx, &info_tx).is_err());
 
     playback.queue.enqueue_tracks(vec![
         PathBuf::from("test_assets/test.flac"),
         PathBuf::from("test_assets/test.opus"),
     ]);
 
-    assert!(super::try_next_track(&mut playback, &msg_tx, &info_tx).is_ok());
-    assert!(super::try_next_track(&mut playback, &msg_tx, &info_tx).is_ok());
+    assert!(player::try_next_track(&mut playback, &msg_tx, &info_tx).is_ok());
+    assert!(player::try_next_track(&mut playback, &msg_tx, &info_tx).is_ok());
 }
 
 #[test]
@@ -210,7 +218,7 @@ fn play_next_track() {
     ];
 
     path.iter()
-        .for_each(|p| assert!(super::play_next_track(p, &mut playback).is_ok()));
+        .for_each(|p| assert!(player::play_next_track(p, &mut playback).is_ok()));
 }
 
 #[test]
@@ -222,5 +230,5 @@ fn get_metadata() {
     ];
 
     path.iter()
-        .for_each(|p| assert!(super::get_metadata(p, &playback.current.get_temp()).is_ok()));
+        .for_each(|p| assert!(player::get_metadata(p, &playback.current.get_temp()).is_ok()));
 }

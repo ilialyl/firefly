@@ -19,6 +19,9 @@ pub mod message;
 pub mod model;
 pub mod view;
 
+#[cfg(test)]
+mod tests;
+
 fn main() -> Result<()> {
     view::terminal::install_panic_hook();
     color_eyre::install()?;

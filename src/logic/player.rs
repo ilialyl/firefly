@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod tests;
-
 use color_eyre::eyre::{Result, eyre};
 use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
