@@ -262,6 +262,12 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     None
 }
 
+pub fn update_info(info: String, model: &mut Model) -> Option<Message> {
+    model.info_display = info;
+
+    None
+}
+
 pub fn quit(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Done;
 
