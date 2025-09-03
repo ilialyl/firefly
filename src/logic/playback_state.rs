@@ -53,6 +53,11 @@ impl Track {
     pub fn get_temp(&self) -> PathBuf {
         self.temp.clone()
     }
+
+    pub fn reset(&mut self) {
+        self.pos = None;
+        self.duration = None;
+    }
 }
 
 #[derive(PartialEq, Debug, Default)]

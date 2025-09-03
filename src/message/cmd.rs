@@ -52,8 +52,7 @@ pub fn tick(
                 log::error!("{}", e);
             }
         } else {
-            model.playback.current.pos = None;
-            model.playback.current.duration = None;
+            model.playback.current.reset();
             model.playback.status = PlaybackStatus::Idle;
         }
     }
