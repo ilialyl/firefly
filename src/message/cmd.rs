@@ -187,11 +187,12 @@ pub fn skip(
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Option<Message> {
-    model.session.state = RunningState::Running;
-
     if model.playback.queue.is_empty() {
         return None;
     }
+
+    model.session.state = RunningState::Running;
+
     log::info!("Skipping...");
 
     if let Some(handle) = model.ffmpeg_handle.take() {
