@@ -25,52 +25,41 @@ pub fn tick(
     if model.session.state == RunningState::Busy {
         return None;
     }
-    let mut err: Option<color_eyre::eyre::ErrReport> = None;
-    {
-        // If sink paused, set status to paused
-        // If track_path exists in App and sink isn't empty, set status to playing
-        if model.playback.sink.is_paused() {
-            model.playback.status = PlaybackStatus::Paused;
-        } else if model.playback.current.path.is_some() && !model.playback.sink.empty() {
-            model.playback.status = PlaybackStatus::Playing;
-        }
 
-        if model.playback.sink.empty() {
+    // Update playback status
+    if model.playback.sink.is_paused() {
+        model.playback.status = PlaybackStatus::Paused;
+    } else if model.playback.current.path.is_some() && !model.playback.sink.empty() {
+        model.playback.status = PlaybackStatus::Playing;
+    } else if model.playback.sink.empty() {
+        model.playback.status = PlaybackStatus::Idle;
+    }
+
+    // Update playback position
+    model.playback.current.pos = Some(model.playback.sink.get_pos());
+
+    // Reload track when track ends if looped
+    // Set position, duration, and status to default if not looped
+    if let (Some(path), Some(dur), Some(pos)) = (
+        model.playback.current.path.clone(),
+        model.playback.current.duration,
+        model.playback.current.pos,
+    ) && model.playback.sink.empty()
+        && dur.saturating_sub(pos) < Duration::from_secs(3)
+    {
+        if model.playback.looping {
+            if let Err(e) = player::load_track(&path, &mut model.playback) {
+                log::error!("{}", e);
+            }
+        } else {
+            model.playback.current.pos = None;
+            model.playback.current.duration = None;
             model.playback.status = PlaybackStatus::Idle;
         }
-
-        // Get track position
-        model.playback.current.pos = Some(model.playback.sink.get_pos());
-
-        // If path, duration, and position are not None,
-        // If sink is empty or the track is within 3 seconds away from ending
-        // If looping is on, load the same track
-        // Else, load next track in queue.
-
-        {
-            if let (Some(path), Some(dur), Some(pos)) = (
-                model.playback.current.path.clone(),
-                model.playback.current.duration,
-                model.playback.current.pos,
-            ) && model.playback.sink.empty()
-                && dur.saturating_sub(pos) < Duration::from_secs(3)
-            {
-                if model.playback.looping {
-                    if let Err(e) = player::load_track(&path, &mut model.playback) {
-                        err = Some(e);
-                    }
-                } else {
-                    model.playback.current.pos = None;
-                    model.playback.current.duration = None;
-                    model.playback.status = PlaybackStatus::Idle;
-                }
-            }
-        }
-    }
-    if let Some(e) = err {
-        log::error!("{}", e);
     }
 
+    // If playback is idle and queue is not empty,
+    // Try playing the next track.
     if model.playback.status == PlaybackStatus::Idle && !model.playback.queue.is_empty() {
         log::info!("[TICK] Trying to load {:?}.", model.playback.queue.front());
         if let Err(e) = player::try_next_track(&mut model.playback, msg_tx, info_tx) {
