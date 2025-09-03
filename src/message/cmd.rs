@@ -109,7 +109,7 @@ pub fn queue_dir(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn queue_file(model: &mut Model) -> Option<Message> {
+pub fn queue_files(model: &mut Model) -> Option<Message> {
     if let Some(path_vec) = player::choose_multiple_files() {
         model.playback.queue.enqueue_tracks(path_vec);
     }
@@ -117,7 +117,7 @@ pub fn queue_file(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn queue_up(model: &mut Model) -> Option<Message> {
+pub fn move_queue_up(model: &mut Model) -> Option<Message> {
     if let Err(e) = model.playback.queue.move_selected_up() {
         log::info!("{}", e);
     };
@@ -125,7 +125,7 @@ pub fn queue_up(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn queue_down(model: &mut Model) -> Option<Message> {
+pub fn move_queue_down(model: &mut Model) -> Option<Message> {
     if let Err(e) = model.playback.queue.move_selected_down() {
         log::info!("{}", e);
     };
@@ -219,7 +219,7 @@ pub fn toggle_loop(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn volume_down(model: &mut Model) -> Option<Message> {
+pub fn decrease_volume(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::Busy {
         return None;
     }
@@ -229,7 +229,7 @@ pub fn volume_down(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn volume_up(model: &mut Model) -> Option<Message> {
+pub fn increase_volume(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::Busy {
         return None;
     }
