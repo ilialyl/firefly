@@ -37,16 +37,21 @@ fn main() -> Result<()> {
     while model.session.state != RunningState::Done {
         let mut current_msg;
 
+        // Tick
         update(&mut model, Message::Tick, &msg_tx, &info_tx);
 
+        // Draw TUI view
         terminal.draw(|f| view(&model, f))?;
 
+        // Handle terminal events
         current_msg = terminal::handle_events()?;
 
+        // Consume message
         while current_msg.is_some() {
             current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
         }
 
+        // Receive message from other threads and consume it.
         if let Ok(msg) = msg_rx.try_recv() {
             current_msg = update(&mut model, msg, &msg_tx, &info_tx);
             while current_msg.is_some() {
