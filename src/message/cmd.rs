@@ -31,7 +31,9 @@ pub fn tick(
         model.playback.status = PlaybackStatus::Paused;
     } else if model.playback.current.path.is_some() && !model.playback.sink.empty() {
         model.playback.status = PlaybackStatus::Playing;
-    } else if model.playback.sink.empty() {
+    }
+
+    if model.playback.sink.empty() {
         model.playback.status = PlaybackStatus::Idle;
     }
 
@@ -52,7 +54,7 @@ pub fn tick(
                 log::error!("{}", e);
             }
         } else {
-            model.playback.current.reset();
+            model.playback.current.reset_dur();
             model.playback.status = PlaybackStatus::Idle;
         }
     }
@@ -60,9 +62,13 @@ pub fn tick(
     // If playback is idle and queue is not empty,
     // Try playing the next track.
     if model.playback.status == PlaybackStatus::Idle && !model.playback.queue.is_empty() {
+        model.playback.current.clear();
         log::info!("[TICK] Trying to load {:?}.", model.playback.queue.front());
+
         if let Err(e) = player::try_next_track(&mut model.playback, msg_tx, info_tx) {
             log::error!("{}", e);
+            info_tx.send(e.to_string()).unwrap();
+            model.session.state = RunningState::Busy;
         };
     }
 
@@ -191,7 +197,10 @@ pub fn skip(
         return None;
     }
 
-    model.session.state = RunningState::Running;
+    model.playback.status = PlaybackStatus::Idle;
+    model.session.state = RunningState::Busy;
+    model.playback.sink.clear();
+    model.playback.current.clear();
 
     log::info!("Skipping...");
 
@@ -200,8 +209,14 @@ pub fn skip(
         runtime.block_on(handle.lock().unwrap().kill()).unwrap();
     }
 
-    if let Err(e) = player::try_next_track(&mut model.playback, msg_tx, info_tx) {
-        log::error!("{}", e);
+    match player::try_next_track(&mut model.playback, msg_tx, info_tx) {
+        Ok(()) => {
+            model.session.state = RunningState::Running;
+        }
+        Err(e) => {
+            log::error!("{}", e);
+            info_tx.send(e.to_string()).unwrap();
+        }
     };
 
     None

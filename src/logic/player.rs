@@ -12,6 +12,7 @@ use std::{
     fs::File,
     ops::{Add, Sub},
     path::{Path, PathBuf},
+    process::Command,
     sync::{Arc, Mutex, mpsc::Sender},
     thread,
     time::Duration,
@@ -244,6 +245,10 @@ pub fn try_next_track(
 
     match is_rodio_supported(&next_track) {
         Ok(false) => {
+            if !check_ffmpeg() {
+                return Err(eyre!("Please install FFmpeg to be able to play this file."));
+            }
+
             convert_format_in_bg(&next_track, &playback.current.get_temp(), msg_tx, info_tx);
 
             return Ok(());
@@ -290,5 +295,14 @@ pub fn get_metadata(track: &PathBuf, temp_path: &Path) -> Result<TaggedFile> {
     match Probe::open(track)?.read() {
         Ok(f) => Ok(f),
         Err(_) => Ok(Probe::open(temp_path)?.read()?),
+    }
+}
+
+pub fn check_ffmpeg() -> bool {
+    let output = Command::new("ffmpeg").arg("-version").output();
+
+    match output {
+        Ok(output) => output.status.success(),
+        Err(_) => false,
     }
 }
