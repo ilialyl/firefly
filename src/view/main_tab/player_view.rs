@@ -20,9 +20,19 @@ use crate::{
 pub fn draw(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     let player_text = [
         get_track_name_str(&model.playback),
-        "".into(),
-        get_track_pos_str(&model.playback),
-        "".into(),
+        String::new(),
+        format!(
+            "{} / {}",
+            duration_as_str(&model.playback.current.pos.unwrap_or(Duration::from_secs(0))),
+            duration_as_str(
+                &model
+                    .playback
+                    .current
+                    .duration
+                    .unwrap_or(Duration::from_secs(0)),
+            )
+        ),
+        String::new(),
         get_status_str(&model.playback),
         get_loop_status_str(&model.playback),
         model.info_display.clone(),
@@ -170,10 +180,6 @@ fn get_track_name_str(playback_st: &PlaybackState) -> String {
     }
 }
 
-fn get_track_pos_str(playback_st: &PlaybackState) -> String {
-    track_pos_as_str(playback_st)
-}
-
 fn get_status_str(playback_st: &PlaybackState) -> String {
     match playback_st.status {
         PlaybackStatus::Playing => "Playing".into(),
@@ -196,10 +202,14 @@ fn get_volume_str(playback_st: &PlaybackState) -> String {
     )
 }
 
-fn track_pos_as_str(playback_st: &PlaybackState) -> String {
-    let track_pos = playback_st.current.pos.unwrap_or(Duration::from_secs(0));
-    let sec = track_pos.as_secs() % 60;
-    let min = track_pos.as_secs() / 60;
+fn duration_as_str(dur: &Duration) -> String {
+    let sec = dur.as_secs() % 60;
+    let min = (dur.as_secs() / 60) % 60;
+    let hour = dur.as_secs() / 3600;
 
-    format!("{:02}:{:02}", min, sec)
+    if hour > 0 {
+        format!("{:02}:{:02}:{:02}", hour, min, sec)
+    } else {
+        format!("{:02}:{:02}", min, sec)
+    }
 }
