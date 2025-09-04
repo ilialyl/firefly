@@ -54,9 +54,17 @@ impl Track {
         self.temp.clone()
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset_dur(&mut self) {
         self.pos = None;
         self.duration = None;
+    }
+
+    pub fn clear(&mut self) {
+        self.tagged_file = None;
+        self.duration = None;
+        self.path = None;
+        self.has_metadata = false;
+        self.pos = None;
     }
 }
 
