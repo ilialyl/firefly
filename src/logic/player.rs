@@ -246,7 +246,9 @@ pub fn try_next_track(
     match is_rodio_supported(&next_track) {
         Ok(false) => {
             if !check_ffmpeg() {
-                return Err(eyre!("Please install FFmpeg to be able to play this file."));
+                return Err(eyre!(
+                    "Please install FFmpeg to be able to play this file. (https://ffmpeg.org/download.html)"
+                ));
             }
 
             convert_format_in_bg(&next_track, &playback.current.get_temp(), msg_tx, info_tx);
