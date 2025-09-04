@@ -30,6 +30,7 @@ It can still play other formats by converting formats not supported by Rodio to 
 
 ## Usage
 ### Windows
+#### Requires [FFmpeg](https://ffmpeg.org/)
 - [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) (Extract first)
 - Build from source
 
@@ -39,6 +40,7 @@ Build from source.
 - [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 - [wayland-devel](https://packages.fedoraproject.org/pkgs/wayland/wayland-devel/)
 - [alsa-lib-devel](https://packages.fedoraproject.org/pkgs/alsa-lib/alsa-lib-devel/)
+- [FFmpeg](https://ffmpeg.org/)
 #### Steps
 1. Clone this repository
 2. run `cargo run --release`
