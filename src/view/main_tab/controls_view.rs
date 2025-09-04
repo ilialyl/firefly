@@ -20,12 +20,14 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     controls.push(Span::from(" Load Now <N>"));
     controls.push(Span::from(" Queue <Q>"));
     controls.push(Span::from(" Queue Dir <ShiftQ>"));
-    let mut toggle_arrange = Span::from(" Toggle Q Arrange <A>");
+    let mut toggle_arrange = Span::from(" Queue Arrange <A>");
     if model.playback.queue.is_arrange() {
         toggle_arrange = toggle_arrange.bold().italic();
     }
     controls.push(toggle_arrange);
 
+    controls.push(Span::from(" Move Queue Up <↑>"));
+    controls.push(Span::from(" Move Queue Down <↓>"));
     controls.push(Span::from(" Skip <S>"));
 
     let mut rewind_seek = Span::from(" Rewind/Seek <←/→>");
