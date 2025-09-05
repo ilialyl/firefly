@@ -25,7 +25,7 @@ pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
         .split(inner_layout[1]);
 
     let (term_width, term_height) = crossterm::terminal::size().unwrap();
-    let term_too_small = term_width < 122 || term_height < 28;
+    let term_too_small = term_width < 133 || term_height < 30;
     let queue_panel_constant = if term_too_small {
         vec![Constraint::Percentage(70), Constraint::Percentage(30)]
     } else {
@@ -77,7 +77,7 @@ pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
             .split(left_panel_chunks[1]);
 
         frame.render_widget(
-            Paragraph::new("Your terminal size is too small to display UI properly.")
+            Paragraph::new("Your terminal size may be too small to display UI properly.")
                 .wrap(Wrap { trim: true }),
             warning_chunk[0],
         )
