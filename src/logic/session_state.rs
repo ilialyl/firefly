@@ -2,8 +2,6 @@ use std::path::PathBuf;
 
 use rand::{Rng, distr::Alphanumeric};
 
-use crate::clean_up;
-
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum RunningState {
     #[default]
@@ -46,11 +44,5 @@ impl Session {
 
     pub fn get_temp(&self) -> PathBuf {
         PathBuf::from(format!("{}_{}.flac", Self::TEMP_NAME, self.code))
-    }
-}
-
-impl Drop for Session {
-    fn drop(&mut self) {
-        clean_up(self).unwrap();
     }
 }
