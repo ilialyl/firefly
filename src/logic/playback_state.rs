@@ -1,13 +1,20 @@
 use std::{collections::VecDeque, fs, path::PathBuf, time::Duration};
 
 use color_eyre::eyre::{Result, eyre};
-use lofty::file::TaggedFile;
+use lofty::{
+    file::{AudioFile, TaggedFile, TaggedFileExt},
+    probe::Probe,
+    tag::Accessor,
+};
 use rodio::{OutputStream, Sink};
 
-use crate::logic::player::{self, AUDIO_FORMATS};
+use crate::{
+    TEMP_DIR,
+    logic::player::{self, AUDIO_FORMATS},
+};
 
 pub struct PlaybackState {
-    pub current: Track,
+    pub current: Option<Track>,
     pub queue: TrackQueue,
     // pub previous: VecDeque<PathBuf>,
     pub looping: bool,
@@ -21,7 +28,7 @@ impl PlaybackState {
     pub fn new(session_code: String) -> PlaybackState {
         let (stream, sink) = player::get_sink().expect("Error creating sink");
         PlaybackState {
-            current: Track::new(),
+            current: None,
             queue: TrackQueue::default(),
             looping: false,
             status: PlaybackStatus::default(),
@@ -34,38 +41,48 @@ impl PlaybackState {
     pub fn get_temp_code(&self) -> String {
         self.session_code.clone()
     }
+
+    pub fn new_track(&mut self, track: PathBuf) {
+        self.current = Some(Track::new(track, self.session_code.clone()));
+    }
 }
 
 pub struct Track {
-    pub path: Option<PathBuf>,
-    pub pos: Option<Duration>,
-    pub duration: Option<Duration>,
-    pub tagged_file: Option<TaggedFile>,
-    pub has_metadata: bool,
+    pub path: PathBuf,
+    pub temp: PathBuf,
+    pub pos: Duration,
+    pub duration: Duration,
+    pub tagged_file: TaggedFile,
+    pub has_title: bool,
+    pub session_code: String,
 }
 
 impl Track {
-    pub fn new() -> Track {
+    pub fn new(path: PathBuf, session_code: String) -> Track {
+        let tagged_file = Probe::open(path.clone()).unwrap().read().unwrap();
         Track {
-            path: None,
-            pos: None,
-            duration: None,
-            tagged_file: None,
-            has_metadata: false,
+            path: path.clone(),
+            temp: Self::get_temp_file(path.clone(), &session_code),
+            session_code,
+            pos: Duration::from_secs(0),
+            duration: Self::read_duration(&tagged_file),
+            has_title: tagged_file.primary_tag().unwrap().title().is_some(),
+            tagged_file,
         }
     }
 
-    pub fn reset_dur(&mut self) {
-        self.pos = None;
-        self.duration = None;
+    pub fn get_temp_file(path: PathBuf, session_code: &str) -> PathBuf {
+        let file_name = path
+            .file_stem()
+            .expect("Original path has no file name")
+            .to_str()
+            .expect("File name is not valid UTF-8");
+
+        PathBuf::from(format!("{}/{}_{}.flac", TEMP_DIR, session_code, file_name))
     }
 
-    pub fn clear(&mut self) {
-        self.tagged_file = None;
-        self.duration = None;
-        self.path = None;
-        self.has_metadata = false;
-        self.pos = None;
+    pub fn read_duration(tagged_file: &TaggedFile) -> Duration {
+        tagged_file.properties().duration()
     }
 }
 
