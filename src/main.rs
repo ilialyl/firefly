@@ -1,10 +1,11 @@
 use std::{
-    path::PathBuf,
+    fs,
     sync::mpsc::{self, Receiver, Sender},
     time::SystemTime,
 };
 
 use color_eyre::eyre::Result;
+use glob::glob;
 use log::info;
 
 use crate::{
@@ -72,9 +73,17 @@ fn main() -> Result<()> {
 }
 
 fn clean_up(session: &Session) -> Result<()> {
-    let track_temp: PathBuf = session.get_temp();
-    if track_temp.exists() {
-        std::fs::remove_file(track_temp)?;
+    let temp_pattern = glob(format!("firefly_temp/{}*", session.get_code()).as_str());
+    for path in temp_pattern.expect("Failed to read glob pattern") {
+        match path {
+            Ok(path) => {
+                if path.is_file() {
+                    fs::remove_file(&path)?;
+                    println!("Deleted {:?}", path);
+                }
+            }
+            Err(e) => println!("Error: {:?}", e),
+        }
     }
 
     info!("Cleaned up, restoring terminal.");

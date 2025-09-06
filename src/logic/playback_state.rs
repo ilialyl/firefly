@@ -9,23 +9,30 @@ use crate::logic::player::{self, AUDIO_FORMATS};
 pub struct PlaybackState {
     pub current: Track,
     pub queue: TrackQueue,
+    // pub previous: VecDeque<PathBuf>,
     pub looping: bool,
     pub status: PlaybackStatus,
     pub _stream: OutputStream,
     pub sink: Sink,
+    session_code: String,
 }
 
 impl PlaybackState {
-    pub fn new(temp: PathBuf) -> PlaybackState {
+    pub fn new(session_code: String) -> PlaybackState {
         let (stream, sink) = player::get_sink().expect("Error creating sink");
         PlaybackState {
-            current: Track::new(temp),
+            current: Track::new(),
             queue: TrackQueue::default(),
             looping: false,
             status: PlaybackStatus::default(),
             _stream: stream,
             sink,
+            session_code,
         }
+    }
+
+    pub fn get_temp_code(&self) -> String {
+        self.session_code.clone()
     }
 }
 
@@ -35,23 +42,17 @@ pub struct Track {
     pub duration: Option<Duration>,
     pub tagged_file: Option<TaggedFile>,
     pub has_metadata: bool,
-    temp: PathBuf,
 }
 
 impl Track {
-    pub fn new(temp: PathBuf) -> Track {
+    pub fn new() -> Track {
         Track {
             path: None,
             pos: None,
             duration: None,
             tagged_file: None,
             has_metadata: false,
-            temp,
         }
-    }
-
-    pub fn get_temp(&self) -> PathBuf {
-        self.temp.clone()
     }
 
     pub fn reset_dur(&mut self) {

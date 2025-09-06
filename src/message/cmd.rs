@@ -158,8 +158,11 @@ pub fn rewind(model: &mut Model, info_tx: &Sender<String>) -> Option<Message> {
                 cloned_info_tx.send("".to_string()).unwrap();
             });
         };
-        model.playback.current.duration =
-            player::read_track_duration(&track, &mut model.playback).ok();
+        model.playback.current.duration = player::read_track_duration(
+            &track,
+            &player::get_temp_file(&track, &model.playback.get_temp_code()),
+        )
+        .ok();
         info_tx.send("".to_string()).unwrap();
     }
 

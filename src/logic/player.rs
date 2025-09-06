@@ -9,7 +9,7 @@ use rfd::FileDialog;
 use rodio::{Decoder, OutputStream, Sink};
 use rust_ffmpeg::{FFmpegProcess, prelude::*};
 use std::{
-    fs::File,
+    fs::{self, File},
     ops::{Add, Sub},
     path::{Path, PathBuf},
     process::Command,
@@ -83,7 +83,7 @@ pub fn choose_dir() -> Option<PathBuf> {
 pub fn load_track(track: &Path, playback_st: &mut PlaybackState) -> Result<()> {
     let mut track_temp = track.to_path_buf();
     if !is_rodio_supported(&track_temp)? {
-        track_temp = playback_st.current.get_temp();
+        track_temp = get_temp_file(&track_temp, playback_st.get_temp_code().as_str());
     }
 
     let source = get_source(track_temp)?;
@@ -125,7 +125,7 @@ pub fn seek(sink: &mut Sink, track_dur: &Duration, seek_dur: Duration) -> Result
 pub fn rewind(rewind_dur: Duration, playback: &PlaybackState) -> Result<()> {
     let mut path = playback.current.path.clone().unwrap().to_path_buf();
     if !is_rodio_supported(&path)? {
-        path = playback.current.get_temp();
+        path = get_temp_file(&path, playback.get_temp_code().as_str());
     }
 
     let current_pos = playback.sink.get_pos();
@@ -155,10 +155,10 @@ pub fn rewind(rewind_dur: Duration, playback: &PlaybackState) -> Result<()> {
     Ok(())
 }
 
-pub fn read_track_duration(track: &Path, playback: &mut PlaybackState) -> Result<Duration> {
+pub fn read_track_duration(track: &Path, temp_track: &Path) -> Result<Duration> {
     let mut temp_path = track.to_path_buf();
     if !is_rodio_supported(&temp_path)? {
-        temp_path = playback.current.get_temp();
+        temp_path = temp_track.to_path_buf();
     }
 
     let tagged_file = Probe::open(temp_path)?.read()?;
@@ -168,12 +168,7 @@ pub fn read_track_duration(track: &Path, playback: &mut PlaybackState) -> Result
 
 pub async fn convert_format(track_path: &Path, temp_path: &Path) -> FFmpegProcess {
     FFmpegBuilder::convert(track_path.to_path_buf(), temp_path.to_path_buf())
-        .audio_filter(
-            AudioFilter::loudnorm()
-                .param("I", -13)
-                .param("TP", -1.0)
-                .param("LRA", 10),
-        )
+        .audio_filter(AudioFilter::loudnorm())
         .spawn()
         .await
         .unwrap()
@@ -200,7 +195,7 @@ pub fn convert_format_in_bg(
     info_tx: &Sender<String>,
 ) {
     let path = to_convert.to_path_buf();
-    let temp = output.to_path_buf();
+    let output = output.to_path_buf();
     let cloned_msg_tx = msg_tx.clone();
     let cloned_info_tx = info_tx.clone();
 
@@ -211,7 +206,7 @@ pub fn convert_format_in_bg(
 
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
-        let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(convert_format(&path, &temp))));
+        let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(convert_format(&path, &output))));
         cloned_msg_tx
             .send(Message::ConversionStarted(ffmpeg_handle.clone()))
             .unwrap();
@@ -256,7 +251,12 @@ pub fn try_next_track(
                 ));
             }
 
-            convert_format_in_bg(&next_track, &playback.current.get_temp(), msg_tx, info_tx);
+            convert_format_in_bg(
+                &next_track,
+                &get_temp_file(&next_track, playback.get_temp_code().as_str()),
+                msg_tx,
+                info_tx,
+            );
 
             return Ok(());
         }
@@ -279,8 +279,8 @@ pub fn play_next_track(track: &Path, playback: &mut PlaybackState) -> Result<()>
     };
 
     playback.current.tagged_file = Some(get_metadata(
-        &track.to_path_buf(),
-        &playback.current.get_temp(),
+        &track,
+        get_temp_file(track, playback.get_temp_code().as_str()),
     )?);
     playback.current.has_metadata = playback
         .current
@@ -289,16 +289,14 @@ pub fn play_next_track(track: &Path, playback: &mut PlaybackState) -> Result<()>
         .and_then(|f| f.primary_tag())
         .and_then(|t| t.title())
         .is_some();
-    playback.current.duration = playback
-        .current
-        .path
-        .clone()
-        .and_then(|p| read_track_duration(&p, playback).ok());
+    playback.current.duration = playback.current.path.clone().and_then(|p| {
+        read_track_duration(&p, &get_temp_file(track, playback.get_temp_code().as_str())).ok()
+    });
 
     Ok(())
 }
 
-pub fn get_metadata(track: &PathBuf, temp_path: &Path) -> Result<TaggedFile> {
+pub fn get_metadata(track: &Path, temp_path: PathBuf) -> Result<TaggedFile> {
     match Probe::open(track)?.read() {
         Ok(f) => Ok(f),
         Err(_) => Ok(Probe::open(temp_path)?.read()?),
@@ -312,4 +310,19 @@ pub fn check_ffmpeg() -> bool {
         Ok(output) => output.status.success(),
         Err(_) => false,
     }
+}
+
+pub fn get_temp_file(original: &Path, temp_code: &str) -> PathBuf {
+    let file_name = original
+        .file_stem()
+        .expect("Original path has no file name")
+        .to_str()
+        .expect("File name is not valid UTF-8");
+
+    let temp_dir = Path::new("firefly_temp");
+    if !temp_dir.exists() {
+        fs::create_dir_all(temp_dir).expect("Failed to create temp directory");
+    }
+
+    PathBuf::from(format!("firefly_temp/{}_{}.flac", temp_code, file_name))
 }

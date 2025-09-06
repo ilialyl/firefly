@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use rand::{Rng, distr::Alphanumeric};
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -25,8 +23,6 @@ impl Default for Session {
 }
 
 impl Session {
-    const TEMP_NAME: &str = "firefly_temp";
-
     fn randomize_code() -> String {
         let rng = rand::rng();
         let rand_string: String = rng
@@ -40,9 +36,5 @@ impl Session {
 
     pub fn get_code(&self) -> String {
         self.code.clone()
-    }
-
-    pub fn get_temp(&self) -> PathBuf {
-        PathBuf::from(format!("{}_{}.flac", Self::TEMP_NAME, self.code))
     }
 }
