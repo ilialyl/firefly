@@ -168,7 +168,12 @@ pub fn read_track_duration(track: &Path, playback: &mut PlaybackState) -> Result
 
 pub async fn convert_format(track_path: &Path, temp_path: &Path) -> FFmpegProcess {
     FFmpegBuilder::convert(track_path.to_path_buf(), temp_path.to_path_buf())
-        .audio_filter(AudioFilter::loudnorm())
+        .audio_filter(
+            AudioFilter::loudnorm()
+                .param("I", -13)
+                .param("TP", -1.0)
+                .param("LRA", 10),
+        )
         .spawn()
         .await
         .unwrap()
