@@ -27,8 +27,8 @@ pub fn update(
         Message::DecreaseVolume => cmd::decrease_volume(model),
         Message::IncreaseVolume => cmd::increase_volume(model),
         Message::Busy => cmd::busy(model),
-        // Message::ConversionStarted(handle) => cmd::conversion_started(handle, model),
-        // Message::ConversionEnded => cmd::conversion_ended(model),
+        Message::ConversionStarted(handle) => cmd::conversion_started(handle, model),
+        Message::ConversionEnded => cmd::conversion_ended(model),
         Message::UpdateInfo(info) => cmd::update_info(info, model),
         Message::Quit => cmd::quit(model),
     }

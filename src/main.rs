@@ -47,7 +47,10 @@ fn main() -> Result<()> {
         let mut current_msg;
 
         // Tick
-        update(&mut model, Message::Tick, &msg_tx, &info_tx);
+        current_msg = update(&mut model, Message::Tick, &msg_tx, &info_tx);
+        while current_msg.is_some() {
+            current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+        }
 
         // Draw TUI view
         terminal.draw(|f| view(&mut model, f))?;

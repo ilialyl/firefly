@@ -6,10 +6,14 @@ use std::{
     ops::{Add, Sub},
     path::{Path, PathBuf},
     process::Command,
+    sync::mpsc::Sender,
     time::Duration,
 };
 
-use crate::logic::{playback_status::PlaybackStatus, track::Track, track_queue::TrackQueue};
+use crate::{
+    logic::{playback_status::PlaybackStatus, track::Track, track_queue::TrackQueue},
+    message::Message,
+};
 
 const RODIO_SUPPORTED_FORMATS: [&str; 4] = ["flac", "mp3", "ogg", "wav"];
 const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
@@ -47,8 +51,18 @@ impl Player {
         self.session_code.clone()
     }
 
-    pub fn new_track(&mut self, track: PathBuf) -> Result<()> {
-        self.current = Some(Track::new(track, self.session_code.clone())?);
+    pub fn new_track(
+        &mut self,
+        track: PathBuf,
+        msg_tx: &Sender<Message>,
+        info_tx: &Sender<String>,
+    ) -> Result<()> {
+        self.current = Some(Track::new(
+            track,
+            self.session_code.clone(),
+            msg_tx,
+            info_tx,
+        )?);
 
         Ok(())
     }
@@ -130,48 +144,20 @@ impl Player {
         Ok(())
     }
 
-    pub fn load_next_track(&mut self) -> Result<()> {
+    pub fn load_next_track(
+        &mut self,
+        msg_tx: &Sender<Message>,
+        info_tx: &Sender<String>,
+    ) -> Result<()> {
         let path = match self.queue.dequeue() {
             Some(path) => path,
             None => return Err(eyre!("Queue is empty.")),
         };
 
-        self.new_track(path)?;
+        self.new_track(path, msg_tx, info_tx)?;
 
         Ok(())
     }
-
-    // pub fn consume_next_track(
-    //     &self,
-    //     track: &Path,
-    //     track_temp: &Path,
-    // ) -> Result<()> {
-    //     if let Err(e) = load_track(track, playback) {
-    //         log::error!("{}", e);
-    //         return Err(e);
-    //     };
-
-    //     playback.current.tagged_file = Some(get_metadata(&track, &track_temp)?);
-    //     playback.current.has_metadata = playback
-    //         .current
-
-    //     playback.current.duration = playback.current.path.clone().and_then(|p| {
-    //         &playback
-    //             .current
-    //             .get_temp_file()
-    //             .and_then(|t| read_track_duration(&p, &t));
-    //     });
-
-    //     Ok(())
-    // }
-
-    // pub fn prepend_track(&mut self, path: PathBuf) -> Result<()> {
-    //     if path.is_file() {
-    //         self.queue.prepend_track(path);
-    //     }
-
-    //     Ok(())
-    // }
 }
 
 pub fn is_rodio_supported(path: &Path) -> Result<bool> {

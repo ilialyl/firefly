@@ -1,9 +1,9 @@
 pub mod cmd;
 pub mod update;
 
-// use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex};
 
-// use rust_ffmpeg::FFmpegProcess;
+use rust_ffmpeg::FFmpegProcess;
 
 pub enum Message {
     Tick,
@@ -21,8 +21,8 @@ pub enum Message {
     QueueFiles,
     QueueDir,
     Quit,
-    // ConversionStarted(Arc<Mutex<FFmpegProcess>>),
-    // ConversionEnded,
+    ConversionStarted(Arc<Mutex<FFmpegProcess>>),
+    ConversionEnded,
     Busy,
     UpdateInfo(String),
 }
