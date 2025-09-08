@@ -14,8 +14,16 @@ use ratatui::{
 use crate::{logic::playback_status::PlaybackStatus, model::Model, view::center_vertical};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
+    let player_text: Vec<String>;
+
     if let Some(ref mut current_track) = model.player.current {
-        let player_text = [
+        // let path = current_track.real_path.clone();
+        // let pos = current_track.pos.clone();
+        // let dur = current_track.duration.clone();
+        // let status = model.player.status.clone();
+        // let looping = model.player.looping;
+
+        player_text = vec![
             get_track_name_str(&current_track.real_path),
             String::new(),
             format!(
@@ -61,15 +69,26 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
 
             frame.render_widget(meta_para, centered_area);
         }
-
-        let centered_area = center_vertical(chunk[0], player_text.len() as u16);
-
-        let player_para = Paragraph::new(player_text.join("\n"))
-            .centered()
-            .alignment(Alignment::Center);
-
-        frame.render_widget(player_para, centered_area);
+    } else {
+        player_text = vec![
+            "[Empty]".to_string(),
+            String::new(),
+            "0:00 / 0:00".to_string(),
+            String::new(),
+            get_status_str(&model.player.status),
+            get_loop_status_str(&model.player.looping),
+            model.info_display.clone(),
+            get_volume_str(model.player.sink.volume()),
+        ];
     }
+
+    let centered_area = center_vertical(chunk[0], player_text.len() as u16);
+
+    let player_para = Paragraph::new(player_text.join("\n"))
+        .centered()
+        .alignment(Alignment::Center);
+
+    frame.render_widget(player_para, centered_area);
 }
 
 fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
