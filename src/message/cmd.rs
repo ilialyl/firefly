@@ -105,6 +105,7 @@ pub fn load_now(
     // }
     if let Some(path) = player::choose_file() {
         model.player.queue.prepend_track(path);
+        return Some(Message::Skip);
     }
 
     None
