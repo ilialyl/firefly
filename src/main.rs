@@ -1,5 +1,6 @@
 use std::{
     fs,
+    path::Path,
     sync::mpsc::{self, Receiver, Sender},
     time::SystemTime,
 };
@@ -23,10 +24,17 @@ pub mod view;
 #[cfg(test)]
 mod tests;
 
+const TEMP_DIR: &str = "firefly_temp";
+
 fn main() -> Result<()> {
     view::terminal::install_panic_hook();
     color_eyre::install()?;
     setup_logger()?;
+
+    let temp_dir = Path::new(TEMP_DIR);
+    if !temp_dir.exists() {
+        fs::create_dir(temp_dir).expect("Failed to create temp directory");
+    }
 
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
@@ -42,7 +50,7 @@ fn main() -> Result<()> {
         update(&mut model, Message::Tick, &msg_tx, &info_tx);
 
         // Draw TUI view
-        terminal.draw(|f| view(&model, f))?;
+        terminal.draw(|f| view(&mut model, f))?;
 
         // Handle terminal events
         current_msg = terminal::handle_events()?;

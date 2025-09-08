@@ -11,11 +11,11 @@ use ratatui::{
 
 use crate::model::Model;
 
-pub fn view(model: &Model, frame: &mut Frame) {
+pub fn view(model: &mut Model, frame: &mut Frame) {
     render(model, frame);
 }
 
-pub fn render(model: &Model, frame: &mut Frame) {
+pub fn render(model: &mut Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(1), Constraint::Fill(1)])

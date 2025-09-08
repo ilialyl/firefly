@@ -13,7 +13,7 @@ use ratatui::{
 
 use crate::model::Model;
 
-pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
+pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let inner_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![Constraint::Percentage(25), Constraint::Percentage(75)])
@@ -83,10 +83,11 @@ pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
         )
     }
 
-    let player_chunks_const = if model.playback.current.has_metadata {
-        vec![Constraint::Percentage(60), Constraint::Percentage(40)]
-    } else {
-        vec![Constraint::Percentage(100)]
+    let player_chunks_const = match &mut model.player.current {
+        Some(current_track) if current_track.has_title => {
+            vec![Constraint::Percentage(60), Constraint::Percentage(40)]
+        }
+        _ => vec![Constraint::Percentage(100)],
     };
 
     let player_chunks = Layout::default()
