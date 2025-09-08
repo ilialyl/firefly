@@ -19,13 +19,13 @@ pub fn tick(
         return None;
     }
 
-    if model.player.sink.is_paused() {
+    if model.player.sink.is_paused() && !model.player.looping {
         model.player.status = PlaybackStatus::Paused;
     } else if !model.player.sink.empty() {
         model.player.status = PlaybackStatus::Playing;
     }
 
-    if model.player.sink.empty() {
+    if model.player.sink.empty() & !model.player.looping {
         model.player.status = PlaybackStatus::Idle;
     }
 
@@ -49,22 +49,41 @@ pub fn tick(
             }
         }
 
-        // If playback is idle and queue is not empty,
-        // Try playing the next track.
-        if model.player.status == PlaybackStatus::Idle && !model.player.queue.is_empty() {
-            log::info!("[TICK] Trying to load {:?}.", model.player.queue.front());
-            model
-                .player
-                .load_next_track()
-                .expect("Error loading next track in Tick.");
-            model.player.sink.play();
+        // if let Err(e) = player::try_next_track(&mut model.player, msg_tx, info_tx) {
+        //     log::error!("{}", e);
+        //     info_tx.send(e.to_string()).unwrap();
+        //     model.session.state = RunningState::Busy;
+        // };
 
-            // if let Err(e) = player::try_next_track(&mut model.player, msg_tx, info_tx) {
-            //     log::error!("{}", e);
-            //     info_tx.send(e.to_string()).unwrap();
-            //     model.session.state = RunningState::Busy;
-            // };
-        }
+        // Load first track (player.current is None)
+    } else if !model.player.queue.is_empty() {
+        log::info!("[TICK] Trying to load {:?}.", model.player.queue.front());
+        model
+            .player
+            .load_next_track()
+            .expect("[TICK] Error loading next track in Tick.");
+        log::info!("[TICK] Playing track...");
+        model
+            .player
+            .reload()
+            .expect("[TICK] Error reloading track...");
+    }
+
+    // Load the next track after current track ends.
+    if model.player.status == PlaybackStatus::Idle
+        && !model.player.queue.is_empty()
+        && !model.player.looping
+    {
+        log::info!("[TICK] Trying to load {:?}.", model.player.queue.front());
+        model
+            .player
+            .load_next_track()
+            .expect("[TICK] Error loading next track in Tick.");
+        log::info!("[TICK] Playing track...");
+        model
+            .player
+            .reload()
+            .expect("[TICK] Error reloading track...");
     }
 
     None
