@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{self, File},
     path::PathBuf,
     sync::{Arc, Mutex, mpsc::Sender},
     thread,
@@ -12,7 +12,7 @@ use lofty::{
     probe::Probe,
     tag::Accessor,
 };
-use log::info;
+use log::{debug, info};
 use rodio::{Decoder, Sink};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
 use tokio::runtime::Runtime;
@@ -49,7 +49,12 @@ impl Track {
 
         let conversion_status;
         if !is_rodio_supported(&path)? {
-            conversion_status = FormatConversion::Running;
+            if temp_path.exists() {
+                debug!("Path {:?} exists, skipping conversion", temp_path);
+                conversion_status = FormatConversion::Done;
+            } else {
+                conversion_status = FormatConversion::Running;
+            }
         } else {
             conversion_status = FormatConversion::Unnecessary;
         }
@@ -111,13 +116,8 @@ impl Track {
             self.real_path.to_path_buf(),
             self.temp_path.to_path_buf(),
         );
-        Self::wait_conversion(process, msg_tx, info_tx);
-    }
 
-    fn wait_conversion<F>(process: F, msg_tx: &Sender<Message>, info_tx: &Sender<String>)
-    where
-        F: Future<Output = FFmpegProcess> + Send + 'static,
-    {
+        let cloned_temp_path = self.temp_path.to_path_buf();
         let cloned_msg_tx = msg_tx.clone();
         let cloned_info_tx = info_tx.clone();
 
@@ -142,9 +142,16 @@ impl Track {
                         .success()
                     {
                         cloned_info_tx.send("".to_string()).unwrap();
+                        info!("Conversion Complete.");
                         cloned_msg_tx.send(Message::ConversionEnded).unwrap();
+                        break;
                     }
                     cloned_info_tx.send("".to_string()).unwrap();
+                    if cloned_temp_path.is_file() {
+                        fs::remove_file(&cloned_temp_path)
+                            .expect("Error deleting half-converted file.");
+                        info!("Deleted {:?}", cloned_temp_path);
+                    }
                     info!("Conversion killed.");
                     break;
                 }
