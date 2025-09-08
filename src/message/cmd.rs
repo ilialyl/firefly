@@ -3,6 +3,7 @@ use std::{
     time::Duration,
 };
 
+use log::debug;
 use rust_ffmpeg::FFmpegProcess;
 use tokio::runtime::Runtime;
 
@@ -37,6 +38,7 @@ pub fn tick(
     }
 
     if let Some(ref mut current_track) = model.player.current {
+        let status = current_track.conversion_status;
         // Update playback status
 
         // Update playback position
@@ -56,16 +58,19 @@ pub fn tick(
             }
         }
 
-        // Load first track (player.current is None)
-    } else if !model.player.queue.is_empty() {
-        return Some(Message::Skip);
-    }
+        // Load the next track after current track ends.
+        if model.player.status == PlaybackStatus::Idle
+            && !model.player.queue.is_empty()
+            && !model.player.looping
+            && status != FormatConversion::Running
+        {
+            debug!("Load the next track after current track ends.");
+            return Some(Message::Skip);
+        }
 
-    // Load the next track after current track ends.
-    if model.player.status == PlaybackStatus::Idle
-        && !model.player.queue.is_empty()
-        && !model.player.looping
-    {
+        // Load first track (player.current is None)
+    } else if model.player.current.is_none() && !model.player.queue.is_empty() {
+        debug!("Load first track (player.current is None)");
         return Some(Message::Skip);
     }
 
@@ -173,6 +178,8 @@ pub fn skip(
         let runtime = Runtime::new().unwrap();
         runtime.block_on(handle.lock().unwrap().kill()).unwrap();
     }
+
+    model.session.state = RunningState::Running;
 
     log::info!("Trying to load {:?}.", model.player.queue.front());
     model.player.sink.clear();
