@@ -141,10 +141,28 @@ pub fn rewind(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
         return None;
     }
 
-    model
-        .player
-        .rewind(Duration::from_secs(5))
-        .expect("Error rewinding.");
+    let track_dur = if let Some(ref mut current_track) = model.player.current {
+        current_track.duration
+    } else {
+        return None;
+    };
+
+    // Rewind duration depends on the duration of the track.
+    let rewind_dur = if track_dur > Duration::from_secs(36000) {
+        Duration::from_secs(1800)
+    } else if track_dur > Duration::from_secs(18000) {
+        Duration::from_secs(600)
+    } else if track_dur > Duration::from_secs(3600) {
+        Duration::from_secs(300)
+    } else if track_dur > Duration::from_secs(1800) {
+        Duration::from_secs(60)
+    } else if track_dur > Duration::from_secs(600) {
+        Duration::from_secs(10)
+    } else {
+        Duration::from_secs(5)
+    };
+
+    model.player.rewind(rewind_dur).expect("Error rewinding.");
 
     None
 }
@@ -154,11 +172,28 @@ pub fn seek(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
         return None;
     }
 
+    let track_dur = if let Some(ref mut current_track) = model.player.current {
+        current_track.duration
+    } else {
+        return None;
+    };
+
+    // Seek duration depends on the duration of the track.
+    let seek_dur = if track_dur > Duration::from_secs(3600) {
+        Duration::from_secs(20)
+    } else if track_dur > Duration::from_secs(1800) {
+        Duration::from_secs(15)
+    } else if track_dur > Duration::from_secs(600) {
+        Duration::from_secs(10)
+    } else {
+        Duration::from_secs(5)
+    };
+
     if let Some(current_track) = &model.player.current {
         let duration = current_track.duration;
         model
             .player
-            .seek(&duration, Duration::from_secs(5))
+            .seek(&duration, seek_dur)
             .expect("Error seeking.");
     }
 
