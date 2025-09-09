@@ -22,6 +22,7 @@ pub fn update(
         Message::Rewind => cmd::rewind(model, info_tx),
         Message::Seek => cmd::seek(model, info_tx),
         Message::Skip => cmd::skip(model, msg_tx, info_tx),
+        Message::PreviousTrack => cmd::previous_track(model, msg_tx, info_tx),
         Message::ToggleArrange => cmd::toggle_arrange(model),
         Message::ToggleLoop => cmd::toggle_loop(model),
         Message::DecreaseVolume => cmd::decrease_volume(model),

@@ -300,3 +300,35 @@ pub fn quit(model: &mut Model) -> Option<Message> {
 
     None
 }
+
+pub fn previous_track(
+    model: &mut Model,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<String>,
+) -> Option<Message> {
+    if model.player.previous.is_empty() {
+        return None;
+    }
+
+    if let Some(handle) = model.ffmpeg_handle.take() {
+        let runtime = Runtime::new().unwrap();
+        runtime.block_on(handle.lock().unwrap().kill()).unwrap();
+    }
+
+    model.session.state = RunningState::Running;
+
+    log::info!("Trying to load previous track.");
+    model.player.sink.clear();
+    model
+        .player
+        .load_prev_track(msg_tx, info_tx)
+        .expect("Error loading previous track.");
+
+    if let Some(ref mut current_track) = model.player.current {
+        if current_track.conversion_status != FormatConversion::Running {
+            model.player.reload().expect("Error reloading track.");
+        }
+    }
+
+    None
+}
