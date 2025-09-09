@@ -28,7 +28,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
 
     controls.push(Span::from(" Move Queue Up <↑>"));
     controls.push(Span::from(" Move Queue Down <↓>"));
-    controls.push(Span::from(" Skip <S>"));
+    controls.push(Span::from(" Prev/Skip <P/S>"));
 
     let mut rewind_seek = Span::from(" Rewind/Seek <←/→>");
     if model.session.state == RunningState::Busy {

@@ -56,6 +56,7 @@ fn handle_keys(key_event: KeyEvent) -> Option<Message> {
         KeyCode::Up => Some(Message::MoveQueueUp),
         KeyCode::Down => Some(Message::MoveQueueDown),
         KeyCode::Char('a') => Some(Message::ToggleArrange),
+        KeyCode::Char('p') => Some(Message::PreviousTrack),
         _ => None,
     }
 }
