@@ -25,7 +25,7 @@ pub const AUDIO_FORMATS: [&str; 11] = [
 pub struct Player {
     pub current: Option<Track>,
     pub queue: TrackQueue,
-    // pub previous: VecDeque<PathBuf>,
+    pub previous: Vec<PathBuf>,
     pub looping: bool,
     pub status: PlaybackStatus,
     pub stream: OutputStream,
@@ -39,6 +39,7 @@ impl Player {
         Player {
             current: None,
             queue: TrackQueue::default(),
+            previous: Vec::<PathBuf>::new(),
             looping: false,
             status: PlaybackStatus::default(),
             stream,
@@ -154,7 +155,30 @@ impl Player {
             None => return Err(eyre!("Queue is empty.")),
         };
 
+        if let Some(ref mut current) = self.current {
+            self.previous.push(current.real_path.clone());
+        }
+
         self.new_track(path, msg_tx, info_tx)?;
+
+        Ok(())
+    }
+
+    pub fn load_prev_track(
+        &mut self,
+        msg_tx: &Sender<Message>,
+        info_tx: &Sender<String>,
+    ) -> Result<()> {
+        let prev = match self.previous.pop() {
+            Some(path) => path,
+            None => return Err(eyre!("There are no previous tracks.")),
+        };
+
+        if let Some(ref mut current) = self.current {
+            self.queue.prepend_track(current.real_path.clone());
+        }
+
+        self.new_track(prev, msg_tx, info_tx)?;
 
         Ok(())
     }

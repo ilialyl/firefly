@@ -25,4 +25,5 @@ pub enum Message {
     ConversionEnded,
     Busy,
     UpdateInfo(String),
+    PreviousTrack,
 }
