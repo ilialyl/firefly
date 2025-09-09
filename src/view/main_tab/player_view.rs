@@ -1,4 +1,4 @@
-use std::{rc::Rc, time::Duration};
+use std::{path::Path, rc::Rc, time::Duration};
 
 use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
@@ -11,66 +11,75 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::{
-    logic::playback_state::{PlaybackState, PlaybackStatus},
-    model::Model,
-    view::center_vertical,
-};
+use crate::{logic::playback_status::PlaybackStatus, model::Model, view::center_vertical};
 
-pub fn draw(model: &Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
-    let player_text = [
-        get_track_name_str(&model.playback),
-        String::new(),
-        format!(
-            "{} / {}",
-            duration_as_str(&model.playback.current.pos.unwrap_or(Duration::from_secs(0))),
-            duration_as_str(
-                &model
-                    .playback
-                    .current
-                    .duration
-                    .unwrap_or(Duration::from_secs(0)),
-            )
-        ),
-        String::new(),
-        get_status_str(&model.playback),
-        get_loop_status_str(&model.playback),
-        model.info_display.clone(),
-        get_volume_str(&model.playback),
-    ];
+pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
+    let player_text: Vec<String>;
 
-    if model.playback.current.has_metadata
-        && let Some(tag) = model.playback.current.tagged_file.as_ref()
-    {
-        let meta_text = get_metadata_text_vec(tag);
+    if let Some(ref mut current_track) = model.player.current {
+        // let path = current_track.real_path.clone();
+        // let pos = current_track.pos.clone();
+        // let dur = current_track.duration.clone();
+        // let status = model.player.status.clone();
+        // let looping = model.player.looping;
 
-        let metadata_margin = 2;
+        player_text = vec![
+            get_track_name_str(&current_track.real_path),
+            String::new(),
+            format!(
+                "{} / {}",
+                duration_as_str(&current_track.pos),
+                duration_as_str(&current_track.duration)
+            ),
+            String::new(),
+            get_status_str(&model.player.status),
+            get_loop_status_str(&model.player.looping),
+            model.info_display.clone(),
+            get_volume_str(model.player.sink.volume()),
+        ];
 
-        let metadata_border_area = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(
-                (metadata_margin * 2) + meta_text.len() as u16,
-            )])
-            .margin(1)
-            .split(chunk[1]);
+        if current_track.has_title {
+            let meta_text = get_metadata_text_vec(&current_track.tagged_file);
 
-        Block::bordered()
-            .fg(Color::White)
-            .title("Metadata")
-            .title_alignment(Alignment::Right)
-            .render(metadata_border_area[0], frame.buffer_mut());
+            let metadata_margin = 2;
 
-        let metadata_chunk = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Percentage(100)])
-            .margin(metadata_margin)
-            .split(metadata_border_area[0]);
+            let metadata_border_area = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Length(
+                    (metadata_margin * 2) + meta_text.len() as u16,
+                )])
+                .margin(1)
+                .split(chunk[1]);
 
-        let centered_area = center_vertical(metadata_chunk[0], meta_text.len() as u16);
+            Block::bordered()
+                .fg(Color::White)
+                .title("Metadata")
+                .title_alignment(Alignment::Right)
+                .render(metadata_border_area[0], frame.buffer_mut());
 
-        let meta_para = Paragraph::new(meta_text.join("\n"));
+            let metadata_chunk = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Percentage(100)])
+                .margin(metadata_margin)
+                .split(metadata_border_area[0]);
 
-        frame.render_widget(meta_para, centered_area);
+            let centered_area = center_vertical(metadata_chunk[0], meta_text.len() as u16);
+
+            let meta_para = Paragraph::new(meta_text.join("\n"));
+
+            frame.render_widget(meta_para, centered_area);
+        }
+    } else {
+        player_text = vec![
+            "[Empty]".to_string(),
+            String::new(),
+            "0:00 / 0:00".to_string(),
+            String::new(),
+            get_status_str(&model.player.status),
+            get_loop_status_str(&model.player.looping),
+            model.info_display.clone(),
+            get_volume_str(model.player.sink.volume()),
+        ];
     }
 
     let centered_area = center_vertical(chunk[0], player_text.len() as u16);
@@ -163,43 +172,35 @@ fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
     meta_text
 }
 
-fn get_track_name_str(playback_st: &PlaybackState) -> String {
-    match playback_st.current.path.clone() {
-        Some(path) => {
-            if let Some(os_name) = path.file_name() {
-                if let Some(name) = os_name.to_str() {
-                    name.to_string()
-                } else {
-                    "[Invalid UTF-8 name]".into()
-                }
-            } else {
-                "[No file name]".into()
-            }
+fn get_track_name_str(path: &Path) -> String {
+    if let Some(os_name) = path.file_name() {
+        if let Some(name) = os_name.to_str() {
+            return name.to_string();
+        } else {
+            return "[Invalid UTF-8 name]".to_string();
         }
-        None => "[Track Empty]".into(),
+    } else {
+        return "[No file name]".to_string();
     }
 }
 
-fn get_status_str(playback_st: &PlaybackState) -> String {
-    match playback_st.status {
+fn get_status_str(player_status: &PlaybackStatus) -> String {
+    match player_status {
         PlaybackStatus::Playing => "Playing".into(),
         PlaybackStatus::Paused => ("Paused").into(),
         PlaybackStatus::Idle => ("Idle").into(),
     }
 }
 
-fn get_loop_status_str(playback_st: &PlaybackState) -> String {
-    match playback_st.looping {
+fn get_loop_status_str(loop_status: &bool) -> String {
+    match loop_status {
         true => "[Looped]".into(),
         false => "".into(),
     }
 }
 
-fn get_volume_str(playback_st: &PlaybackState) -> String {
-    format!(
-        "Volume: {}%",
-        (playback_st.sink.volume() * 100.00).ceil() as i32
-    )
+fn get_volume_str(volume: f32) -> String {
+    format!("Volume: {}%", (volume * 100.00).ceil() as i32)
 }
 
 fn duration_as_str(dur: &Duration) -> String {

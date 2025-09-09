@@ -1,75 +1,77 @@
 use std::{
     sync::{Arc, Mutex, mpsc::Sender},
-    thread,
     time::Duration,
 };
 
+use log::debug;
+use rust_ffmpeg::FFmpegProcess;
+use tokio::runtime::Runtime;
+
 use crate::{
     logic::{
-        playback_state::PlaybackStatus,
+        playback_status::PlaybackStatus,
         player::{self},
         session_state::RunningState,
+        track::FormatConversion,
     },
     message::Message,
     model::Model,
 };
 
-use rust_ffmpeg::FFmpegProcess;
-use tokio::runtime::Runtime;
-
 pub fn tick(
     model: &mut Model,
-    msg_tx: &Sender<Message>,
-    info_tx: &Sender<String>,
+    _msg_tx: &Sender<Message>,
+    _info_tx: &Sender<String>,
 ) -> Option<Message> {
     if model.session.state == RunningState::Busy {
         return None;
     }
 
-    // Update playback status
-    if model.playback.sink.is_paused() {
-        model.playback.status = PlaybackStatus::Paused;
-    } else if model.playback.current.path.is_some() && !model.playback.sink.empty() {
-        model.playback.status = PlaybackStatus::Playing;
+    if model.player.sink.is_paused() && !model.player.looping {
+        model.player.status = PlaybackStatus::Paused;
+    } else if !model.player.sink.empty() {
+        model.player.status = PlaybackStatus::Playing;
     }
 
-    if model.playback.sink.empty() {
-        model.playback.status = PlaybackStatus::Idle;
+    if model.player.sink.empty() & !model.player.looping {
+        model.player.status = PlaybackStatus::Idle;
     }
 
-    // Update playback position
-    model.playback.current.pos = Some(model.playback.sink.get_pos());
+    if let Some(ref mut current_track) = model.player.current {
+        let status = current_track.conversion_status;
+        // Update playback status
 
-    // Reload track when track ends if looped
-    // Set position, duration, and status to default if not looped
-    if let (Some(path), Some(dur), Some(pos)) = (
-        model.playback.current.path.clone(),
-        model.playback.current.duration,
-        model.playback.current.pos,
-    ) && model.playback.sink.empty()
-        && dur.saturating_sub(pos) < Duration::from_secs(3)
-    {
-        if model.playback.looping {
-            if let Err(e) = player::load_track(&path, &mut model.playback) {
-                log::error!("{}", e);
+        // Update playback position
+        current_track.sync_pos(&model.player.sink);
+
+        // Reload track when track ends if looped
+        // Set position, duration, and status to default if not looped
+        if model.player.sink.empty()
+            && current_track.duration.saturating_sub(current_track.pos) < Duration::from_secs(3)
+        {
+            if model.player.looping {
+                if let Err(e) = model.player.reload() {
+                    log::error!("{}", e);
+                }
+            } else {
+                model.player.status = PlaybackStatus::Idle;
             }
-        } else {
-            model.playback.current.reset_dur();
-            model.playback.status = PlaybackStatus::Idle;
         }
-    }
 
-    // If playback is idle and queue is not empty,
-    // Try playing the next track.
-    if model.playback.status == PlaybackStatus::Idle && !model.playback.queue.is_empty() {
-        model.playback.current.clear();
-        log::info!("[TICK] Trying to load {:?}.", model.playback.queue.front());
+        // Load the next track after current track ends.
+        if model.player.status == PlaybackStatus::Idle
+            && !model.player.queue.is_empty()
+            && !model.player.looping
+            && status != FormatConversion::Running
+        {
+            debug!("Load the next track after current track ends.");
+            return Some(Message::Skip);
+        }
 
-        if let Err(e) = player::try_next_track(&mut model.playback, msg_tx, info_tx) {
-            log::error!("{}", e);
-            info_tx.send(e.to_string()).unwrap();
-            model.session.state = RunningState::Busy;
-        };
+        // Load first track (player.current is None)
+    } else if model.player.current.is_none() && !model.player.queue.is_empty() {
+        debug!("Load first track (player.current is None)");
+        return Some(Message::Skip);
     }
 
     None
@@ -77,17 +79,12 @@ pub fn tick(
 
 pub fn load_now(
     model: &mut Model,
-    msg_tx: &Sender<Message>,
-    info_tx: &Sender<String>,
+    _msg_tx: &Sender<Message>,
+    _info_tx: &Sender<String>,
 ) -> Option<Message> {
     if let Some(path) = player::choose_file() {
-        if let Some(handle) = model.ffmpeg_handle.take() {
-            let runtime = Runtime::new().unwrap();
-            runtime.block_on(handle.lock().unwrap().kill()).unwrap();
-        }
-        if let Err(e) = player::load_now(path, &mut model.playback, msg_tx, info_tx) {
-            log::error!("{}", e);
-        }
+        model.player.queue.prepend_track(path);
+        return Some(Message::Skip);
     }
 
     None
@@ -98,10 +95,10 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    if model.playback.status == PlaybackStatus::Playing {
-        model.playback.sink.pause();
+    if model.player.status == PlaybackStatus::Playing {
+        model.player.sink.pause();
     } else {
-        model.playback.sink.play();
+        model.player.sink.play();
     }
 
     None
@@ -109,7 +106,7 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
 
 pub fn queue_dir(model: &mut Model) -> Option<Message> {
     if let Some(dir) = player::choose_dir() {
-        model.playback.queue.enqueue_dir(dir);
+        model.player.queue.enqueue_dir(dir);
     }
 
     None
@@ -117,14 +114,14 @@ pub fn queue_dir(model: &mut Model) -> Option<Message> {
 
 pub fn queue_files(model: &mut Model) -> Option<Message> {
     if let Some(path_vec) = player::choose_multiple_files() {
-        model.playback.queue.enqueue_tracks(path_vec);
+        model.player.queue.enqueue_tracks(path_vec);
     }
 
     None
 }
 
 pub fn move_queue_up(model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.playback.queue.move_selected_up() {
+    if let Err(e) = model.player.queue.move_selected_up() {
         log::info!("{}", e);
     };
 
@@ -132,57 +129,37 @@ pub fn move_queue_up(model: &mut Model) -> Option<Message> {
 }
 
 pub fn move_queue_down(model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.playback.queue.move_selected_down() {
+    if let Err(e) = model.player.queue.move_selected_down() {
         log::info!("{}", e);
     };
 
     None
 }
 
-pub fn rewind(model: &mut Model, info_tx: &Sender<String>) -> Option<Message> {
+pub fn rewind(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
     if model.session.state == RunningState::Busy {
         return None;
     }
 
-    if let Some(track) = model.playback.current.path.clone()
-        && model.playback.current.path.is_some()
-    {
-        info_tx.send("Rewinding...".to_string()).unwrap();
-        if let Err(e) = player::rewind(Duration::from_secs(5), &model.playback) {
-            let cloned_info_tx = info_tx.clone();
-
-            log::error!("{}", e);
-            thread::spawn(move || {
-                cloned_info_tx.send(e.to_string()).unwrap();
-                thread::sleep(Duration::from_secs(2));
-                cloned_info_tx.send("".to_string()).unwrap();
-            });
-        };
-        model.playback.current.duration =
-            player::read_track_duration(&track, &mut model.playback).ok();
-        info_tx.send("".to_string()).unwrap();
-    }
+    model
+        .player
+        .rewind(Duration::from_secs(5))
+        .expect("Error rewinding.");
 
     None
 }
 
-pub fn seek(model: &mut Model, info_tx: &Sender<String>) -> Option<Message> {
+pub fn seek(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
     if model.session.state == RunningState::Busy {
         return None;
     }
 
-    if let Some(track_dur) = &model.playback.current.duration
-        && model.playback.current.path.is_some()
-        && let Err(e) = player::seek(&mut model.playback.sink, track_dur, Duration::from_secs(5))
-    {
-        let cloned_info_tx = info_tx.clone();
-
-        log::error!("{}", e);
-        thread::spawn(move || {
-            cloned_info_tx.send(e.to_string()).unwrap();
-            thread::sleep(Duration::from_secs(2));
-            cloned_info_tx.send("".to_string()).unwrap();
-        });
+    if let Some(current_track) = &model.player.current {
+        let duration = current_track.duration;
+        model
+            .player
+            .seek(&duration, Duration::from_secs(5))
+            .expect("Error seeking.");
     }
 
     None
@@ -193,43 +170,41 @@ pub fn skip(
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Option<Message> {
-    if model.playback.queue.is_empty() {
+    if model.player.queue.is_empty() {
         return None;
     }
-
-    model.playback.status = PlaybackStatus::Idle;
-    model.session.state = RunningState::Busy;
-    model.playback.sink.clear();
-    model.playback.current.clear();
-
-    log::info!("Skipping...");
 
     if let Some(handle) = model.ffmpeg_handle.take() {
         let runtime = Runtime::new().unwrap();
         runtime.block_on(handle.lock().unwrap().kill()).unwrap();
     }
 
-    match player::try_next_track(&mut model.playback, msg_tx, info_tx) {
-        Ok(()) => {
-            model.session.state = RunningState::Running;
+    model.session.state = RunningState::Running;
+
+    log::info!("Trying to load {:?}.", model.player.queue.front());
+    model.player.sink.clear();
+    model
+        .player
+        .load_next_track(msg_tx, info_tx)
+        .expect("Error loading next track.");
+
+    if let Some(ref mut current_track) = model.player.current {
+        if current_track.conversion_status != FormatConversion::Running {
+            model.player.reload().expect("Error reloading track.");
         }
-        Err(e) => {
-            log::error!("{}", e);
-            info_tx.send(e.to_string()).unwrap();
-        }
-    };
+    }
 
     None
 }
 
 pub fn toggle_arrange(model: &mut Model) -> Option<Message> {
-    model.playback.queue.toggle_arrange();
+    model.player.queue.toggle_arrange();
 
     None
 }
 
 pub fn toggle_loop(model: &mut Model) -> Option<Message> {
-    model.playback.looping = !model.playback.looping;
+    model.player.looping = !model.player.looping;
 
     None
 }
@@ -239,7 +214,7 @@ pub fn decrease_volume(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    player::decrease_volume(&mut model.playback.sink, 0.05);
+    model.player.decrease_volume(0.05);
 
     None
 }
@@ -249,7 +224,7 @@ pub fn increase_volume(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    player::increase_volume(&mut model.playback.sink, 0.05);
+    model.player.increase_volume(0.05);
 
     None
 }
@@ -268,11 +243,13 @@ pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) 
 
 pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
-    if let Some(path) = model.playback.current.path.clone()
-        && let Err(e) = player::play_next_track(&path, &mut model.playback)
-    {
-        log::error!("{}", e);
-    };
+    if let Some(ref mut current_track) = model.player.current {
+        current_track.conversion_status = FormatConversion::Done;
+        model
+            .player
+            .reload()
+            .expect("Error reloading after conversion finished.");
+    }
 
     None
 }

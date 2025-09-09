@@ -21,7 +21,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     controls.push(Span::from(" Queue <Q>"));
     controls.push(Span::from(" Queue Dir <ShiftQ>"));
     let mut toggle_arrange = Span::from(" Queue Arrange <A>");
-    if model.playback.queue.is_arrange() {
+    if model.player.queue.is_arrange() {
         toggle_arrange = toggle_arrange.bold().italic();
     }
     controls.push(toggle_arrange);

@@ -1,3 +1,4 @@
 /target
 firefly_temp*.flac
 *.log
+/firefly_temp

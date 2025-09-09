@@ -1,80 +1,8 @@
-use std::{collections::VecDeque, fs, path::PathBuf, time::Duration};
+use std::{collections::VecDeque, fs, path::PathBuf};
 
 use color_eyre::eyre::{Result, eyre};
-use lofty::file::TaggedFile;
-use rodio::{OutputStream, Sink};
 
-use crate::logic::player::{self, AUDIO_FORMATS};
-
-pub struct PlaybackState {
-    pub current: Track,
-    pub queue: TrackQueue,
-    pub looping: bool,
-    pub status: PlaybackStatus,
-    pub _stream: OutputStream,
-    pub sink: Sink,
-}
-
-impl PlaybackState {
-    pub fn new(temp: PathBuf) -> PlaybackState {
-        let (stream, sink) = player::get_sink().expect("Error creating sink");
-        PlaybackState {
-            current: Track::new(temp),
-            queue: TrackQueue::default(),
-            looping: false,
-            status: PlaybackStatus::default(),
-            _stream: stream,
-            sink,
-        }
-    }
-}
-
-pub struct Track {
-    pub path: Option<PathBuf>,
-    pub pos: Option<Duration>,
-    pub duration: Option<Duration>,
-    pub tagged_file: Option<TaggedFile>,
-    pub has_metadata: bool,
-    temp: PathBuf,
-}
-
-impl Track {
-    pub fn new(temp: PathBuf) -> Track {
-        Track {
-            path: None,
-            pos: None,
-            duration: None,
-            tagged_file: None,
-            has_metadata: false,
-            temp,
-        }
-    }
-
-    pub fn get_temp(&self) -> PathBuf {
-        self.temp.clone()
-    }
-
-    pub fn reset_dur(&mut self) {
-        self.pos = None;
-        self.duration = None;
-    }
-
-    pub fn clear(&mut self) {
-        self.tagged_file = None;
-        self.duration = None;
-        self.path = None;
-        self.has_metadata = false;
-        self.pos = None;
-    }
-}
-
-#[derive(PartialEq, Debug, Default)]
-pub enum PlaybackStatus {
-    Playing,
-    Paused,
-    #[default]
-    Idle,
-}
+use crate::logic::player::AUDIO_FORMATS;
 
 pub struct TrackQueue {
     queue: VecDeque<PathBuf>,

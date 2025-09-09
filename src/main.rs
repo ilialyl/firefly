@@ -1,10 +1,12 @@
 use std::{
-    path::PathBuf,
+    fs,
+    path::Path,
     sync::mpsc::{self, Receiver, Sender},
     time::SystemTime,
 };
 
 use color_eyre::eyre::Result;
+use glob::glob;
 use log::info;
 
 use crate::{
@@ -22,10 +24,17 @@ pub mod view;
 #[cfg(test)]
 mod tests;
 
+const TEMP_DIR: &str = "firefly_temp";
+
 fn main() -> Result<()> {
     view::terminal::install_panic_hook();
     color_eyre::install()?;
     setup_logger()?;
+
+    let temp_dir = Path::new(TEMP_DIR);
+    if !temp_dir.exists() {
+        fs::create_dir(temp_dir).expect("Failed to create temp directory");
+    }
 
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
@@ -38,10 +47,13 @@ fn main() -> Result<()> {
         let mut current_msg;
 
         // Tick
-        update(&mut model, Message::Tick, &msg_tx, &info_tx);
+        current_msg = update(&mut model, Message::Tick, &msg_tx, &info_tx);
+        while current_msg.is_some() {
+            current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+        }
 
         // Draw TUI view
-        terminal.draw(|f| view(&model, f))?;
+        terminal.draw(|f| view(&mut model, f))?;
 
         // Handle terminal events
         current_msg = terminal::handle_events()?;
@@ -72,9 +84,17 @@ fn main() -> Result<()> {
 }
 
 fn clean_up(session: &Session) -> Result<()> {
-    let track_temp: PathBuf = session.get_temp();
-    if track_temp.exists() {
-        std::fs::remove_file(track_temp)?;
+    let temp_pattern = glob(format!("firefly_temp/{}*", session.get_code()).as_str());
+    for path in temp_pattern.expect("Failed to read glob pattern") {
+        match path {
+            Ok(path) => {
+                if path.is_file() {
+                    fs::remove_file(&path)?;
+                    println!("Deleted {:?}", path);
+                }
+            }
+            Err(e) => println!("Error: {:?}", e),
+        }
     }
 
     info!("Cleaned up, restoring terminal.");
