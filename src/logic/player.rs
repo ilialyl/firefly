@@ -30,11 +30,10 @@ pub struct Player {
     pub status: PlaybackStatus,
     pub stream: OutputStream,
     pub sink: Sink,
-    session_code: String,
 }
 
 impl Player {
-    pub fn new(session_code: String) -> Player {
+    pub fn new() -> Player {
         let (stream, sink) = Self::get_sink();
         Player {
             current: None,
@@ -44,12 +43,7 @@ impl Player {
             status: PlaybackStatus::default(),
             stream,
             sink,
-            session_code,
         }
-    }
-
-    pub fn get_temp_code(&self) -> String {
-        self.session_code.clone()
     }
 
     pub fn new_track(
@@ -58,12 +52,7 @@ impl Player {
         msg_tx: &Sender<Message>,
         info_tx: &Sender<String>,
     ) -> Result<()> {
-        self.current = Some(Track::new(
-            track,
-            self.session_code.clone(),
-            msg_tx,
-            info_tx,
-        )?);
+        self.current = Some(Track::new(track, msg_tx, info_tx)?);
 
         Ok(())
     }

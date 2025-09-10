@@ -29,7 +29,7 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
     Block::new()
         .fg(Color::White)
         .title(
-            format!("SESSION: {}", model.session.get_code())
+            format!("v{}", env!("CARGO_PKG_VERSION"))
                 .to_span()
                 .into_right_aligned_line(),
         )

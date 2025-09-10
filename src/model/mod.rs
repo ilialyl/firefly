@@ -14,7 +14,7 @@ impl Default for Model {
     fn default() -> Self {
         let session = Session::default();
         Self {
-            player: Player::new(session.get_code()),
+            player: Player::new(),
             session,
             info_display: String::new(),
             ffmpeg_handle: None,

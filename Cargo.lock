@@ -828,7 +828,6 @@ dependencies = [
  "lofty",
  "log",
  "once_cell",
- "rand",
  "ratatui",
  "rfd",
  "rodio",

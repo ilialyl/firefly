@@ -10,7 +10,7 @@ use glob::glob;
 use log::info;
 
 use crate::{
-    logic::session_state::{RunningState, Session},
+    logic::session_state::RunningState,
     message::{Message, update::update},
     model::Model,
     view::{terminal, view},
@@ -25,6 +25,7 @@ pub mod view;
 mod tests;
 
 const TEMP_DIR: &str = "firefly_temp";
+const TEMP_FILE_PREFIX: &str = "firefly";
 
 fn main() -> Result<()> {
     view::terminal::install_panic_hook();
@@ -41,7 +42,7 @@ fn main() -> Result<()> {
     let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
     let (info_tx, info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
-    info!("\n\n\nStarting session {}.", model.session.get_code());
+    info!("\n\n\nStarting a new session...");
 
     while model.session.state != RunningState::Done {
         let mut current_msg;
@@ -80,11 +81,11 @@ fn main() -> Result<()> {
         }
     }
 
-    clean_up(&model.session)
+    view::terminal::restore_terminal()
 }
 
-fn clean_up(session: &Session) -> Result<()> {
-    let temp_pattern = glob(format!("firefly_temp/{}*", session.get_code()).as_str());
+fn _clear_cache() -> Result<()> {
+    let temp_pattern = glob(format!("firefly_temp/{}*", TEMP_FILE_PREFIX).as_str());
     for path in temp_pattern.expect("Failed to read glob pattern") {
         match path {
             Ok(path) => {
@@ -99,7 +100,7 @@ fn clean_up(session: &Session) -> Result<()> {
 
     info!("Cleaned up, restoring terminal.");
 
-    view::terminal::restore_terminal()
+    Ok(())
 }
 
 fn setup_logger() -> Result<()> {
