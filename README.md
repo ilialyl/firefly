@@ -1,7 +1,7 @@
 # Terminal Audio Player
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and [Ratatui](https://ratatui.rs/) for interface.
 ![example_img](example_img/firefly_v0-5-0.png)
-## Features (v0.5.0)
+## Features (v0.5.1)
 - Play, Pause, Rewind, and Seek.
 - Volume control from 0-200%
 - Track Looping
@@ -17,10 +17,11 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Vorbis (ogg)
 - WAV
 
-It can still play other formats by converting formats not supported by Rodio to FLAC using [rust_ffmpeg](https://github.com/RustNSparks/ffmpeg-suite-rs).
+It can still play other formats by converting formats not supported by Rodio to FLAC using [rust_ffmpeg](https://github.com/RustNSparks/ffmpeg-suite-rs). (Does not overwrite)
 ### Tested Converted Formats
 - Opus
 - OGA
+Temporary FLAC files stay on disk for reuse, which can be cleared by running `cargo run --release -- clean` or `firefly clean`
 
 ### Planned Features
 - [ ] Playlists
