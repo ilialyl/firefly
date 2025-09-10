@@ -17,7 +17,7 @@ use rodio::{Decoder, Sink};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
 use tokio::runtime::Runtime;
 
-use crate::{TEMP_DIR, TEMP_FILE_PREFIX, logic::player::is_rodio_supported, message::Message};
+use crate::{TEMP_FILE_PREFIX, data::cache, logic::player::is_rodio_supported, message::Message};
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum FormatConversion {
@@ -79,7 +79,9 @@ impl Track {
 
         PathBuf::from(format!(
             "{}/{}_{}.flac",
-            TEMP_DIR, TEMP_FILE_PREFIX, file_name
+            cache::get_cache_dir().to_str().unwrap(),
+            TEMP_FILE_PREFIX,
+            file_name
         ))
     }
 

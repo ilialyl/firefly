@@ -10,12 +10,14 @@ use glob::glob;
 use log::info;
 
 use crate::{
+    data::cache,
     logic::session_state::RunningState,
     message::{Message, update::update},
     model::Model,
     view::{terminal, view},
 };
 
+pub mod data;
 pub mod logic;
 pub mod message;
 pub mod model;
@@ -24,7 +26,6 @@ pub mod view;
 #[cfg(test)]
 mod tests;
 
-const TEMP_DIR: &str = "firefly_temp";
 const TEMP_FILE_PREFIX: &str = "firefly";
 
 fn main() -> Result<()> {
@@ -32,9 +33,9 @@ fn main() -> Result<()> {
     color_eyre::install()?;
     setup_logger()?;
 
-    let temp_dir = Path::new(TEMP_DIR);
-    if !temp_dir.exists() {
-        fs::create_dir(temp_dir).expect("Failed to create temp directory");
+    let cache_dir = cache::get_cache_dir();
+    if !cache_dir.exists() {
+        fs::create_dir(&cache_dir).expect("Failed to create cache directory.");
     }
 
     let mut terminal = view::terminal::init_terminal()?;
@@ -43,6 +44,7 @@ fn main() -> Result<()> {
     let (info_tx, info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     info!("\n\n\nStarting a new session...");
+    info!("Cache directory: {}", &cache_dir.to_str().unwrap());
 
     while model.session.state != RunningState::Done {
         let mut current_msg;
@@ -84,8 +86,15 @@ fn main() -> Result<()> {
     view::terminal::restore_terminal()
 }
 
-fn _clear_cache() -> Result<()> {
-    let temp_pattern = glob(format!("firefly_temp/{}*", TEMP_FILE_PREFIX).as_str());
+fn _clear_cache(dir: &Path) -> Result<()> {
+    let temp_pattern = glob(
+        format!(
+            "{}/{}*",
+            dir.as_os_str().to_str().unwrap(),
+            TEMP_FILE_PREFIX
+        )
+        .as_str(),
+    );
     for path in temp_pattern.expect("Failed to read glob pattern") {
         match path {
             Ok(path) => {
