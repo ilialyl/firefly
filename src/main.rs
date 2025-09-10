@@ -1,12 +1,10 @@
 use std::{
     fs,
-    path::Path,
     sync::mpsc::{self, Receiver, Sender},
     time::SystemTime,
 };
 
 use color_eyre::eyre::Result;
-use glob::glob;
 use log::info;
 
 use crate::{
@@ -17,6 +15,7 @@ use crate::{
     view::{terminal, view},
 };
 
+pub mod cli;
 pub mod data;
 pub mod logic;
 pub mod message;
@@ -29,7 +28,6 @@ mod tests;
 const TEMP_FILE_PREFIX: &str = "firefly";
 
 fn main() -> Result<()> {
-    view::terminal::install_panic_hook();
     color_eyre::install()?;
     setup_logger()?;
 
@@ -38,6 +36,18 @@ fn main() -> Result<()> {
         fs::create_dir(&cache_dir).expect("Failed to create cache directory.");
     }
 
+    let cli_command = cli::cli().get_matches();
+
+    match cli_command.subcommand() {
+        Some(("clean", _)) => {
+            cli::clear_cache(&cache_dir)?;
+            println!("Success");
+            return Ok(());
+        }
+        _ => {}
+    };
+
+    view::terminal::install_panic_hook();
     let mut terminal = view::terminal::init_terminal()?;
     let mut model = Model::default();
     let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
@@ -83,31 +93,10 @@ fn main() -> Result<()> {
         }
     }
 
-    view::terminal::restore_terminal()
-}
+    view::terminal::restore_terminal()?;
 
-fn _clear_cache(dir: &Path) -> Result<()> {
-    let temp_pattern = glob(
-        format!(
-            "{}/{}*",
-            dir.as_os_str().to_str().unwrap(),
-            TEMP_FILE_PREFIX
-        )
-        .as_str(),
-    );
-    for path in temp_pattern.expect("Failed to read glob pattern") {
-        match path {
-            Ok(path) => {
-                if path.is_file() {
-                    fs::remove_file(&path)?;
-                    println!("Deleted {:?}", path);
-                }
-            }
-            Err(e) => println!("Error: {:?}", e),
-        }
-    }
-
-    info!("Cleaned up, restoring terminal.");
+    println!("Thank you for using Firefly.");
+    println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");
 
     Ok(())
 }
