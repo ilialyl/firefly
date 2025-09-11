@@ -1,8 +1,8 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
-    text::Span,
+    style::{Color, Modifier, Style, Stylize},
+    text::{Line, Span},
     widgets::Paragraph,
 };
 
@@ -19,10 +19,10 @@ pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
         ])
         .split(area);
 
-    let mut on_select = Style::default().add_modifier(Modifier::ITALIC);
+    let mut on_select = Style::new().reversed();
 
     if model.player.queue.is_arrange() {
-        on_select = on_select.add_modifier(Modifier::UNDERLINED);
+        on_select = Style::new().bg(Color::Rgb(255, 192, 15));
     }
 
     for (idx, track) in prev_tracks.iter().enumerate() {
@@ -35,15 +35,17 @@ pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
         );
     }
 
-    for (idx, track) in queued_tracks.iter().enumerate() {
+    for (idx, track) in queued_tracks.into_iter().enumerate() {
+        let text = format!(" {}", track);
+
         if model.player.queue.get_selected() == idx {
             frame.render_widget(
-                Span::styled(track.clone(), on_select),
+                Line::styled(text.to_string(), on_select),
                 chunks[prev_tracks.len() + idx],
             );
         }
         frame.render_widget(
-            Paragraph::new(track.clone()),
+            Paragraph::new(text.to_string()),
             chunks[prev_tracks.len() + idx],
         );
     }
