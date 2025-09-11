@@ -2,11 +2,12 @@ use color_eyre::eyre::{Result, eyre};
 use lofty::{file::TaggedFile, probe::Probe};
 use rfd::FileDialog;
 use rodio::{OutputStream, Sink};
+use rust_ffmpeg::FFmpegProcess;
 use std::{
     ops::{Add, Sub},
     path::{Path, PathBuf},
     process::Command,
-    sync::mpsc::Sender,
+    sync::{Arc, Mutex, mpsc::Sender},
     time::Duration,
 };
 
@@ -30,6 +31,7 @@ pub struct Player {
     pub status: PlaybackStatus,
     pub stream: OutputStream,
     pub sink: Sink,
+    pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
 
 impl Player {
@@ -43,6 +45,7 @@ impl Player {
             status: PlaybackStatus::default(),
             stream,
             sink,
+            ffmpeg_handle: None,
         }
     }
 

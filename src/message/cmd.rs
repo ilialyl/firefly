@@ -209,7 +209,7 @@ pub fn skip(
         return None;
     }
 
-    if let Some(handle) = model.ffmpeg_handle.take() {
+    if let Some(handle) = model.player.ffmpeg_handle.take() {
         let runtime = Runtime::new().unwrap();
         runtime.block_on(handle.lock().unwrap().kill()).unwrap();
     }
@@ -271,7 +271,7 @@ pub fn busy(model: &mut Model) -> Option<Message> {
 }
 
 pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
-    model.ffmpeg_handle = Some(handle);
+    model.player.ffmpeg_handle = Some(handle);
 
     Some(Message::Busy)
 }
@@ -310,7 +310,7 @@ pub fn previous_track(
         return None;
     }
 
-    if let Some(handle) = model.ffmpeg_handle.take() {
+    if let Some(handle) = model.player.ffmpeg_handle.take() {
         let runtime = Runtime::new().unwrap();
         runtime.block_on(handle.lock().unwrap().kill()).unwrap();
     }

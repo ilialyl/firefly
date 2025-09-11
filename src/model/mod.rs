@@ -1,13 +1,9 @@
-use rust_ffmpeg::FFmpegProcess;
-use std::sync::{Arc, Mutex};
-
 use crate::logic::{player::Player, session_state::Session};
 
 pub struct Model {
     pub session: Session,
     pub player: Player,
     pub info_display: String,
-    pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
 
 impl Default for Model {
@@ -17,7 +13,6 @@ impl Default for Model {
             player: Player::new(),
             session,
             info_display: String::new(),
-            ffmpeg_handle: None,
         }
     }
 }
