@@ -1,9 +1,13 @@
-use crate::logic::{player::Player, session_state::Session};
+use crate::{
+    logic::{player::Player, session_state::Session},
+    view::tabs::SelectedTab,
+};
 
 pub struct Model {
     pub session: Session,
     pub player: Player,
     pub info_display: String,
+    pub selected_tab: SelectedTab,
 }
 
 impl Default for Model {
@@ -13,6 +17,7 @@ impl Default for Model {
             player: Player::new(),
             session,
             info_display: String::new(),
+            selected_tab: SelectedTab::default(),
         }
     }
 }

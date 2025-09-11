@@ -57,6 +57,7 @@ fn handle_keys(key_event: KeyEvent) -> Option<Message> {
         KeyCode::Down => Some(Message::MoveQueueDown),
         KeyCode::Char('a') => Some(Message::ToggleArrange),
         KeyCode::Char('p') => Some(Message::PreviousTrack),
+        KeyCode::Tab => Some(Message::CycleTabs),
         _ => None,
     }
 }

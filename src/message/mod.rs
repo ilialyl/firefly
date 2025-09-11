@@ -26,4 +26,5 @@ pub enum Message {
     Busy,
     UpdateInfo(String),
     PreviousTrack,
+    CycleTabs,
 }

@@ -332,3 +332,9 @@ pub fn previous_track(
 
     None
 }
+
+pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
+    model.selected_tab.cycle_right();
+
+    None
+}

@@ -31,6 +31,7 @@ pub fn update(
         Message::ConversionStarted(handle) => cmd::conversion_started(handle, model),
         Message::ConversionEnded => cmd::conversion_ended(model),
         Message::UpdateInfo(info) => cmd::update_info(info, model),
+        Message::CycleTabs => cmd::cycle_tabs(model),
         Message::Quit => cmd::quit(model),
     }
 }

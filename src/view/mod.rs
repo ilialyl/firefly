@@ -1,4 +1,5 @@
 pub mod main_tab;
+pub mod tabs;
 pub mod terminal;
 
 use ratatui::{
@@ -25,6 +26,8 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
         .fg(Color::White)
         .title("Firefly Player".to_span().into_centered_line())
         .render(outer_layout[0], frame.buffer_mut());
+
+    tabs::draw(model, outer_layout[0], frame.buffer_mut());
 
     Block::new()
         .fg(Color::White)
