@@ -63,7 +63,6 @@ impl TrackQueue {
                         .filter(|e| AUDIO_FORMATS.contains(e))
                         .map(|_| p)
                 })
-                .take(50)
                 .collect();
             self.queue.extend(path_vec);
         }
