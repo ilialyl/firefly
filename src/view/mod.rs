@@ -10,7 +10,7 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-use crate::model::Model;
+use crate::{model::Model, view::tabs::SelectedTab};
 
 pub fn view(model: &mut Model, frame: &mut Frame) {
     render(model, frame);
@@ -38,7 +38,10 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
         )
         .render(outer_layout[0], frame.buffer_mut());
 
-    main_tab::draw(model, frame, outer_layout[1]);
+    match model.selected_tab {
+        SelectedTab::Main => main_tab::draw(model, frame, outer_layout[1]),
+        SelectedTab::Playlist => {}
+    }
 }
 
 fn center_vertical(area: Rect, height: u16) -> Rect {
