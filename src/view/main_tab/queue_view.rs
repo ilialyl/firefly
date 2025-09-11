@@ -1,54 +1,83 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
-    text::{Line, Span},
+    style::{Color, Modifier, Style},
+    text::Line,
     widgets::Paragraph,
 };
 
 use crate::{logic::player::Player, model::Model};
 
-pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
+pub struct QueueViewState {
+    pub scroll_offset: usize,
+    pub area_height: Option<usize>,
+}
+
+impl Default for QueueViewState {
+    fn default() -> Self {
+        QueueViewState {
+            scroll_offset: 0,
+            area_height: None,
+        }
+    }
+}
+
+pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let queued_tracks = get_queued_tracks(&model.player);
     let prev_tracks = get_previous_tracks(&model.player);
-    let chunks = Layout::default()
+
+    let chunk = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
-            Constraint::Length(1);
-            prev_tracks.len() + queued_tracks.len()
-        ])
+        .constraints(vec![Constraint::Percentage(100)])
         .split(area);
 
-    let mut on_select = Style::new().reversed();
+    let mut lines: Vec<Line> = Vec::new();
 
-    if model.player.queue.is_arrange() {
-        on_select = Style::new().bg(Color::Rgb(255, 192, 15));
+    for track in prev_tracks {
+        lines.push(Line::from(Line::styled(
+            track,
+            Style::default().add_modifier(Modifier::CROSSED_OUT),
+        )));
     }
 
-    for (idx, track) in prev_tracks.iter().enumerate() {
-        frame.render_widget(
-            Span::styled(
-                track.clone(),
-                Style::default().add_modifier(Modifier::CROSSED_OUT),
-            ),
-            chunks[idx],
-        );
+    let mut on_select = Style::default().fg(Color::Rgb(255, 192, 15));
+    if model.player.queue.is_arrange() {
+        on_select = on_select.add_modifier(Modifier::BOLD);
     }
 
     for (idx, track) in queued_tracks.into_iter().enumerate() {
         let text = format!(" {}", track);
-
         if model.player.queue.get_selected() == idx {
-            frame.render_widget(
-                Line::styled(text.to_string(), on_select),
-                chunks[prev_tracks.len() + idx],
-            );
+            lines.push(Line::from(text.clone()).style(on_select));
+        } else {
+            lines.push(Line::from(text).style(Style::new().fg(Color::White)));
         }
-        frame.render_widget(
-            Paragraph::new(text.to_string()),
-            chunks[prev_tracks.len() + idx],
-        );
     }
+
+    let paragraph = Paragraph::new(lines).scroll((model.queue_view.scroll_offset as u16, 0));
+
+    frame.render_widget(paragraph, chunk[0]);
+    model.queue_view.area_height = Some(chunk[0].height as usize);
+}
+
+pub fn ensure_visible(
+    selected: usize,
+    mut scroll_offset: usize,
+    content_len: usize,
+    view_height: usize,
+) -> usize {
+    // if selected is above the viewport, scroll up
+    if selected < scroll_offset {
+        scroll_offset = selected;
+    }
+    // if selected is below the viewport, scroll down
+    else if selected >= scroll_offset + view_height {
+        scroll_offset = selected + 1 - view_height;
+    }
+
+    // clamp at bottom
+    let max_offset = content_len.saturating_sub(view_height);
+    scroll_offset.min(max_offset)
 }
 
 fn get_previous_tracks(player: &Player) -> Vec<String> {

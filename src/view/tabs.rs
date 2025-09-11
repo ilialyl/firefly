@@ -2,6 +2,7 @@ use log::debug;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
+    style::{Color, Style},
     text::Line,
     widgets::{Tabs, Widget},
 };
@@ -41,6 +42,7 @@ pub fn draw(model: &mut Model, area: Rect, buf: &mut Buffer) {
     let selected_tab_index = model.selected_tab as usize;
     Tabs::new(titles)
         .select(selected_tab_index)
+        .style(Style::new().fg(Color::White))
         .padding("", "")
         .divider(" ")
         .render(area, buf);

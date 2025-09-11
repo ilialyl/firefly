@@ -5,8 +5,8 @@ pub mod terminal;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Flex, Layout, Rect},
-    style::{Color, Stylize},
-    text::ToSpan,
+    style::{Color, Style},
+    text::Line,
     widgets::{Block, Widget},
 };
 
@@ -23,18 +23,18 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
         .split(frame.area());
 
     Block::new()
-        .fg(Color::White)
-        .title("Firefly Player".to_span().into_centered_line())
+        .title(Line::style(Line::from("Player"), Style::new().fg(Color::White)).centered())
         .render(outer_layout[0], frame.buffer_mut());
 
     tabs::draw(model, outer_layout[0], frame.buffer_mut());
 
     Block::new()
-        .fg(Color::White)
         .title(
-            format!("v{}", env!("CARGO_PKG_VERSION"))
-                .to_span()
-                .into_right_aligned_line(),
+            Line::style(
+                Line::from(format!("v{}", env!("CARGO_PKG_VERSION"))),
+                Style::new().fg(Color::White),
+            )
+            .right_aligned(),
         )
         .render(outer_layout[0], frame.buffer_mut());
 

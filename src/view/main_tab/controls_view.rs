@@ -1,44 +1,43 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::Stylize,
-    text::{Span, Text},
+    style::{Color, Stylize},
     widgets::Paragraph,
 };
 
 use crate::{logic::session_state::RunningState, model::Model};
 
 pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
-    let mut controls: Vec<Span<'_>> = Vec::new();
+    let mut controls: Vec<Paragraph<'_>> = Vec::new();
 
-    let mut toggle_play = Span::from(" Play/Pause <Space>");
+    let mut toggle_play = Paragraph::new(" Play/Pause <Space>").fg(Color::White);
     if model.session.state == RunningState::Busy {
         toggle_play = toggle_play.crossed_out();
     }
     controls.push(toggle_play);
 
-    controls.push(Span::from(" Load Now <N>"));
-    controls.push(Span::from(" Queue <Q>"));
-    controls.push(Span::from(" Queue Dir <ShiftQ>"));
-    let mut toggle_arrange = Span::from(" Queue Arrange <A>");
+    controls.push(Paragraph::new(" Load Now <N>").fg(Color::White));
+    controls.push(Paragraph::new(" Queue <Q>").fg(Color::White));
+    controls.push(Paragraph::new(" Queue Dir <ShiftQ>").fg(Color::White));
+    let mut toggle_arrange = Paragraph::new(" Queue Arrange <A>").fg(Color::White);
     if model.player.queue.is_arrange() {
-        toggle_arrange = toggle_arrange.bold().italic();
+        toggle_arrange = toggle_arrange.fg(Color::Rgb(255, 192, 15));
     }
     controls.push(toggle_arrange);
 
-    controls.push(Span::from(" Move Queue Up <↑>"));
-    controls.push(Span::from(" Move Queue Down <↓>"));
-    controls.push(Span::from(" Prev/Skip <P/S>"));
+    controls.push(Paragraph::new(" Move Queue Up <↑>").fg(Color::White));
+    controls.push(Paragraph::new(" Move Queue Down <↓>").fg(Color::White));
+    controls.push(Paragraph::new(" Prev/Skip <P/S>").fg(Color::White));
 
-    let mut rewind_seek = Span::from(" Rewind/Seek <←/→>");
+    let mut rewind_seek = Paragraph::new(" Rewind/Seek <←/→>").fg(Color::White);
     if model.session.state == RunningState::Busy {
         rewind_seek = rewind_seek.crossed_out();
     }
     controls.push(rewind_seek);
 
-    controls.push(Span::from(" Volume <=/->"));
-    controls.push(Span::from(" Loop <L>"));
-    controls.push(Span::from(" Quit <Esc>"));
+    controls.push(Paragraph::new(" Volume <=/->").fg(Color::White));
+    controls.push(Paragraph::new(" Loop <L>").fg(Color::White));
+    controls.push(Paragraph::new(" Quit <Esc>").fg(Color::White));
 
     let rows = Layout::default()
         .direction(Direction::Vertical)
@@ -58,7 +57,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
         })
         .collect();
 
-    for (idx, control) in controls.iter().enumerate() {
-        frame.render_widget(Paragraph::new(Text::from(control.clone())), grid[idx])
+    for (idx, control) in controls.into_iter().enumerate() {
+        frame.render_widget(control, grid[idx])
     }
 }
