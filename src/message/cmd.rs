@@ -16,6 +16,7 @@ use crate::{
     },
     message::Message,
     model::Model,
+    view::main_tab::queue_view,
 };
 
 pub fn tick(
@@ -23,6 +24,16 @@ pub fn tick(
     _msg_tx: &Sender<Message>,
     _info_tx: &Sender<String>,
 ) -> Option<Message> {
+    // Scroll queue view
+    if let Some(area_height) = model.queue_view.area_height.take() {
+        model.queue_view.scroll_offset = queue_view::scroll(
+            model.player.queue.get_selected(),
+            model.queue_view.scroll_offset,
+            model.player.queue.get().len(),
+            area_height,
+        );
+    }
+
     if model.session.state == RunningState::Busy {
         return None;
     }

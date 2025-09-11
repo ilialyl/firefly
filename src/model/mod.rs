@@ -1,6 +1,6 @@
 use crate::{
     logic::{player::Player, session_state::Session},
-    view::tabs::SelectedTab,
+    view::{main_tab::queue_view::QueueViewState, tabs::SelectedTab},
 };
 
 pub struct Model {
@@ -8,6 +8,7 @@ pub struct Model {
     pub player: Player,
     pub info_display: String,
     pub selected_tab: SelectedTab,
+    pub queue_view: QueueViewState,
 }
 
 impl Default for Model {
@@ -18,6 +19,7 @@ impl Default for Model {
             session,
             info_display: String::new(),
             selected_tab: SelectedTab::default(),
+            queue_view: QueueViewState::default(),
         }
     }
 }

@@ -60,7 +60,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     model.queue_view.area_height = Some(chunk[0].height as usize);
 }
 
-pub fn ensure_visible(
+pub fn scroll(
     selected: usize,
     mut scroll_offset: usize,
     content_len: usize,
