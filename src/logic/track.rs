@@ -17,7 +17,11 @@ use rodio::{Decoder, Sink};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
 use tokio::runtime::Runtime;
 
-use crate::{TEMP_FILE_PREFIX, data::cache, logic::player::is_rodio_supported, message::Message};
+use crate::{
+    data::{TEMP_FILE_PREFIX, cache},
+    logic::player::is_rodio_supported,
+    message::Message,
+};
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum FormatConversion {

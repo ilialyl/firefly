@@ -5,7 +5,7 @@ use color_eyre::eyre::Result;
 use glob::glob;
 use log::info;
 
-use crate::TEMP_FILE_PREFIX;
+use crate::data::TEMP_FILE_PREFIX;
 
 pub fn cli() -> Command {
     Command::new("firefly")
