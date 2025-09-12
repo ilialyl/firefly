@@ -5,27 +5,16 @@ use std::{
 };
 
 use color_eyre::eyre::Result;
+use firefly::{cli, view};
 use log::info;
 
-use crate::{
+use firefly::{
     data::cache,
     logic::session_state::RunningState,
     message::{Message, update::update},
     model::Model,
     view::{terminal, view},
 };
-
-pub mod cli;
-pub mod data;
-pub mod logic;
-pub mod message;
-pub mod model;
-pub mod view;
-
-#[cfg(test)]
-mod tests;
-
-const TEMP_FILE_PREFIX: &str = "firefly";
 
 fn main() -> Result<()> {
     color_eyre::install()?;
