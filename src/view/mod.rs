@@ -1,4 +1,5 @@
 pub mod main_tab;
+pub mod playlist_tab;
 pub mod tabs;
 pub mod terminal;
 
@@ -40,7 +41,7 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
 
     match model.selected_tab {
         SelectedTab::Main => main_tab::draw(model, frame, outer_layout[1]),
-        SelectedTab::Playlist => {}
+        SelectedTab::Playlist => playlist_tab::draw(model, frame, outer_layout[1]),
     }
 }
 

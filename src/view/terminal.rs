@@ -16,7 +16,7 @@ use std::time::Duration;
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
-use crate::message::Message;
+use crate::{message::Message, model::Model, view::tabs::SelectedTab};
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
@@ -40,33 +40,78 @@ pub fn install_panic_hook() {
     }));
 }
 
-fn handle_keys(key_event: KeyEvent) -> Option<Message> {
+fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
     match key_event.code {
         KeyCode::Esc => Some(Message::Quit),
-        KeyCode::Char('n') => Some(Message::LoadNow),
-        KeyCode::Char(' ') => Some(Message::TogglePlay),
-        KeyCode::Char('s') => Some(Message::Skip),
-        KeyCode::Char('=') => Some(Message::IncreaseVolume),
-        KeyCode::Char('-') => Some(Message::DecreaseVolume),
-        KeyCode::Right => Some(Message::Seek),
-        KeyCode::Left => Some(Message::Rewind),
-        KeyCode::Char('l') => Some(Message::ToggleLoop),
-        KeyCode::Char('q') => Some(Message::QueueFiles),
-        KeyCode::Char('Q') => Some(Message::QueueDir),
-        KeyCode::Up => Some(Message::MoveQueueUp),
-        KeyCode::Down => Some(Message::MoveQueueDown),
-        KeyCode::Char('a') => Some(Message::ToggleArrange),
-        KeyCode::Char('p') => Some(Message::PreviousTrack),
-        KeyCode::Tab => Some(Message::CycleTabs),
+        KeyCode::Char('n') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::LoadNow),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char(' ') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::TogglePlay),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('s') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::Skip),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('=') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::IncreaseVolume),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('-') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::DecreaseVolume),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Right => match model.selected_tab {
+            SelectedTab::Main => Some(Message::Seek),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Left => match model.selected_tab {
+            SelectedTab::Main => Some(Message::Rewind),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('l') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::ToggleLoop),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('q') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::QueueFiles),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('Q') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::QueueDir),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Up => match model.selected_tab {
+            SelectedTab::Main => Some(Message::MoveQueueUp),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Down => match model.selected_tab {
+            SelectedTab::Main => Some(Message::MoveQueueDown),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('a') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::ToggleArrange),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Char('p') => match model.selected_tab {
+            SelectedTab::Main => Some(Message::PreviousTrack),
+            SelectedTab::Playlist => None,
+        },
+        KeyCode::Tab => match model.selected_tab {
+            SelectedTab::Main => Some(Message::CycleTabs),
+            SelectedTab::Playlist => None,
+        },
         _ => None,
     }
 }
 
-pub fn handle_events() -> Result<Option<Message>> {
+pub fn handle_events(model: &Model) -> Result<Option<Message>> {
     if event::poll(Duration::from_millis(16))? {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                return Ok(handle_keys(key_event));
+                return Ok(handle_keys(key_event, model));
             }
             _ => {}
         };

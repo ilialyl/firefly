@@ -69,7 +69,7 @@ fn main() -> Result<()> {
         terminal.draw(|f| view(&mut model, f))?;
 
         // Handle terminal events
-        current_msg = terminal::handle_events()?;
+        current_msg = terminal::handle_events(&model)?;
 
         // Consume message
         while current_msg.is_some() {
