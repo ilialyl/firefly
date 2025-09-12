@@ -26,13 +26,17 @@ impl Playlist {
     pub fn save_to_file(&self) -> Result<()> {
         let json_data = serde_json::to_string(&self.entries)?;
         if let Some(name) = &self.name {
-            let playlists_path = data::get_data_dir().join("/playlists");
+            let playlists_path = data::get_data_dir().join("playlists");
             if !playlists_path.exists() {
+                log::info!(
+                    "Attempting to create directory {}",
+                    playlists_path.to_str().unwrap()
+                );
                 fs::create_dir_all(&playlists_path)
                     .expect("Failed to create playlist data directory.");
             }
 
-            let mut file = File::create(playlists_path.join(format!("/{}", name)))?;
+            let mut file = File::create(playlists_path.join(format!("{}.json", name)))?;
             file.write(json_data.as_bytes())?;
 
             Ok(())
