@@ -1,11 +1,10 @@
 use std::{
     fs,
     sync::mpsc::{self, Receiver, Sender},
-    time::SystemTime,
 };
 
 use color_eyre::eyre::Result;
-use firefly::{cli, view};
+use firefly::{cli, setup_logger, view};
 use log::info;
 
 use firefly::{
@@ -87,22 +86,5 @@ fn main() -> Result<()> {
     println!("Thank you for using Firefly.");
     println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");
 
-    Ok(())
-}
-
-fn setup_logger() -> Result<()> {
-    fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{} {} {}] {}",
-                humantime::format_rfc3339_seconds(SystemTime::now()),
-                record.level(),
-                record.target(),
-                message
-            ))
-        })
-        .level(log::LevelFilter::Debug)
-        .chain(fern::log_file("output.log")?)
-        .apply()?;
     Ok(())
 }
