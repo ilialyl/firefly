@@ -127,6 +127,13 @@ impl PlaylistCollection {
 
         Ok(json_files)
     }
+
+    pub fn new_playlist(&mut self) -> usize {
+        // Create a new playlist and returns index to it
+        self.playlists.push(Playlist::default());
+
+        (self.playlists.len() - 1) as usize
+    }
 }
 
 fn get_playlists_path() -> PathBuf {
