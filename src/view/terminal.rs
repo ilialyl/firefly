@@ -44,59 +44,59 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
     match key_event.code {
         KeyCode::Esc => Some(Message::Quit),
         KeyCode::Char('n') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::LoadNow),
+            SelectedTab::Main => Some(Message::PlayerLoadNow),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char(' ') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::TogglePlay),
+            SelectedTab::Main => Some(Message::PlayerTogglePlay),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('s') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::Skip),
+            SelectedTab::Main => Some(Message::PlayerSkip),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('=') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::IncreaseVolume),
+            SelectedTab::Main => Some(Message::PlayerIncreaseVolume),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('-') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::DecreaseVolume),
+            SelectedTab::Main => Some(Message::PlayerDecreaseVolume),
             SelectedTab::Playlist => None,
         },
         KeyCode::Right => match model.selected_tab {
-            SelectedTab::Main => Some(Message::Seek),
+            SelectedTab::Main => Some(Message::PlayerSeek),
             SelectedTab::Playlist => None,
         },
         KeyCode::Left => match model.selected_tab {
-            SelectedTab::Main => Some(Message::Rewind),
+            SelectedTab::Main => Some(Message::PlayerRewind),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('l') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::ToggleLoop),
+            SelectedTab::Main => Some(Message::PlayerToggleLoop),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('q') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::QueueFiles),
+            SelectedTab::Main => Some(Message::PlayerQueueFiles),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('Q') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::QueueDir),
+            SelectedTab::Main => Some(Message::PlayerQueueDir),
             SelectedTab::Playlist => None,
         },
         KeyCode::Up => match model.selected_tab {
-            SelectedTab::Main => Some(Message::MoveQueueUp),
+            SelectedTab::Main => Some(Message::PlayerMoveQueueUp),
             SelectedTab::Playlist => None,
         },
         KeyCode::Down => match model.selected_tab {
-            SelectedTab::Main => Some(Message::MoveQueueDown),
+            SelectedTab::Main => Some(Message::PlayerMoveQueueDown),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('a') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::ToggleArrange),
+            SelectedTab::Main => Some(Message::PlayerToggleArrange),
             SelectedTab::Playlist => None,
         },
         KeyCode::Char('p') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PreviousTrack),
+            SelectedTab::Main => Some(Message::PlayerPreviousTrack),
             SelectedTab::Playlist => None,
         },
         KeyCode::Tab => Some(Message::CycleTabs),

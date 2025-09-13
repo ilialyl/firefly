@@ -19,6 +19,8 @@ use crate::{
     view::main_tab::queue_view,
 };
 
+pub mod playlist;
+
 pub fn tick(
     model: &mut Model,
     _msg_tx: &Sender<Message>,
@@ -76,13 +78,13 @@ pub fn tick(
             && status != FormatConversion::Running
         {
             debug!("Load the next track after current track ends.");
-            return Some(Message::Skip);
+            return Some(Message::PlayerSkip);
         }
 
         // Load first track (player.current is None)
     } else if model.player.current.is_none() && !model.player.queue.is_empty() {
         debug!("Load first track (player.current is None)");
-        return Some(Message::Skip);
+        return Some(Message::PlayerSkip);
     }
 
     None
@@ -95,7 +97,7 @@ pub fn load_now(
 ) -> Option<Message> {
     if let Some(path) = player::choose_file() {
         model.player.queue.prepend_track(path);
-        return Some(Message::Skip);
+        return Some(Message::PlayerSkip);
     }
 
     None
