@@ -99,10 +99,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
             SelectedTab::Main => Some(Message::PreviousTrack),
             SelectedTab::Playlist => None,
         },
-        KeyCode::Tab => match model.selected_tab {
-            SelectedTab::Main => Some(Message::CycleTabs),
-            SelectedTab::Playlist => None,
-        },
+        KeyCode::Tab => Some(Message::CycleTabs),
         _ => None,
     }
 }
