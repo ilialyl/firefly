@@ -5,6 +5,13 @@ use crate::{
     view::{main_tab::queue_view::QueueViewState, tabs::SelectedTab},
 };
 
+#[derive(Default)]
+pub enum InputMode {
+    #[default]
+    Normal,
+    Editing,
+}
+
 pub struct Model {
     pub session: Session,
     pub player: Player,
@@ -12,6 +19,7 @@ pub struct Model {
     pub info_display: String,
     pub selected_tab: SelectedTab,
     pub queue_view: QueueViewState,
+    pub input_mode: InputMode,
 }
 
 impl Default for Model {
@@ -24,6 +32,7 @@ impl Default for Model {
             info_display: String::new(),
             selected_tab: SelectedTab::default(),
             queue_view: QueueViewState::default(),
+            input_mode: InputMode::default(),
         }
     }
 }
