@@ -34,6 +34,9 @@ pub fn update(
         Message::CycleTabs => cmd::cycle_tabs(model),
         Message::PlaylistCreate => cmd::playlist::create_playlist(&mut model.playlist_controller),
         Message::PlaylistAddTracks => cmd::playlist::add_tracks(&mut model.playlist_controller),
+        Message::PlaylistToPlayer => {
+            cmd::playlist::send_to_player(&mut model.playlist_controller, &mut model.player)
+        }
         Message::Quit => cmd::quit(model),
         _ => None,
     }

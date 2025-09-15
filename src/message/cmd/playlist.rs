@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use crate::{
-    logic::{player, playlist::playlist_controller::PlaylistController},
+    logic::{
+        player::{self, Player},
+        playlist::playlist_controller::PlaylistController,
+    },
     message::Message,
 };
 
@@ -20,5 +23,18 @@ pub fn add_tracks(playlist_controller: &mut PlaylistController) -> Option<Messag
             new_tracks.iter().for_each(|p| playlist.add(p));
         }
     }
+    None
+}
+
+pub fn send_to_player(
+    playlist_controller: &mut PlaylistController,
+    player: &mut Player,
+) -> Option<Message> {
+    if let Some(selected) = playlist_controller.get_selected_playlist() {
+        player
+            .queue
+            .enqueue_tracks(selected.entries.iter().map(|e| e.to_path_buf()).collect());
+    }
+
     None
 }
