@@ -12,7 +12,10 @@ use ratatui::{
 
 use crate::model::Model;
 
-pub fn draw(_model: &mut Model, frame: &mut Frame, area: Rect) {
+pub mod playlists;
+pub mod tracks;
+
+pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let outer_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Fill(1), Constraint::Length(1)])
@@ -25,7 +28,7 @@ pub fn draw(_model: &mut Model, frame: &mut Frame, area: Rect) {
 
     Block::bordered()
         .title(Line::style(
-            Line::from("Entries"),
+            Line::from("Playlists"),
             Style::new().fg(Color::White),
         ))
         .border_style(Style::default().fg(Color::White))
@@ -33,10 +36,22 @@ pub fn draw(_model: &mut Model, frame: &mut Frame, area: Rect) {
         .render(inner_chunks[0], frame.buffer_mut());
 
     Block::bordered()
+        .title(Line::style(
+            Line::from("Tracks"),
+            Style::new().fg(Color::White),
+        ))
+        .title_alignment(Alignment::Right)
         .border_style(Style::default().fg(Color::White))
         .render(inner_chunks[1], frame.buffer_mut());
 
+    let left_panel_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(100)])
+        .margin(2)
+        .split(inner_chunks[0]);
+
     draw_controls(frame, outer_chunks[1]);
+    playlists::draw(model, frame, left_panel_chunks[0]);
 }
 
 fn draw_controls(frame: &mut Frame, area: Rect) {

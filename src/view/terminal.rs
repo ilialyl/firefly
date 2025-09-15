@@ -45,7 +45,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         KeyCode::Esc => Some(Message::Quit),
         KeyCode::Char('n') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerLoadNow),
-            SelectedTab::Playlist => None,
+            SelectedTab::Playlist => Some(Message::PlaylistCreate),
         },
         KeyCode::Char(' ') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerTogglePlay),

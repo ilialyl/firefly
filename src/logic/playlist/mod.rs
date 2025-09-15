@@ -49,6 +49,10 @@ impl Playlist {
         Ok(playlist)
     }
 
+    pub fn get_name(&self) -> Option<String> {
+        self.name.clone()
+    }
+
     pub fn rename(&mut self, name: &str) {
         self.name = Some(name.to_string());
     }

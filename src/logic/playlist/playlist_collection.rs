@@ -68,4 +68,8 @@ impl PlaylistCollection {
     pub fn get_playlist(&mut self, idx: usize) -> Option<&mut Playlist> {
         self.playlists.get_mut(idx)
     }
+
+    pub fn get_playlists(&self) -> &Vec<Playlist> {
+        &self.playlists
+    }
 }
