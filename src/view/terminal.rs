@@ -77,7 +77,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         },
         KeyCode::Char('q') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerQueueFiles),
-            SelectedTab::Playlist => None,
+            SelectedTab::Playlist => Some(Message::PlaylistAddTracks),
         },
         KeyCode::Char('Q') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerQueueDir),

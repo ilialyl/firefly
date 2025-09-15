@@ -33,6 +33,7 @@ pub fn update(
         Message::UpdateInfo(info) => cmd::update_info(info, model),
         Message::CycleTabs => cmd::cycle_tabs(model),
         Message::PlaylistCreate => cmd::playlist::create_playlist(&mut model.playlist_controller),
+        Message::PlaylistAddTracks => cmd::playlist::add_tracks(&mut model.playlist_controller),
         Message::Quit => cmd::quit(model),
         _ => None,
     }

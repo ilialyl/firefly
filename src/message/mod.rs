@@ -35,4 +35,7 @@ pub enum Message {
     PlaylistRemove,
     PlaylistSave,
     PlaylistQueueUp,
+    PlaylistAddTracks,
+    PlaylistAddDir,
+    PlaylistToPlayer,
 }
