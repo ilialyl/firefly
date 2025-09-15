@@ -50,8 +50,15 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .margin(2)
         .split(inner_chunks[0]);
 
+    let right_panel_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(100)])
+        .margin(2)
+        .split(inner_chunks[1]);
+
     draw_controls(frame, outer_chunks[1]);
     playlists::draw(model, frame, left_panel_chunks[0]);
+    tracks::draw(model, frame, right_panel_chunks[0]);
 }
 
 fn draw_controls(frame: &mut Frame, area: Rect) {
