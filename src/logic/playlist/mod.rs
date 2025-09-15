@@ -15,7 +15,7 @@ pub mod playlist_controller;
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Playlist {
     name: Option<String>,
-    entries: Vec<PathBuf>,
+    pub entries: Vec<PathBuf>,
 }
 
 impl Default for Playlist {
