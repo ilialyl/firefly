@@ -1,8 +1,16 @@
 use crate::logic::playlist::{Playlist, playlist_collection::PlaylistCollection};
 
+#[derive(Default)]
+pub enum PlaylistTabFocus {
+    #[default]
+    Playlists,
+    Tracks,
+}
+
 pub struct PlaylistController {
     pub selected_playlist: Option<usize>,
     pub playlist_collection: PlaylistCollection,
+    pub tab_focus: PlaylistTabFocus,
 }
 
 impl Default for PlaylistController {
@@ -10,6 +18,7 @@ impl Default for PlaylistController {
         PlaylistController {
             selected_playlist: None,
             playlist_collection: PlaylistCollection::default(),
+            tab_focus: PlaylistTabFocus::default(),
         }
     }
 }
@@ -37,6 +46,13 @@ impl PlaylistController {
             return self.playlist_collection.get_playlist(idx);
         } else {
             None
+        }
+    }
+
+    pub fn rename_selected_playlist(&mut self, name: &str) {
+        if !self.playlist_collection.is_empty() {
+            let selected = self.get_selected_playlist().unwrap();
+            selected.rename(name);
         }
     }
 }
