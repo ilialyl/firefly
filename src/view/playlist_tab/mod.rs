@@ -1,7 +1,8 @@
 use ratatui::layout::{Layout, Rect};
 
-use ratatui::style::Style;
+use ratatui::style::{Style, Stylize};
 use ratatui::text::Line;
+use ratatui::widgets::Paragraph;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction},
@@ -34,4 +35,22 @@ pub fn draw(_model: &mut Model, frame: &mut Frame, area: Rect) {
     Block::bordered()
         .border_style(Style::default().fg(Color::White))
         .render(inner_chunks[1], frame.buffer_mut());
+
+    draw_controls(frame, outer_chunks[1]);
+}
+
+fn draw_controls(frame: &mut Frame, area: Rect) {
+    let controls = [
+        "New <n>",
+        "Rename <F2>",
+        "Del Playlist <F5>",
+        "Add Tracks <q/Q>",
+        "Remove Track <Del>",
+        "Arrange <a>",
+        "Send to Player <F1>",
+    ];
+
+    let paragraph = Paragraph::new(controls.join("  ")).centered().white();
+
+    frame.render_widget(paragraph, area);
 }
