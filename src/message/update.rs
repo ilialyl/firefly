@@ -37,11 +37,8 @@ pub fn update(
         Message::PlaylistToPlayer => {
             cmd::playlist::send_to_player(&mut model.playlist_controller, &mut model.player)
         }
-        Message::PlaylistCycleCursorFocusLeft => {
-            cmd::playlist::cycle_playlist_focus_left(&mut model.playlist_controller)
-        }
-        Message::PlaylistCycleCursorFocusRight => {
-            cmd::playlist::cycle_playlist_focus_right(&mut model.playlist_controller)
+        Message::PlaylistCycleCursorFocus(direction) => {
+            cmd::playlist::cycle_playlist_focus(direction, &mut model.playlist_controller)
         }
         Message::Quit => cmd::quit(model),
         _ => None,

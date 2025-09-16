@@ -16,7 +16,11 @@ use std::time::Duration;
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
-use crate::{message::Message, model::Model, view::tabs::SelectedTab};
+use crate::{
+    message::{Message, cursor_movement::CursorMovementDirection},
+    model::Model,
+    view::tabs::SelectedTab,
+};
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
@@ -65,11 +69,15 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         },
         KeyCode::Right => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerSeek),
-            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocusRight),
+            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocus(
+                CursorMovementDirection::Right,
+            )),
         },
         KeyCode::Left => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerRewind),
-            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocusLeft),
+            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocus(
+                CursorMovementDirection::Left,
+            )),
         },
         KeyCode::Char('l') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerToggleLoop),

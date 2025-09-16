@@ -1,9 +1,12 @@
 pub mod cmd;
+pub mod cursor_movement;
 pub mod update;
 
 use std::sync::{Arc, Mutex};
 
 use rust_ffmpeg::FFmpegProcess;
+
+use crate::message::cursor_movement::CursorMovementDirection;
 
 pub enum Message {
     Tick,
@@ -38,6 +41,5 @@ pub enum Message {
     PlaylistAddTracks,
     PlaylistAddDir,
     PlaylistToPlayer,
-    PlaylistCycleCursorFocusLeft,
-    PlaylistCycleCursorFocusRight,
+    PlaylistCycleCursorFocus(CursorMovementDirection),
 }

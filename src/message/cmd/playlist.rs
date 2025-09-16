@@ -5,7 +5,7 @@ use crate::{
         player::{self, Player},
         playlist::playlist_controller::PlaylistController,
     },
-    message::Message,
+    message::{Message, cursor_movement::CursorMovementDirection},
 };
 
 pub fn create_playlist(playlist_controller: &mut PlaylistController) -> Option<Message> {
@@ -39,14 +39,15 @@ pub fn send_to_player(
     None
 }
 
-pub fn cycle_playlist_focus_left(playlist_controller: &mut PlaylistController) -> Option<Message> {
-    playlist_controller.tab_focus.cycle_focus_left();
-
-    None
-}
-
-pub fn cycle_playlist_focus_right(playlist_controller: &mut PlaylistController) -> Option<Message> {
-    playlist_controller.tab_focus.cycle_focus_right();
+pub fn cycle_playlist_focus(
+    direction: CursorMovementDirection,
+    playlist_controller: &mut PlaylistController,
+) -> Option<Message> {
+    match direction {
+        CursorMovementDirection::Left => playlist_controller.tab_focus.cycle_focus_left(),
+        CursorMovementDirection::Right => playlist_controller.tab_focus.cycle_focus_right(),
+        _ => {}
+    }
 
     None
 }
