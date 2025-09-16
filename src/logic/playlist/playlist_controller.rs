@@ -62,14 +62,14 @@ impl PlaylistController {
 impl PlaylistTabFocus {
     pub fn cycle_focus_left(&mut self) {
         let current_index = *self as usize;
-        let next_index = (current_index - 1).min(0);
+        let next_index = (current_index - 1).max(0);
 
         *self = Self::from_repr(next_index).unwrap_or(*self);
     }
 
     pub fn cycle_focus_right(&mut self) {
         let current_index = *self as usize;
-        let next_index = (current_index + 1).max(PlaylistTabFocus::COUNT - 1);
+        let next_index = (current_index + 1).min(PlaylistTabFocus::COUNT - 1);
 
         *self = Self::from_repr(next_index).unwrap_or(*self);
     }
