@@ -45,12 +45,14 @@ impl Playlist {
     }
 
     pub fn select_next_track(&mut self) {
-        self.selected_track =
-            Some((self.selected_track.unwrap_or(0) + 1).min(self.tracks.len() - 1));
+        self.selected_track = Some(
+            (self.selected_track.unwrap_or(0) + 1)
+                .min(self.tracks.len().checked_sub(1).unwrap_or(0)),
+        );
     }
 
     pub fn select_prev_track(&mut self) {
-        self.selected_track = Some((self.selected_track.unwrap_or(0) - 1).max(0));
+        self.selected_track = Some(self.selected_track.unwrap_or(0).checked_sub(1).unwrap_or(0));
     }
 
     pub fn from(file: &Path) -> Result<Playlist> {

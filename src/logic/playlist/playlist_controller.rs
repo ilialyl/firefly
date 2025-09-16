@@ -27,15 +27,22 @@ impl Default for PlaylistController {
 
 impl PlaylistController {
     pub fn next_playlist(&mut self) {
-        self.selected_playlist =
-            Some((self.selected_playlist.unwrap_or(0) + 1).max(self.playlist_collection.len() - 1));
+        self.selected_playlist = Some(
+            (self.selected_playlist.unwrap_or(0) + 1)
+                .min(self.playlist_collection.len().checked_sub(1).unwrap_or(0)),
+        );
     }
 
     pub fn prev_playlist(&mut self) {
         if self.playlist_collection.is_empty() {
             self.selected_playlist = None;
         } else {
-            self.selected_playlist = Some((self.selected_playlist.unwrap_or(0) - 1).min(0));
+            self.selected_playlist = Some(
+                self.selected_playlist
+                    .unwrap_or(0)
+                    .checked_sub(1)
+                    .unwrap_or(0),
+            );
         }
     }
 
@@ -62,7 +69,7 @@ impl PlaylistController {
 impl PlaylistTabFocus {
     pub fn cycle_focus_left(&mut self) {
         let current_index = *self as usize;
-        let next_index = (current_index - 1).max(0);
+        let next_index = current_index.checked_sub(1).unwrap_or(0);
 
         *self = Self::from_repr(next_index).unwrap_or(*self);
     }
