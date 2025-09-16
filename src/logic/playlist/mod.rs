@@ -15,14 +15,16 @@ pub mod playlist_controller;
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Playlist {
     name: Option<String>,
-    pub entries: Vec<PathBuf>,
+    pub tracks: Vec<PathBuf>,
+    pub selected_track: Option<usize>,
 }
 
 impl Default for Playlist {
     fn default() -> Self {
         Playlist {
             name: None,
-            entries: Vec::<PathBuf>::new(),
+            tracks: Vec::<PathBuf>::new(),
+            selected_track: None,
         }
     }
 }
@@ -42,6 +44,15 @@ impl Playlist {
         }
     }
 
+    pub fn select_next_track(&mut self) {
+        self.selected_track =
+            Some((self.selected_track.unwrap_or(0) + 1).min(self.tracks.len() - 1));
+    }
+
+    pub fn select_prev_track(&mut self) {
+        self.selected_track = Some((self.selected_track.unwrap_or(0) - 1).max(0));
+    }
+
     pub fn from(file: &Path) -> Result<Playlist> {
         let json_data = fs::read_to_string(file)?;
         let playlist: Playlist = serde_json::from_str(&json_data)?;
@@ -59,17 +70,27 @@ impl Playlist {
 
     pub fn add(&mut self, track: &Path) {
         if track.is_file() {
-            self.entries.push(track.to_path_buf());
+            self.tracks.push(track.to_path_buf());
+            self.update_selected_track();
+        }
+    }
+
+    pub fn update_selected_track(&mut self) {
+        if self.tracks.is_empty() {
+            self.selected_track = None;
+        } else {
+            self.selected_track = Some(0);
         }
     }
 
     pub fn remove(&mut self, idx: usize) {
-        self.entries.remove(idx);
+        self.tracks.remove(idx);
+        self.update_selected_track();
     }
 
     pub fn as_vec_string(&mut self) -> Vec<String> {
         let mut vec_string: Vec<String> = Vec::new();
-        for track in &self.entries {
+        for track in &self.tracks {
             if let Some(os_name) = track.file_name() {
                 if let Some(name) = os_name.to_str() {
                     vec_string.push(name.to_string());
@@ -85,7 +106,7 @@ impl Playlist {
     }
 
     pub fn len(&self) -> usize {
-        self.entries.len()
+        self.tracks.len()
     }
 }
 

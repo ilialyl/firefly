@@ -5,7 +5,7 @@ use crate::model::Model;
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     if let Some(selected) = model.playlist_controller.get_selected_playlist() {
         let name_lines: Vec<Line> = selected
-            .entries
+            .tracks
             .iter()
             .map(|e| {
                 e.file_stem()

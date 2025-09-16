@@ -69,15 +69,15 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         },
         KeyCode::Right => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerSeek),
-            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocus(
-                CursorMovementDirection::Right,
-            )),
+            SelectedTab::Playlist => {
+                Some(Message::PlaylistMoveCursor(CursorMovementDirection::Right))
+            }
         },
         KeyCode::Left => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerRewind),
-            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocus(
-                CursorMovementDirection::Left,
-            )),
+            SelectedTab::Playlist => {
+                Some(Message::PlaylistMoveCursor(CursorMovementDirection::Left))
+            }
         },
         KeyCode::Char('l') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerToggleLoop),
@@ -93,11 +93,13 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         },
         KeyCode::Up => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerMoveQueueUp),
-            SelectedTab::Playlist => Some(Message::PlaylistMoveCursorUp),
+            SelectedTab::Playlist => Some(Message::PlaylistMoveCursor(CursorMovementDirection::Up)),
         },
         KeyCode::Down => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerMoveQueueDown),
-            SelectedTab::Playlist => Some(Message::PlaylistMoveCursorDown),
+            SelectedTab::Playlist => {
+                Some(Message::PlaylistMoveCursor(CursorMovementDirection::Down))
+            }
         },
         KeyCode::Char('a') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerToggleArrange),

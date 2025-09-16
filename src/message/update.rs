@@ -40,6 +40,9 @@ pub fn update(
         Message::PlaylistCycleCursorFocus(direction) => {
             cmd::playlist::cycle_playlist_focus(direction, &mut model.playlist_controller)
         }
+        Message::PlaylistMoveCursor(direction) => {
+            cmd::playlist::move_cursor(direction, &mut model.playlist_controller)
+        }
         Message::Quit => cmd::quit(model),
         _ => None,
     }
