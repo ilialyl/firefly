@@ -38,3 +38,15 @@ pub fn send_to_player(
 
     None
 }
+
+pub fn cycle_playlist_focus_left(playlist_controller: &mut PlaylistController) -> Option<Message> {
+    playlist_controller.tab_focus.cycle_focus_left();
+
+    None
+}
+
+pub fn cycle_playlist_focus_right(playlist_controller: &mut PlaylistController) -> Option<Message> {
+    playlist_controller.tab_focus.cycle_focus_right();
+
+    None
+}

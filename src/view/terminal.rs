@@ -65,11 +65,11 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         },
         KeyCode::Right => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerSeek),
-            SelectedTab::Playlist => None,
+            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocusRight),
         },
         KeyCode::Left => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerRewind),
-            SelectedTab::Playlist => None,
+            SelectedTab::Playlist => Some(Message::PlaylistCycleCursorFocusLeft),
         },
         KeyCode::Char('l') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerToggleLoop),
@@ -85,11 +85,11 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         },
         KeyCode::Up => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerMoveQueueUp),
-            SelectedTab::Playlist => None,
+            SelectedTab::Playlist => Some(Message::PlaylistMoveCursorUp),
         },
         KeyCode::Down => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerMoveQueueDown),
-            SelectedTab::Playlist => None,
+            SelectedTab::Playlist => Some(Message::PlaylistMoveCursorDown),
         },
         KeyCode::Char('a') => match model.selected_tab {
             SelectedTab::Main => Some(Message::PlayerToggleArrange),

@@ -27,8 +27,8 @@ pub enum Message {
     UpdateInfo(String),
     PlayerPreviousTrack,
     CycleTabs,
-    PlaylistMoveEntryUp,
-    PlaylistMoveEntryDown,
+    PlaylistMoveCursorUp,
+    PlaylistMoveCursorDown,
     PlaylistCreate,
     PlaylistsNavUp,
     PlaylistsNavDown,
@@ -38,4 +38,6 @@ pub enum Message {
     PlaylistAddTracks,
     PlaylistAddDir,
     PlaylistToPlayer,
+    PlaylistCycleCursorFocusLeft,
+    PlaylistCycleCursorFocusRight,
 }
