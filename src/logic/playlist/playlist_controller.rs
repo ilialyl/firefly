@@ -1,13 +1,6 @@
-use crate::logic::playlist::{Playlist, playlist_collection::PlaylistCollection};
-use strum::EnumCount;
-use strum_macros::{EnumCount, EnumIter, FromRepr};
-
-#[derive(Default, EnumIter, EnumCount, FromRepr, Clone, Copy)]
-pub enum PlaylistTabFocus {
-    #[default]
-    Playlists,
-    Tracks,
-}
+use crate::logic::playlist::{
+    Playlist, playlist_collection::PlaylistCollection, playlist_tab_focus::PlaylistTabFocus,
+};
 
 pub struct PlaylistController {
     pub selected_playlist: Option<usize>,
@@ -63,21 +56,5 @@ impl PlaylistController {
             let selected = self.get_selected_playlist().unwrap();
             selected.rename(name);
         }
-    }
-}
-
-impl PlaylistTabFocus {
-    pub fn cycle_focus_left(&mut self) {
-        let current_index = *self as usize;
-        let next_index = current_index.checked_sub(1).unwrap_or(0);
-
-        *self = Self::from_repr(next_index).unwrap_or(*self);
-    }
-
-    pub fn cycle_focus_right(&mut self) {
-        let current_index = *self as usize;
-        let next_index = (current_index + 1).min(PlaylistTabFocus::COUNT - 1);
-
-        *self = Self::from_repr(next_index).unwrap_or(*self);
     }
 }

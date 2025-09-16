@@ -6,7 +6,7 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-use crate::{logic::playlist::playlist_controller::PlaylistTabFocus, model::Model};
+use crate::{logic::playlist::playlist_tab_focus::PlaylistTabFocus, model::Model};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let playlists = model

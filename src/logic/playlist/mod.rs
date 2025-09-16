@@ -11,6 +11,7 @@ use crate::data;
 
 pub mod playlist_collection;
 pub mod playlist_controller;
+pub mod playlist_tab_focus;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Playlist {

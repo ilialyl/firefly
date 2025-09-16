@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     logic::{
         player::{self, Player},
-        playlist::playlist_controller::{PlaylistController, PlaylistTabFocus},
+        playlist::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
     },
     message::{Message, cursor_movement::CursorMovementDirection},
 };
