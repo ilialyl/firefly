@@ -39,19 +39,6 @@ pub fn send_to_player(
     None
 }
 
-pub fn cycle_playlist_focus(
-    direction: CursorMovementDirection,
-    playlist_controller: &mut PlaylistController,
-) -> Option<Message> {
-    match direction {
-        CursorMovementDirection::Left => playlist_controller.tab_focus.cycle_focus_left(),
-        CursorMovementDirection::Right => playlist_controller.tab_focus.cycle_focus_right(),
-        _ => {}
-    }
-
-    None
-}
-
 pub fn navigate_playlists(
     direction: CursorMovementDirection,
     playlist_controller: &mut PlaylistController,
@@ -96,12 +83,20 @@ pub fn move_cursor(
     direction: CursorMovementDirection,
     playlist_controller: &mut PlaylistController,
 ) -> Option<Message> {
+    if playlist_controller.playlist_collection.is_empty() {
+        return None;
+    }
+
     match direction {
         CursorMovementDirection::Left => {
             playlist_controller.tab_focus = PlaylistTabFocus::Playlists;
         }
         CursorMovementDirection::Right => {
-            playlist_controller.tab_focus = PlaylistTabFocus::Tracks;
+            if let Some(selected_playlist) = playlist_controller.get_selected_playlist()
+                && !selected_playlist.is_empty()
+            {
+                playlist_controller.tab_focus = PlaylistTabFocus::Tracks;
+            }
         }
         _ => match playlist_controller.tab_focus {
             PlaylistTabFocus::Playlists => {

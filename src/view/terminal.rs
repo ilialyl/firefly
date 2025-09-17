@@ -17,7 +17,6 @@ use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
 use crate::{
-    logic::input_box::InputMode,
     message::{Message, cursor_movement::CursorMovementDirection},
     model::Model,
     view::tabs::SelectedTab,
