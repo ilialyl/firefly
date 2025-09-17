@@ -9,8 +9,8 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-use crate::logic::input_box::InputMode;
 use crate::model::Model;
+use crate::view::input_box::InputMode;
 use crate::view::playlist_tab::input_popup::InputPopup;
 
 pub mod input_popup;

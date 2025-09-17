@@ -1,4 +1,4 @@
-use crate::{logic::input_box::InputMode, message::Message, model::Model};
+use crate::{message::Message, model::Model, view::input_box::InputMode};
 
 pub fn enter_edit_mode(model: &mut Model) -> Option<Message> {
     model.input_mode = InputMode::Editing;
