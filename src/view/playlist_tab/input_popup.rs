@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Flex, Layout, Rect},
-    style::{Color, Style},
+    style::Style,
     widgets::{Block, Clear, Widget},
 };
 
@@ -22,7 +22,7 @@ impl InputPopup {
         let popup_block = Block::bordered()
             .title("Value")
             .title_alignment(Alignment::Left)
-            .border_style(Style::default().fg(Color::White));
+            .border_style(Style::default());
 
         let area = Self::create_popup_area(area, self.percent_x, self.length_y);
         Clear.render(area, frame.buffer_mut());

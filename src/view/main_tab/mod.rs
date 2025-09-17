@@ -9,7 +9,6 @@ use ratatui::text::Line;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction},
-    style::Color,
     widgets::{Block, Paragraph, Widget, Wrap},
 };
 
@@ -48,39 +47,27 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     queue_view::draw(model, frame, left_panel_chunks[0]);
 
     Block::bordered()
-        .title(Line::style(
-            Line::from("Player"),
-            Style::new().fg(Color::White),
-        ))
-        .border_style(Style::default().fg(Color::White))
+        .title(Line::style(Line::from("Player"), Style::new()))
+        .border_style(Style::default())
         .title_alignment(Alignment::Right)
         .render(main_chunks[0], frame.buffer_mut());
 
     Block::bordered()
-        .title(Line::style(
-            Line::from("Control"),
-            Style::new().fg(Color::White),
-        ))
-        .border_style(Style::default().fg(Color::White))
+        .title(Line::style(Line::from("Control"), Style::new()))
+        .border_style(Style::default())
         .title_alignment(Alignment::Right)
         .render(main_chunks[1], frame.buffer_mut());
 
     Block::bordered()
-        .title(Line::style(
-            Line::from("Queue"),
-            Style::new().fg(Color::White),
-        ))
-        .border_style(Style::default().fg(Color::White))
+        .title(Line::style(Line::from("Queue"), Style::new()))
+        .border_style(Style::default())
         .title_alignment(Alignment::Left)
         .render(left_panel_border[0], frame.buffer_mut());
 
     if term_too_small {
         Block::bordered()
-            .title(Line::style(
-                Line::from("Warning"),
-                Style::new().fg(Color::White),
-            ))
-            .border_style(Style::default().fg(Color::White))
+            .title(Line::style(Line::from("Warning"), Style::new()))
+            .border_style(Style::default())
             .title_alignment(Alignment::Left)
             .render(left_panel_chunks[1], frame.buffer_mut());
 

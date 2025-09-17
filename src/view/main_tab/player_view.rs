@@ -7,7 +7,7 @@ use lofty::{
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::Style,
     text::Line,
     widgets::{Block, Paragraph, Widget},
 };
@@ -53,11 +53,8 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
                 .split(chunk[1]);
 
             Block::bordered()
-                .title(Line::style(
-                    Line::from("Metadata"),
-                    Style::new().fg(Color::White),
-                ))
-                .border_style(Style::default().fg(Color::White))
+                .title(Line::style(Line::from("Metadata"), Style::new()))
+                .border_style(Style::default())
                 .title_alignment(Alignment::Right)
                 .render(metadata_border_area[0], frame.buffer_mut());
 
@@ -69,7 +66,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
 
             let centered_area = center_vertical(metadata_chunk[0], meta_text.len() as u16);
 
-            let meta_para = Paragraph::new(meta_text.join("\n")).fg(Color::White);
+            let meta_para = Paragraph::new(meta_text.join("\n"));
 
             frame.render_widget(meta_para, centered_area);
         }
@@ -91,7 +88,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     let player_para = Paragraph::new(player_text.join("\n"))
         .centered()
         .alignment(Alignment::Center)
-        .style(Style::new().fg(Color::White));
+        .style(Style::new());
 
     frame.render_widget(player_para, centered_area);
 }

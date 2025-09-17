@@ -6,7 +6,7 @@ pub mod terminal;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Flex, Layout, Rect},
-    style::{Color, Style},
+    style::Style,
     text::Line,
     widgets::{Block, Widget},
 };
@@ -24,7 +24,7 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
         .split(frame.area());
 
     Block::new()
-        .title(Line::style(Line::from("Player"), Style::new().fg(Color::White)).centered())
+        .title(Line::style(Line::from("Player"), Style::new()).centered())
         .render(outer_layout[0], frame.buffer_mut());
 
     tabs::draw(model, outer_layout[0], frame.buffer_mut());
@@ -33,7 +33,7 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
         .title(
             Line::style(
                 Line::from(format!("v{}", env!("CARGO_PKG_VERSION"))),
-                Style::new().fg(Color::White),
+                Style::new(),
             )
             .right_aligned(),
         )

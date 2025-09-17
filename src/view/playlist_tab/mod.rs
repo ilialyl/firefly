@@ -1,12 +1,11 @@
 use ratatui::layout::{Layout, Rect};
 
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction},
-    style::Color,
     widgets::{Block, Widget},
 };
 
@@ -30,21 +29,15 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .split(outer_chunks[0]);
 
     Block::bordered()
-        .title(Line::style(
-            Line::from("Playlists"),
-            Style::new().fg(Color::White),
-        ))
-        .border_style(Style::default().fg(Color::White))
+        .title(Line::style(Line::from("Playlists"), Style::new()))
+        .border_style(Style::default())
         .title_alignment(Alignment::Left)
         .render(inner_chunks[0], frame.buffer_mut());
 
     Block::bordered()
-        .title(Line::style(
-            Line::from("Tracks"),
-            Style::new().fg(Color::White),
-        ))
+        .title(Line::style(Line::from("Tracks"), Style::new()))
         .title_alignment(Alignment::Right)
-        .border_style(Style::default().fg(Color::White))
+        .border_style(Style::default())
         .render(inner_chunks[1], frame.buffer_mut());
 
     let left_panel_chunks = Layout::default()
@@ -79,7 +72,7 @@ fn draw_controls(frame: &mut Frame, area: Rect) {
         "Send to Player <F1>",
     ];
 
-    let paragraph = Paragraph::new(controls.join("  ")).centered().white();
+    let paragraph = Paragraph::new(controls.join("  ")).centered();
 
     frame.render_widget(paragraph, area);
 }
