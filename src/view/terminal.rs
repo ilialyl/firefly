@@ -19,7 +19,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use crate::{
     message::{Message, cursor_movement::CursorMovementDirection},
     model::Model,
-    view::tabs::SelectedTab,
+    view::{input_box::InputMode, tabs::SelectedTab},
 };
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -45,78 +45,46 @@ pub fn install_panic_hook() {
 }
 
 fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
-    match key_event.code {
-        KeyCode::Esc => Some(Message::Quit),
-        KeyCode::Char('n') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerLoadNow),
-            SelectedTab::Playlist => Some(Message::PlaylistCreate),
+    match model.input_mode {
+        InputMode::Normal => match model.selected_tab {
+            SelectedTab::Main => match key_event.code {
+                KeyCode::Esc => Some(Message::Quit),
+                KeyCode::Char('n') => Some(Message::PlayerLoadNow),
+                KeyCode::Char(' ') => Some(Message::PlayerTogglePlay),
+                KeyCode::Char('s') => Some(Message::PlayerSkip),
+                KeyCode::Char('=') => Some(Message::PlayerIncreaseVolume),
+                KeyCode::Char('-') => Some(Message::PlayerDecreaseVolume),
+                KeyCode::Right => Some(Message::PlayerSeek),
+                KeyCode::Left => Some(Message::PlayerRewind),
+                KeyCode::Char('l') => Some(Message::PlayerToggleLoop),
+                KeyCode::Char('q') => Some(Message::PlayerQueueFiles),
+                KeyCode::Char('Q') => Some(Message::PlayerQueueDir),
+                KeyCode::Up => Some(Message::PlayerMoveQueueUp),
+                KeyCode::Down => Some(Message::PlayerMoveQueueDown),
+                KeyCode::Char('a') => Some(Message::PlayerToggleArrange),
+                KeyCode::Char('p') => Some(Message::PlayerPreviousTrack),
+                KeyCode::Tab => Some(Message::CycleTabs),
+                _ => None,
+            },
+
+            SelectedTab::Playlist => match key_event.code {
+                KeyCode::Esc => Some(Message::Quit),
+                KeyCode::Char('n') => Some(Message::PlaylistCreate),
+                KeyCode::Right => Some(Message::PlaylistMoveCursor(CursorMovementDirection::Right)),
+                KeyCode::Left => Some(Message::PlaylistMoveCursor(CursorMovementDirection::Left)),
+                KeyCode::Char('q') => Some(Message::PlaylistAddTracks),
+                KeyCode::Up => Some(Message::PlaylistMoveCursor(CursorMovementDirection::Up)),
+                KeyCode::Down => Some(Message::PlaylistMoveCursor(CursorMovementDirection::Down)),
+                KeyCode::F(1) => Some(Message::PlaylistToPlayer),
+                KeyCode::F(9) => Some(Message::EnterEditMode),
+                KeyCode::Tab => Some(Message::CycleTabs),
+                _ => None,
+            },
         },
-        KeyCode::Char(' ') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerTogglePlay),
-            SelectedTab::Playlist => None,
+        InputMode::Editing => match key_event.code {
+            KeyCode::F(10) => Some(Message::ExitEditMode),
+            _ => None,
         },
-        KeyCode::Char('s') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerSkip),
-            SelectedTab::Playlist => None,
-        },
-        KeyCode::Char('=') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerIncreaseVolume),
-            SelectedTab::Playlist => None,
-        },
-        KeyCode::Char('-') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerDecreaseVolume),
-            SelectedTab::Playlist => None,
-        },
-        KeyCode::Right => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerSeek),
-            SelectedTab::Playlist => {
-                Some(Message::PlaylistMoveCursor(CursorMovementDirection::Right))
-            }
-        },
-        KeyCode::Left => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerRewind),
-            SelectedTab::Playlist => {
-                Some(Message::PlaylistMoveCursor(CursorMovementDirection::Left))
-            }
-        },
-        KeyCode::Char('l') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerToggleLoop),
-            SelectedTab::Playlist => None,
-        },
-        KeyCode::Char('q') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerQueueFiles),
-            SelectedTab::Playlist => Some(Message::PlaylistAddTracks),
-        },
-        KeyCode::Char('Q') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerQueueDir),
-            SelectedTab::Playlist => None,
-        },
-        KeyCode::Up => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerMoveQueueUp),
-            SelectedTab::Playlist => Some(Message::PlaylistMoveCursor(CursorMovementDirection::Up)),
-        },
-        KeyCode::Down => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerMoveQueueDown),
-            SelectedTab::Playlist => {
-                Some(Message::PlaylistMoveCursor(CursorMovementDirection::Down))
-            }
-        },
-        KeyCode::Char('a') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerToggleArrange),
-            SelectedTab::Playlist => None,
-        },
-        KeyCode::Char('p') => match model.selected_tab {
-            SelectedTab::Main => Some(Message::PlayerPreviousTrack),
-            SelectedTab::Playlist => None,
-        },
-        KeyCode::F(1) => match model.selected_tab {
-            SelectedTab::Main => None,
-            SelectedTab::Playlist => Some(Message::PlaylistToPlayer),
-        },
-        KeyCode::F(9) => Some(Message::EnterEditMode),
-        KeyCode::F(10) => Some(Message::ExitEditMode),
-        KeyCode::Tab => Some(Message::CycleTabs),
-        _ => None,
     }
 }
 
