@@ -1,8 +1,8 @@
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Flex, Layout, Rect},
+    layout::{Alignment, Constraint, Flex, Layout, Position, Rect},
     style::Style,
-    widgets::{Block, Clear, Widget},
+    widgets::{Block, Clear, Paragraph, Widget},
 };
 
 pub struct InputBox {
@@ -96,7 +96,16 @@ impl InputBox {
         let area = Self::create_popup_area(area, percent_x, length_y);
         Clear.render(area, frame.buffer_mut());
 
-        frame.render_widget(popup_block, area);
+        let input = Paragraph::new(self.input.as_str());
+
+        frame.render_widget(input.block(popup_block), area);
+        frame.set_cursor_position(Position::new(
+            // Draw the cursor at the current position in the input field.
+            // This position is can be controlled via the left and right arrow key
+            area.x + self.character_index as u16 + 1,
+            // Move one line down, from the border to the input line
+            area.y + 1,
+        ))
     }
 
     fn create_popup_area(area: Rect, percent_x: u16, length_y: u16) -> Rect {
@@ -129,6 +138,8 @@ impl InputBox {
     //                     KeyCode::Left => self.move_cursor_left(),
     //                     KeyCode::Right => self.move_cursor_right(),
     //                     KeyCode::Esc => self.input_mode = InputMode::Normal,
+    //
+    //
     //                     _ => {}
     //                 },
     //                 InputMode::Editing => {}
