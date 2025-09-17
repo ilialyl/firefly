@@ -83,9 +83,7 @@ pub fn navigate_tracks(
 
     if let Some(selected_playlist) = playlist_controller.get_selected_playlist() {
         match direction {
-            CursorMovementDirection::Up => {
-                selected_playlist.select_prev_track();
-            }
+            CursorMovementDirection::Up => selected_playlist.select_prev_track(),
             CursorMovementDirection::Down => selected_playlist.select_next_track(),
             _ => {}
         }

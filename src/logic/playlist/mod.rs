@@ -50,14 +50,10 @@ impl Playlist {
             (self.selected_track.unwrap_or(0) + 1)
                 .min(self.tracks.len().checked_sub(1).unwrap_or(0)),
         );
-
-        self.set_selected_track_option();
     }
 
     pub fn select_prev_track(&mut self) {
         self.selected_track = Some(self.selected_track.unwrap_or(0).checked_sub(1).unwrap_or(0));
-
-        self.set_selected_track_option();
     }
 
     pub fn from(file: &Path) -> Result<Playlist> {
@@ -77,22 +73,20 @@ impl Playlist {
 
     pub fn add(&mut self, track: &Path) {
         if track.is_file() {
-            self.tracks.push(track.to_path_buf());
-            self.set_selected_track_option();
-        }
-    }
+            if self.is_empty() {
+                self.selected_track = Some(0);
+            }
 
-    pub fn set_selected_track_option(&mut self) {
-        if self.tracks.is_empty() {
-            self.selected_track = None;
-        } else {
-            self.selected_track = Some(0);
+            self.tracks.push(track.to_path_buf());
         }
     }
 
     pub fn remove(&mut self, idx: usize) {
         self.tracks.remove(idx);
-        self.set_selected_track_option();
+
+        if self.is_empty() {
+            self.selected_track = None;
+        }
     }
 
     pub fn as_vec_string(&mut self) -> Vec<String> {
