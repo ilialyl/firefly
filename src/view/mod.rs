@@ -1,4 +1,3 @@
-pub mod input_box;
 pub mod main_tab;
 pub mod playlist_tab;
 pub mod tabs;

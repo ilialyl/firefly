@@ -2,7 +2,10 @@ use crate::{
     logic::{
         player::Player, playlist::playlist_controller::PlaylistController, session_state::Session,
     },
-    view::{input_box::InputMode, main_tab::queue_view::QueueViewState, tabs::SelectedTab},
+    view::{
+        main_tab::queue_view::QueueViewState, playlist_tab::input_box::InputBox, tabs::SelectedTab,
+        terminal::InputMode,
+    },
 };
 
 pub struct Model {
@@ -13,6 +16,7 @@ pub struct Model {
     pub selected_tab: SelectedTab,
     pub queue_view: QueueViewState,
     pub input_mode: InputMode,
+    pub input_box: InputBox,
 }
 
 impl Default for Model {
@@ -26,6 +30,7 @@ impl Default for Model {
             selected_tab: SelectedTab::default(),
             queue_view: QueueViewState::default(),
             input_mode: InputMode::default(),
+            input_box: InputBox::new(),
         }
     }
 }

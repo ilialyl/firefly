@@ -19,8 +19,15 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use crate::{
     message::{Message, cursor_movement::CursorMovementDirection},
     model::Model,
-    view::{input_box::InputMode, tabs::SelectedTab},
+    view::tabs::SelectedTab,
 };
+
+#[derive(Default)]
+pub enum InputMode {
+    #[default]
+    Normal,
+    Editing,
+}
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;

@@ -1,44 +1,39 @@
-#[derive(Default)]
-pub enum InputMode {
-    #[default]
-    Normal,
-    Editing,
-}
+use ratatui::{
+    Frame,
+    layout::{Alignment, Constraint, Flex, Layout, Rect},
+    style::Style,
+    widgets::{Block, Clear, Widget},
+};
 
-#[allow(dead_code)]
 pub struct InputBox {
     /// Current value of the input box
     input: String,
     /// Position of cursor in the editor area.
     character_index: usize,
-    /// Current input mode
-    input_mode: InputMode,
     /// History of recorded messages
     messages: Vec<String>,
 }
 
-#[allow(dead_code)]
 impl InputBox {
-    const fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             input: String::new(),
-            input_mode: InputMode::Normal,
             messages: Vec::new(),
             character_index: 0,
         }
     }
 
-    fn move_cursor_left(&mut self) {
+    pub fn move_cursor_left(&mut self) {
         let cursor_moved_left = self.character_index.saturating_sub(1);
         self.character_index = self.clamp_cursor(cursor_moved_left);
     }
 
-    fn move_cursor_right(&mut self) {
+    pub fn move_cursor_right(&mut self) {
         let cursor_moved_right = self.character_index.saturating_add(1);
         self.character_index = self.clamp_cursor(cursor_moved_right);
     }
 
-    fn enter_char(&mut self, new_char: char) {
+    pub fn enter_char(&mut self, new_char: char) {
         let index = self.byte_index();
         self.input.insert(index, new_char);
         self.move_cursor_right();
@@ -48,7 +43,7 @@ impl InputBox {
     ///
     /// Since each character in a string can contain multiple bytes, it's necessary to calculate
     /// the byte index based on the index of the character.
-    fn byte_index(&self) -> usize {
+    pub fn byte_index(&self) -> usize {
         self.input
             .char_indices()
             .map(|(i, _)| i)
@@ -56,7 +51,7 @@ impl InputBox {
             .unwrap_or(self.input.len())
     }
 
-    fn delete_char(&mut self) {
+    pub fn delete_char(&mut self) {
         let is_not_cursor_leftmost = self.character_index != 0;
         if is_not_cursor_leftmost {
             // Method "remove" is not used on the saved text for deleting the selected char.
@@ -78,18 +73,38 @@ impl InputBox {
         }
     }
 
-    fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
+    pub fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
         new_cursor_pos.clamp(0, self.input.chars().count())
     }
 
-    const fn reset_cursor(&mut self) {
+    pub const fn reset_cursor(&mut self) {
         self.character_index = 0;
     }
 
-    fn submit_message(&mut self) {
+    pub fn submit_message(&mut self) {
         self.messages.push(self.input.clone());
         self.input.clear();
         self.reset_cursor();
+    }
+
+    pub fn render(&self, frame: &mut Frame, area: Rect, percent_x: u16, length_y: u16) {
+        let popup_block = Block::bordered()
+            .title("Value")
+            .title_alignment(Alignment::Left)
+            .border_style(Style::default());
+
+        let area = Self::create_popup_area(area, percent_x, length_y);
+        Clear.render(area, frame.buffer_mut());
+
+        frame.render_widget(popup_block, area);
+    }
+
+    fn create_popup_area(area: Rect, percent_x: u16, length_y: u16) -> Rect {
+        let vertical = Layout::vertical([Constraint::Length(length_y)]).flex(Flex::Center);
+        let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
+        let [area] = vertical.areas(area);
+        let [area] = horizontal.areas(area);
+        area
     }
 
     // fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
