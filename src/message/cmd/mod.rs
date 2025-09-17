@@ -17,7 +17,7 @@ use crate::{
 
 pub mod player_cmd;
 pub mod playlist_cmd;
-pub mod text_input;
+pub mod text_input_cmd;
 
 pub fn tick(
     model: &mut Model,

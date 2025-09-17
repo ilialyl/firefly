@@ -3,7 +3,7 @@ use std::sync::mpsc::Sender;
 use crate::{
     message::{
         Message,
-        cmd::{self, player_cmd, playlist_cmd},
+        cmd::{self, player_cmd, playlist_cmd, text_input_cmd},
     },
     model::Model,
 };
@@ -43,8 +43,13 @@ pub fn update(
         Message::PlaylistMoveCursor(direction) => {
             playlist_cmd::move_cursor(direction, &mut model.playlist_controller)
         }
-        Message::EnterEditMode => cmd::text_input::enter_edit_mode(model),
-        Message::ExitEditMode => cmd::text_input::exit_edit_mode(model),
+        Message::EnterEditMode => text_input_cmd::enter_edit_mode(model),
+        Message::ExitEditMode => text_input_cmd::exit_edit_mode(model),
+        Message::InputSubmit => text_input_cmd::submit(model),
+        Message::InputInsert(char) => text_input_cmd::enter_char(char, model),
+        Message::InputDelete => text_input_cmd::delete_char(model),
+        Message::InputMoveCursorLeft => text_input_cmd::move_cursor_left(model),
+        Message::InputMoveCursorRight => text_input_cmd::move_cursor_right(model),
         Message::Quit => cmd::quit(model),
         _ => None,
     }

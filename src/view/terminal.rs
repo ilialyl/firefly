@@ -94,7 +94,12 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
             },
         },
         InputMode::Editing => match key_event.code {
-            KeyCode::F(10) => Some(Message::ExitEditMode),
+            KeyCode::Enter => Some(Message::InputSubmit),
+            KeyCode::Char(c) => Some(Message::InputInsert(c)),
+            KeyCode::Backspace => Some(Message::InputDelete),
+            KeyCode::Left => Some(Message::InputMoveCursorLeft),
+            KeyCode::Right => Some(Message::InputMoveCursorRight),
+            KeyCode::Esc => Some(Message::ExitEditMode),
             _ => None,
         },
     }

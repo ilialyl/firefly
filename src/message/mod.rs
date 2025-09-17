@@ -43,4 +43,9 @@ pub enum Message {
     PlaylistToPlayer,
     EnterEditMode,
     ExitEditMode,
+    InputSubmit,
+    InputInsert(char),
+    InputDelete,
+    InputMoveCursorLeft,
+    InputMoveCursorRight,
 }
