@@ -1,10 +1,5 @@
-use std::{
-    sync::{Arc, Mutex, mpsc::Sender},
-    time::Duration,
-};
+use std::{sync::mpsc::Sender, time::Duration};
 
-use log::debug;
-use rust_ffmpeg::FFmpegProcess;
 use tokio::runtime::Runtime;
 
 use crate::{
@@ -16,80 +11,7 @@ use crate::{
     },
     message::Message,
     model::Model,
-    view::main_tab::queue_view,
 };
-
-pub mod input;
-pub mod playlist;
-
-pub fn tick(
-    model: &mut Model,
-    _msg_tx: &Sender<Message>,
-    _info_tx: &Sender<String>,
-) -> Option<Message> {
-    // Scroll queue view
-    if let Some(area_height) = model.queue_view.area_height.take() {
-        model.queue_view.scroll_offset = queue_view::scroll(
-            model.player.queue.get_selected(),
-            model.queue_view.scroll_offset,
-            model.player.queue.get().len(),
-            area_height,
-        );
-    }
-
-    if model.session.state == RunningState::Busy {
-        return None;
-    }
-
-    if model.player.sink.is_paused() && !model.player.looping {
-        model.player.status = PlaybackStatus::Paused;
-    } else if !model.player.sink.empty() {
-        model.player.status = PlaybackStatus::Playing;
-    }
-
-    if model.player.sink.empty() & !model.player.looping {
-        model.player.status = PlaybackStatus::Idle;
-    }
-
-    if let Some(ref mut current_track) = model.player.current {
-        let status = current_track.conversion_status;
-        // Update playback status
-
-        // Update playback position
-        current_track.sync_pos(&model.player.sink);
-
-        // Reload track when track ends if looped
-        // Set position, duration, and status to default if not looped
-        if model.player.sink.empty()
-            && current_track.duration.saturating_sub(current_track.pos) < Duration::from_secs(3)
-        {
-            if model.player.looping {
-                if let Err(e) = model.player.reload() {
-                    log::error!("{}", e);
-                }
-            } else {
-                model.player.status = PlaybackStatus::Idle;
-            }
-        }
-
-        // Load the next track after current track ends.
-        if model.player.status == PlaybackStatus::Idle
-            && !model.player.queue.is_empty()
-            && !model.player.looping
-            && status != FormatConversion::Running
-        {
-            debug!("Load the next track after current track ends.");
-            return Some(Message::PlayerSkip);
-        }
-
-        // Load first track (player.current is None)
-    } else if model.player.current.is_none() && !model.player.queue.is_empty() {
-        debug!("Load first track (player.current is None)");
-        return Some(Message::PlayerSkip);
-    }
-
-    None
-}
 
 pub fn load_now(
     model: &mut Model,
@@ -278,43 +200,6 @@ pub fn increase_volume(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn busy(model: &mut Model) -> Option<Message> {
-    model.session.state = RunningState::Busy;
-
-    None
-}
-
-pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
-    model.player.ffmpeg_handle = Some(handle);
-
-    Some(Message::Busy)
-}
-
-pub fn conversion_ended(model: &mut Model) -> Option<Message> {
-    model.session.state = RunningState::Running;
-    if let Some(ref mut current_track) = model.player.current {
-        current_track.conversion_status = FormatConversion::Done;
-        model
-            .player
-            .reload()
-            .expect("Error reloading after conversion finished.");
-    }
-
-    None
-}
-
-pub fn update_info(info: String, model: &mut Model) -> Option<Message> {
-    model.info_display = info;
-
-    None
-}
-
-pub fn quit(model: &mut Model) -> Option<Message> {
-    model.session.state = RunningState::Done;
-
-    None
-}
-
 pub fn previous_track(
     model: &mut Model,
     msg_tx: &Sender<Message>,
@@ -343,12 +228,6 @@ pub fn previous_track(
             model.player.reload().expect("Error reloading track.");
         }
     }
-
-    None
-}
-
-pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
-    model.selected_tab.cycle_right();
 
     None
 }

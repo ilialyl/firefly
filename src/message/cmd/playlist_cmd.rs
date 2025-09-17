@@ -42,9 +42,9 @@ pub fn send_to_player(
 pub fn navigate_playlists(
     direction: CursorMovementDirection,
     playlist_controller: &mut PlaylistController,
-) -> Option<Message> {
+) {
     if !matches!(playlist_controller.tab_focus, PlaylistTabFocus::Playlists) {
-        return None;
+        return;
     }
 
     match direction {
@@ -56,16 +56,14 @@ pub fn navigate_playlists(
         }
         _ => {}
     }
-
-    None
 }
 
 pub fn navigate_tracks(
     direction: CursorMovementDirection,
     playlist_controller: &mut PlaylistController,
-) -> Option<Message> {
+) {
     if !matches!(playlist_controller.tab_focus, PlaylistTabFocus::Tracks) {
-        return None;
+        return;
     }
 
     if let Some(selected_playlist) = playlist_controller.get_selected_playlist() {
@@ -75,8 +73,6 @@ pub fn navigate_tracks(
             _ => {}
         }
     }
-
-    None
 }
 
 pub fn move_cursor(

@@ -26,7 +26,7 @@ pub enum Message {
     Quit,
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
-    Busy,
+    SetBusy,
     UpdateInfo(String),
     PlayerPreviousTrack,
     CycleTabs,
