@@ -19,6 +19,7 @@ use crate::{
     view::main_tab::queue_view,
 };
 
+pub mod input;
 pub mod playlist;
 
 pub fn tick(

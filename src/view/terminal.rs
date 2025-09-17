@@ -17,6 +17,7 @@ use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
 use crate::{
+    logic::input_box::InputMode,
     message::{Message, cursor_movement::CursorMovementDirection},
     model::Model,
     view::tabs::SelectedTab,
@@ -113,6 +114,8 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
             SelectedTab::Main => None,
             SelectedTab::Playlist => Some(Message::PlaylistToPlayer),
         },
+        KeyCode::F(9) => Some(Message::EnterEditMode),
+        KeyCode::F(10) => Some(Message::ExitEditMode),
         KeyCode::Tab => Some(Message::CycleTabs),
         _ => None,
     }

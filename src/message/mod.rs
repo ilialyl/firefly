@@ -39,4 +39,6 @@ pub enum Message {
     PlaylistAddDir,
     PlaylistToPlayer,
     PlaylistCycleCursorFocus(CursorMovementDirection),
+    EnterEditMode,
+    ExitEditMode,
 }

@@ -1,16 +1,10 @@
 use crate::{
     logic::{
-        player::Player, playlist::playlist_controller::PlaylistController, session_state::Session,
+        input_box::InputMode, player::Player, playlist::playlist_controller::PlaylistController,
+        session_state::Session,
     },
     view::{main_tab::queue_view::QueueViewState, tabs::SelectedTab},
 };
-
-#[derive(Default)]
-pub enum InputMode {
-    #[default]
-    Normal,
-    Editing,
-}
 
 pub struct Model {
     pub session: Session,

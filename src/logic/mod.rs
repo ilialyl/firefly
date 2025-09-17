@@ -1,3 +1,4 @@
+pub mod input_box;
 pub mod playback_status;
 pub mod player;
 pub mod playlist;

@@ -10,8 +10,11 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
+use crate::logic::input_box::InputMode;
 use crate::model::Model;
+use crate::view::playlist_tab::input_popup::InputPopup;
 
+pub mod input_popup;
 pub mod playlists;
 pub mod tracks;
 
@@ -59,6 +62,10 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     draw_controls(frame, outer_chunks[1]);
     playlists::draw(model, frame, left_panel_chunks[0]);
     tracks::draw(model, frame, right_panel_chunks[0]);
+    if matches!(model.input_mode, InputMode::Editing) {
+        let popup = InputPopup::new(40, 3);
+        popup.render(frame, area);
+    }
 }
 
 fn draw_controls(frame: &mut Frame, area: Rect) {

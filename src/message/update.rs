@@ -43,6 +43,8 @@ pub fn update(
         Message::PlaylistMoveCursor(direction) => {
             cmd::playlist::move_cursor(direction, &mut model.playlist_controller)
         }
+        Message::EnterEditMode => cmd::input::enter_edit_mode(model),
+        Message::ExitEditMode => cmd::input::exit_edit_mode(model),
         Message::Quit => cmd::quit(model),
         _ => None,
     }
