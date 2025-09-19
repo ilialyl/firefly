@@ -1,22 +1,22 @@
 use crate::{
     logic::{
-        player::Player, playlist::playlist_controller::PlaylistController, session_state::Session,
+        player::Player,
+        playlist::playlist_controller::PlaylistController,
+        session_state::Session,
+        user_input::{InputMode, UserInput},
     },
-    view::{
-        main_tab::queue_view::QueueViewState, playlist_tab::input_box::InputBox, tabs::SelectedTab,
-        terminal::InputMode,
-    },
+    view::{main_tab::queue_view::QueueViewState, tabs::SelectedTab},
 };
 
 pub struct Model {
     pub session: Session,
     pub player: Player,
-    pub playlist_controller: PlaylistController,
+    pub playlist_ctl: PlaylistController,
     pub info_display: String,
     pub selected_tab: SelectedTab,
     pub queue_view: QueueViewState,
     pub input_mode: InputMode,
-    pub input_box: InputBox,
+    pub user_input: UserInput,
 }
 
 impl Default for Model {
@@ -24,13 +24,13 @@ impl Default for Model {
         let session = Session::default();
         Self {
             player: Player::new(),
-            playlist_controller: PlaylistController::default(),
+            playlist_ctl: PlaylistController::default(),
             session,
             info_display: String::new(),
             selected_tab: SelectedTab::default(),
             queue_view: QueueViewState::default(),
             input_mode: InputMode::default(),
-            input_box: InputBox::new(),
+            user_input: UserInput::new(),
         }
     }
 }

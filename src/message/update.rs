@@ -4,13 +4,12 @@ use crate::{
     message::{
         Message,
         cmd::{
-            self, player_cmd,
-            playlist_cmd::{self, name_playlist},
+            self, apply_input, handle_exit_insert_early, player_cmd,
+            playlist_cmd::{self},
             text_input_cmd,
         },
     },
     model::Model,
-    view::terminal::ToEdit,
 };
 
 pub fn update(
@@ -41,28 +40,24 @@ pub fn update(
         Message::UpdateInfo(info) => cmd::update_info(info, model),
         Message::CycleTabs => cmd::cycle_tabs(model),
         Message::PlaylistCreate => playlist_cmd::create_playlist(model),
-        Message::PlaylistAddTracks => playlist_cmd::add_tracks(&mut model.playlist_controller),
+        Message::PlaylistAddTracks => playlist_cmd::add_tracks(&mut model.playlist_ctl),
         Message::PlaylistToPlayer => {
-            playlist_cmd::send_to_player(&mut model.playlist_controller, &mut model.player)
+            playlist_cmd::send_to_player(&mut model.playlist_ctl, &mut model.player)
         }
         Message::PlaylistMoveCursor(direction) => {
-            playlist_cmd::move_cursor(direction, &mut model.playlist_controller)
+            playlist_cmd::move_cursor(direction, &mut model.playlist_ctl)
         }
         Message::EnterEditMode(prompt, to_edit) => {
             text_input_cmd::enter_edit_mode(model, prompt, to_edit)
         }
         Message::ExitEditMode => text_input_cmd::exit_edit_mode(model),
-        Message::ExitEditModeEarly(to_edit) => match to_edit {
-            ToEdit::PlaylistName(_index) => todo!(),
-        },
-        Message::InputSubmit(to_edit) => text_input_cmd::submit(model, to_edit),
+        Message::ExitEditModeEarly(to_edit) => handle_exit_insert_early(to_edit, model),
+        Message::InputSubmit(to_edit) => text_input_cmd::submit(to_edit, model),
         Message::InputInsert(char) => text_input_cmd::enter_char(char, model),
         Message::InputDelete => text_input_cmd::delete_char(model),
         Message::InputMoveCursorLeft => text_input_cmd::move_cursor_left(model),
         Message::InputMoveCursorRight => text_input_cmd::move_cursor_right(model),
-        Message::InputApply(to_edit) => match to_edit {
-            ToEdit::PlaylistName(index) => name_playlist(index, model),
-        },
+        Message::InputApply(to_edit) => apply_input(to_edit, model),
         Message::Quit => cmd::quit(model),
         _ => None,
     }

@@ -1,3 +1,5 @@
+pub mod track_queue;
+
 use std::{
     fs::{self, File},
     path::PathBuf,

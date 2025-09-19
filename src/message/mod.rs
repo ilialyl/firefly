@@ -1,5 +1,4 @@
 pub mod cmd;
-pub mod cursor_movement;
 pub mod update;
 
 use std::sync::{Arc, Mutex};
@@ -7,8 +6,8 @@ use std::sync::{Arc, Mutex};
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
-    message::cursor_movement::CursorMovementDirection,
-    view::terminal::{PromptMsg, ToEdit},
+    logic::user_input::{InputTarget, PlaylistIndex, PromptMsg},
+    view::terminal::CursorMovementDirection,
 };
 
 pub enum Message {
@@ -44,13 +43,13 @@ pub enum Message {
     PlaylistRemoveTrack,
     PlaylistToggleArrangeTracks,
     PlaylistToPlayer,
-    EnterEditMode(PromptMsg, ToEdit),
+    EnterEditMode(PromptMsg, InputTarget),
     ExitEditMode,
-    ExitEditModeEarly(ToEdit),
-    NamePlaylist(usize),
-    InputSubmit(ToEdit),
+    ExitEditModeEarly(InputTarget),
+    NamePlaylist(PlaylistIndex),
+    InputSubmit(InputTarget),
     InputInsert(char),
-    InputApply(ToEdit),
+    InputApply(InputTarget),
     InputDelete,
     InputMoveCursorLeft,
     InputMoveCursorRight,

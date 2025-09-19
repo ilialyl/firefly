@@ -12,9 +12,14 @@ use std::{
 };
 
 use crate::{
-    logic::{playback_status::PlaybackStatus, track::Track, track_queue::TrackQueue},
+    logic::{
+        player::playback_status::PlaybackStatus,
+        track::{Track, track_queue::TrackQueue},
+    },
     message::Message,
 };
+
+pub mod playback_status;
 
 const RODIO_SUPPORTED_FORMATS: [&str; 4] = ["flac", "mp3", "ogg", "wav"];
 const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];

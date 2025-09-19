@@ -17,35 +17,14 @@ use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
 use crate::{
-    message::{Message, cursor_movement::CursorMovementDirection},
-    model::Model,
-    view::tabs::SelectedTab,
+    logic::user_input::InputMode, message::Message, model::Model, view::tabs::SelectedTab,
 };
 
-#[derive(Default, Clone)]
-pub enum InputMode {
-    #[default]
-    Normal,
-    Editing(PromptMsg, ToEdit),
-}
-
-#[derive(Clone)]
-pub struct PromptMsg(String);
-
-impl PromptMsg {
-    pub fn new(prompt: String) -> Self {
-        Self(prompt)
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-#[derive(Clone, Copy)]
-pub enum ToEdit {
-    // usize is index
-    PlaylistName(usize),
+pub enum CursorMovementDirection {
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -72,7 +51,7 @@ pub fn install_panic_hook() {
 
 fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
     match model.input_mode {
-        InputMode::Normal => match model.selected_tab {
+        InputMode::Commands => match model.selected_tab {
             SelectedTab::Main => match key_event.code {
                 KeyCode::Esc => Some(Message::Quit),
                 KeyCode::Char('n') => Some(Message::PlayerLoadNow),
@@ -111,7 +90,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 _ => None,
             },
         },
-        InputMode::Editing(_, to_edit) => match key_event.code {
+        InputMode::Insert(_, to_edit) => match key_event.code {
             KeyCode::Enter => Some(Message::InputSubmit(to_edit)),
             KeyCode::Char(c) => Some(Message::InputInsert(c)),
             KeyCode::Backspace => Some(Message::InputDelete),

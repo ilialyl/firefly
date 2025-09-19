@@ -10,7 +10,7 @@ use crate::{logic::playlist::playlist_tab_focus::PlaylistTabFocus, model::Model}
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let playlists = model
-        .playlist_controller
+        .playlist_ctl
         .playlist_collection
         .get_playlists();
 
@@ -21,10 +21,10 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .collect();
 
     if matches!(
-        model.playlist_controller.tab_focus,
+        model.playlist_ctl.tab_focus,
         PlaylistTabFocus::Playlists
     ) {
-        if let Some(selected_playlist) = model.playlist_controller.selected_playlist {
+        if let Some(selected_playlist) = model.playlist_ctl.selected_playlist {
             name_lines[selected_playlist] = name_lines[selected_playlist]
                 .clone()
                 .set_style(Style::default().fg(Color::Rgb(255, 192, 15)))

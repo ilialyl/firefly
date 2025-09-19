@@ -4,8 +4,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     logic::{
-        playback_status::PlaybackStatus,
-        player::{self},
+        player::{self, playback_status::PlaybackStatus},
         session_state::RunningState,
         track::FormatConversion,
     },

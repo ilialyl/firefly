@@ -2,6 +2,7 @@ pub mod main_tab;
 pub mod playlist_tab;
 pub mod tabs;
 pub mod terminal;
+pub mod user_input_view;
 
 use ratatui::{
     Frame,
@@ -11,7 +12,7 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-use crate::{model::Model, view::tabs::SelectedTab};
+use crate::{logic::user_input::InputMode, model::Model, view::tabs::SelectedTab};
 
 pub fn view(model: &mut Model, frame: &mut Frame) {
     render(model, frame);
@@ -42,6 +43,15 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
     match model.selected_tab {
         SelectedTab::Main => main_tab::draw(model, frame, outer_layout[1]),
         SelectedTab::Playlist => playlist_tab::draw(model, frame, outer_layout[1]),
+    }
+
+    match model.input_mode.clone() {
+        InputMode::Insert(prompt, _) => {
+            model
+                .user_input
+                .render(prompt.as_str(), 40, 3, frame, frame.area())
+        }
+        InputMode::Commands => {}
     }
 }
 

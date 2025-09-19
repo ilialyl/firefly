@@ -9,9 +9,9 @@ use ratatui::{
 use crate::{logic::playlist::playlist_tab_focus::PlaylistTabFocus, model::Model};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
-    let tab_focus = model.playlist_controller.tab_focus;
+    let tab_focus = model.playlist_ctl.tab_focus;
 
-    if let Some(selected_playlist) = model.playlist_controller.get_selected_playlist() {
+    if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
         let mut name_lines: Vec<Line> = selected_playlist
             .tracks
             .iter()

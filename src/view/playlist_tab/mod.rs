@@ -10,9 +10,7 @@ use ratatui::{
 };
 
 use crate::model::Model;
-use crate::view::terminal::InputMode;
 
-pub mod input_box;
 pub mod playlists;
 pub mod tracks;
 
@@ -54,12 +52,6 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     draw_controls(frame, outer_chunks[1]);
     playlists::draw(model, frame, left_panel_chunks[0]);
     tracks::draw(model, frame, right_panel_chunks[0]);
-    match model.input_mode.clone() {
-        InputMode::Editing(prompt, _) => {
-            model.input_box.render(prompt.as_str(), 40, 3, frame, area)
-        }
-        InputMode::Normal => {}
-    }
 }
 
 fn draw_controls(frame: &mut Frame, area: Rect) {

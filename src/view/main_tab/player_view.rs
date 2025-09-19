@@ -12,7 +12,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::{logic::playback_status::PlaybackStatus, model::Model, view::center_vertical};
+use crate::{logic::player::playback_status::PlaybackStatus, model::Model, view::center_vertical};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     let player_text: Vec<String>;

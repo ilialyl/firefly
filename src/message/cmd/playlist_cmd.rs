@@ -4,29 +4,27 @@ use crate::{
     logic::{
         player::{self, Player},
         playlist::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
+        user_input::InputTarget,
     },
-    message::{Message, cursor_movement::CursorMovementDirection},
+    message::Message,
     model::Model,
-    view::terminal::{PromptMsg, ToEdit},
+    view::terminal::CursorMovementDirection,
 };
 
 pub fn create_playlist(model: &mut Model) -> Option<Message> {
-    let index = model.playlist_controller.create_playlist();
+    let index = model.playlist_ctl.create_playlist();
 
     Some(Message::EnterEditMode(
-        PromptMsg::new("Playlist".to_string()),
-        ToEdit::PlaylistName(index),
+        "Playlist".to_string(),
+        InputTarget::PlaylistName(index),
     ))
 }
 
 pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
-    let current_playlist_names = model.playlist_controller.get_all_playlist_names();
+    let current_playlist_names = model.playlist_ctl.get_all_playlist_names();
 
-    if let Some(name) = model.input_box.input_history.pop()
-        && let Some(playlist) = model
-            .playlist_controller
-            .playlist_collection
-            .get_playlist(index)
+    if let Some(name) = model.user_input.input_history.pop()
+        && let Some(playlist) = model.playlist_ctl.playlist_collection.get_playlist(index)
         && !current_playlist_names.contains(&name)
     {
         playlist.rename(name.as_str());
@@ -34,8 +32,8 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
     }
 
     Some(Message::EnterEditMode(
-        PromptMsg::new("Playlist - Name Taken".to_string()),
-        ToEdit::PlaylistName(index),
+        "Playlist - Name Taken".to_string(),
+        InputTarget::PlaylistName(index),
     ))
 }
 

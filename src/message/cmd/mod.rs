@@ -8,9 +8,13 @@ use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     logic::{
-        playback_status::PlaybackStatus, session_state::RunningState, track::FormatConversion,
+        player::playback_status::PlaybackStatus, session_state::RunningState,
+        track::FormatConversion, user_input::InputTarget,
     },
-    message::{Message, cmd::player_cmd::skip},
+    message::{
+        Message,
+        cmd::{player_cmd::skip, playlist_cmd::name_playlist},
+    },
     model::Model,
     view::main_tab::queue_view,
 };
@@ -129,4 +133,16 @@ pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
     model.selected_tab.cycle_right();
 
     None
+}
+
+pub fn apply_input(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
+    match to_edit {
+        InputTarget::PlaylistName(index) => name_playlist(index, model),
+    }
+}
+
+pub fn handle_exit_insert_early(to_edit: InputTarget, _model: &mut Model) -> Option<Message> {
+    match to_edit {
+        InputTarget::PlaylistName(_index) => todo!(),
+    }
 }

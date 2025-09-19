@@ -1,47 +1,51 @@
 use crate::{
+    logic::user_input::{InputMode, InputTarget, PromptMsg},
     message::Message,
     model::Model,
-    view::terminal::{InputMode, PromptMsg, ToEdit},
 };
 
-pub fn enter_edit_mode(model: &mut Model, prompt: PromptMsg, to_edit: ToEdit) -> Option<Message> {
-    model.input_mode = InputMode::Editing(prompt, to_edit);
+pub fn enter_edit_mode(
+    model: &mut Model,
+    prompt: PromptMsg,
+    to_edit: InputTarget,
+) -> Option<Message> {
+    model.input_mode = InputMode::Insert(prompt, to_edit);
 
     None
 }
 
 pub fn exit_edit_mode(model: &mut Model) -> Option<Message> {
-    model.input_mode = InputMode::Normal;
+    model.input_mode = InputMode::Commands;
 
     None
 }
 
-pub fn submit(model: &mut Model, to_edit: ToEdit) -> Option<Message> {
-    model.input_box.submit_input();
+pub fn submit(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
+    model.user_input.submit_input();
 
     Some(Message::InputApply(to_edit))
 }
 
 pub fn enter_char(to_insert: char, model: &mut Model) -> Option<Message> {
-    model.input_box.enter_char(to_insert);
+    model.user_input.enter_char(to_insert);
 
     None
 }
 
 pub fn delete_char(model: &mut Model) -> Option<Message> {
-    model.input_box.delete_char();
+    model.user_input.delete_char();
 
     None
 }
 
 pub fn move_cursor_left(model: &mut Model) -> Option<Message> {
-    model.input_box.move_cursor_left();
+    model.user_input.move_cursor_left();
 
     None
 }
 
 pub fn move_cursor_right(model: &mut Model) -> Option<Message> {
-    model.input_box.move_cursor_right();
+    model.user_input.move_cursor_right();
 
     None
 }
