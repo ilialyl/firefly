@@ -55,7 +55,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     playlists::draw(model, frame, left_panel_chunks[0]);
     tracks::draw(model, frame, right_panel_chunks[0]);
     if matches!(model.input_mode, InputMode::Editing) {
-        model.input_box.render(frame, area, 40, 3);
+        model.input_box.render("Playlist name", 40, 3, frame, area);
     }
 }
 

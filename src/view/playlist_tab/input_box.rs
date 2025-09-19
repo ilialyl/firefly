@@ -15,7 +15,7 @@ pub struct InputBox {
 }
 
 impl InputBox {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             input: String::new(),
             messages: Vec::new(),
@@ -87,9 +87,16 @@ impl InputBox {
         self.reset_cursor();
     }
 
-    pub fn render(&self, frame: &mut Frame, area: Rect, percent_x: u16, length_y: u16) {
+    pub fn render(
+        &self,
+        prompt: &str,
+        percent_x: u16,
+        length_y: u16,
+        frame: &mut Frame,
+        area: Rect,
+    ) {
         let popup_block = Block::bordered()
-            .title("Value")
+            .title(prompt)
             .title_alignment(Alignment::Left)
             .border_style(Style::default());
 
