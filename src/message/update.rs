@@ -48,8 +48,13 @@ pub fn update(
         Message::PlaylistMoveCursor(direction) => {
             playlist_cmd::move_cursor(direction, &mut model.playlist_controller)
         }
-        Message::EnterEditMode(to_edit) => text_input_cmd::enter_edit_mode(model, to_edit),
+        Message::EnterEditMode(prompt, to_edit) => {
+            text_input_cmd::enter_edit_mode(model, prompt, to_edit)
+        }
         Message::ExitEditMode => text_input_cmd::exit_edit_mode(model),
+        Message::ExitEditModeEarly(to_edit) => match to_edit {
+            ToEdit::PlaylistName(_index) => todo!(),
+        },
         Message::InputSubmit(to_edit) => text_input_cmd::submit(model, to_edit),
         Message::InputInsert(char) => text_input_cmd::enter_char(char, model),
         Message::InputDelete => text_input_cmd::delete_char(model),

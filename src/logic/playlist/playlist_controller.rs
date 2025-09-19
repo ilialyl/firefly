@@ -62,4 +62,12 @@ impl PlaylistController {
             selected.rename(name);
         }
     }
+
+    pub fn get_all_playlist_names(&self) -> Vec<String> {
+        self.playlist_collection
+            .get_playlists()
+            .iter()
+            .map(|p| p.name.clone().unwrap_or("New Playlist".to_string()))
+            .collect()
+    }
 }

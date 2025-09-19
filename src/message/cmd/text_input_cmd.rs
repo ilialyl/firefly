@@ -1,11 +1,11 @@
 use crate::{
     message::Message,
     model::Model,
-    view::terminal::{InputMode, ToEdit},
+    view::terminal::{InputMode, PromptMsg, ToEdit},
 };
 
-pub fn enter_edit_mode(model: &mut Model, to_edit: ToEdit) -> Option<Message> {
-    model.input_mode = InputMode::Editing(to_edit);
+pub fn enter_edit_mode(model: &mut Model, prompt: PromptMsg, to_edit: ToEdit) -> Option<Message> {
+    model.input_mode = InputMode::Editing(prompt, to_edit);
 
     None
 }

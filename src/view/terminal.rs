@@ -22,11 +22,24 @@ use crate::{
     view::tabs::SelectedTab,
 };
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub enum InputMode {
     #[default]
     Normal,
-    Editing(ToEdit),
+    Editing(PromptMsg, ToEdit),
+}
+
+#[derive(Clone)]
+pub struct PromptMsg(String);
+
+impl PromptMsg {
+    pub fn new(prompt: String) -> Self {
+        Self(prompt)
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -98,13 +111,13 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 _ => None,
             },
         },
-        InputMode::Editing(to_edit) => match key_event.code {
+        InputMode::Editing(_, to_edit) => match key_event.code {
             KeyCode::Enter => Some(Message::InputSubmit(to_edit)),
             KeyCode::Char(c) => Some(Message::InputInsert(c)),
             KeyCode::Backspace => Some(Message::InputDelete),
             KeyCode::Left => Some(Message::InputMoveCursorLeft),
             KeyCode::Right => Some(Message::InputMoveCursorRight),
-            KeyCode::Esc => Some(Message::ExitEditMode),
+            KeyCode::Esc => Some(Message::ExitEditModeEarly(to_edit)),
             _ => None,
         },
     }
