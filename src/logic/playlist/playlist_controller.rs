@@ -39,8 +39,13 @@ impl PlaylistController {
         }
     }
 
-    pub fn create_playlist(&mut self) {
-        self.selected_playlist = Some(self.playlist_collection.create_playlist());
+    pub fn create_playlist(&mut self) -> usize {
+        // Create a playlist and return index to it
+        let index = self.playlist_collection.create_playlist();
+
+        self.selected_playlist = Some(index);
+
+        index
     }
 
     pub fn get_selected_playlist(&mut self) -> Option<&mut Playlist> {

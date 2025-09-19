@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use rust_ffmpeg::FFmpegProcess;
 
-use crate::message::cursor_movement::CursorMovementDirection;
+use crate::{message::cursor_movement::CursorMovementDirection, view::terminal::ToEdit};
 
 pub enum Message {
     Tick,
@@ -41,10 +41,12 @@ pub enum Message {
     PlaylistRemoveTrack,
     PlaylistToggleArrangeTracks,
     PlaylistToPlayer,
-    EnterEditMode,
+    EnterEditMode(ToEdit),
     ExitEditMode,
-    InputSubmit,
+    NamePlaylist(usize),
+    InputSubmit(ToEdit),
     InputInsert(char),
+    InputApply(ToEdit),
     InputDelete,
     InputMoveCursorLeft,
     InputMoveCursorRight,

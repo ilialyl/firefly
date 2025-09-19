@@ -26,7 +26,13 @@ use crate::{
 pub enum InputMode {
     #[default]
     Normal,
-    Editing,
+    Editing(ToEdit),
+}
+
+#[derive(Clone, Copy)]
+pub enum ToEdit {
+    // usize is index
+    PlaylistName(usize),
 }
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -88,13 +94,12 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 KeyCode::F(1) => Some(Message::PlaylistToPlayer),
                 KeyCode::F(2) => Some(Message::PlaylistRename),
                 KeyCode::F(5) => Some(Message::PlaylistDelete),
-                KeyCode::F(9) => Some(Message::EnterEditMode),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },
         },
-        InputMode::Editing => match key_event.code {
-            KeyCode::Enter => Some(Message::InputSubmit),
+        InputMode::Editing(to_edit) => match key_event.code {
+            KeyCode::Enter => Some(Message::InputSubmit(to_edit)),
             KeyCode::Char(c) => Some(Message::InputInsert(c)),
             KeyCode::Backspace => Some(Message::InputDelete),
             KeyCode::Left => Some(Message::InputMoveCursorLeft),

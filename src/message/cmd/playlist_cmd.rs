@@ -6,12 +6,27 @@ use crate::{
         playlist::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
     },
     message::{Message, cursor_movement::CursorMovementDirection},
+    model::Model,
+    view::terminal::ToEdit,
 };
 
-pub fn create_playlist(playlist_controller: &mut PlaylistController) -> Option<Message> {
-    playlist_controller.create_playlist();
+pub fn create_playlist(model: &mut Model) -> Option<Message> {
+    let index = model.playlist_controller.create_playlist();
 
-    None
+    Some(Message::EnterEditMode(ToEdit::PlaylistName(index)))
+}
+
+pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
+    if let Some(name) = model.input_box.input_history.pop()
+        && let Some(playlist) = model
+            .playlist_controller
+            .playlist_collection
+            .get_playlist(index)
+    {
+        playlist.rename(name.as_str());
+    }
+
+    Some(Message::ExitEditMode)
 }
 
 pub fn add_tracks(playlist_controller: &mut PlaylistController) -> Option<Message> {

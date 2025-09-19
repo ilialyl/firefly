@@ -3,9 +3,14 @@ use std::sync::mpsc::Sender;
 use crate::{
     message::{
         Message,
-        cmd::{self, player_cmd, playlist_cmd, text_input_cmd},
+        cmd::{
+            self, player_cmd,
+            playlist_cmd::{self, name_playlist},
+            text_input_cmd,
+        },
     },
     model::Model,
+    view::terminal::ToEdit,
 };
 
 pub fn update(
@@ -35,7 +40,7 @@ pub fn update(
         Message::ConversionEnded => cmd::conversion_ended(model),
         Message::UpdateInfo(info) => cmd::update_info(info, model),
         Message::CycleTabs => cmd::cycle_tabs(model),
-        Message::PlaylistCreate => playlist_cmd::create_playlist(&mut model.playlist_controller),
+        Message::PlaylistCreate => playlist_cmd::create_playlist(model),
         Message::PlaylistAddTracks => playlist_cmd::add_tracks(&mut model.playlist_controller),
         Message::PlaylistToPlayer => {
             playlist_cmd::send_to_player(&mut model.playlist_controller, &mut model.player)
@@ -43,13 +48,16 @@ pub fn update(
         Message::PlaylistMoveCursor(direction) => {
             playlist_cmd::move_cursor(direction, &mut model.playlist_controller)
         }
-        Message::EnterEditMode => text_input_cmd::enter_edit_mode(model),
+        Message::EnterEditMode(to_edit) => text_input_cmd::enter_edit_mode(model, to_edit),
         Message::ExitEditMode => text_input_cmd::exit_edit_mode(model),
-        Message::InputSubmit => text_input_cmd::submit(model),
+        Message::InputSubmit(to_edit) => text_input_cmd::submit(model, to_edit),
         Message::InputInsert(char) => text_input_cmd::enter_char(char, model),
         Message::InputDelete => text_input_cmd::delete_char(model),
         Message::InputMoveCursorLeft => text_input_cmd::move_cursor_left(model),
         Message::InputMoveCursorRight => text_input_cmd::move_cursor_right(model),
+        Message::InputApply(to_edit) => match to_edit {
+            ToEdit::PlaylistName(index) => name_playlist(index, model),
+        },
         Message::Quit => cmd::quit(model),
         _ => None,
     }

@@ -11,14 +11,14 @@ pub struct InputBox {
     /// Position of cursor in the editor area.
     character_index: usize,
     /// History of recorded messages
-    messages: Vec<String>,
+    pub input_history: Vec<String>,
 }
 
 impl InputBox {
     pub fn new() -> Self {
         Self {
             input: String::new(),
-            messages: Vec::new(),
+            input_history: Vec::new(),
             character_index: 0,
         }
     }
@@ -81,8 +81,8 @@ impl InputBox {
         self.character_index = 0;
     }
 
-    pub fn submit_message(&mut self) {
-        self.messages.push(self.input.clone());
+    pub fn submit_input(&mut self) {
+        self.input_history.push(self.input.clone());
         self.input.clear();
         self.reset_cursor();
     }
