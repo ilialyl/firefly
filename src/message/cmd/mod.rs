@@ -9,19 +9,16 @@ use rust_ffmpeg::FFmpegProcess;
 use crate::{
     logic::{
         player::playback_status::PlaybackStatus, session_state::RunningState,
-        track::FormatConversion, user_input::InputTarget,
+        track::FormatConversion,
     },
-    message::{
-        Message,
-        cmd::{player_cmd::skip, playlist_cmd::name_playlist},
-    },
+    message::{Message, cmd::player_cmd::skip},
     model::Model,
     view::main_tab::queue_view,
 };
 
 pub mod player_cmd;
 pub mod playlist_cmd;
-pub mod text_input_cmd;
+pub mod userinput_cmd;
 
 pub fn tick(
     model: &mut Model,
@@ -123,7 +120,7 @@ pub fn quit(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn busy(model: &mut Model) -> Option<Message> {
+pub fn set_busy(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Busy;
 
     None
@@ -133,16 +130,4 @@ pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
     model.selected_tab.cycle_right();
 
     None
-}
-
-pub fn apply_input(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
-    match to_edit {
-        InputTarget::PlaylistName(index) => name_playlist(index, model),
-    }
-}
-
-pub fn handle_exit_insert_early(to_edit: InputTarget, _model: &mut Model) -> Option<Message> {
-    match to_edit {
-        InputTarget::PlaylistName(_index) => todo!(),
-    }
 }

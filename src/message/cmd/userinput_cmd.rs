@@ -1,6 +1,6 @@
 use crate::{
     logic::user_input::{InputMode, InputTarget, PromptMsg},
-    message::Message,
+    message::{Message, UserInputMessage, cmd::playlist_cmd::name_playlist},
     model::Model,
 };
 
@@ -23,7 +23,7 @@ pub fn exit_edit_mode(model: &mut Model) -> Option<Message> {
 pub fn submit(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
     model.user_input.submit_input();
 
-    Some(Message::InputApply(to_edit))
+    Some(Message::UserInput(UserInputMessage::Apply(to_edit)))
 }
 
 pub fn enter_char(to_insert: char, model: &mut Model) -> Option<Message> {
@@ -48,4 +48,16 @@ pub fn move_cursor_right(model: &mut Model) -> Option<Message> {
     model.user_input.move_cursor_right();
 
     None
+}
+
+pub fn apply_input(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
+    match to_edit {
+        InputTarget::PlaylistName(index) => name_playlist(index, model),
+    }
+}
+
+pub fn handle_exit_insert_early(to_edit: InputTarget, _model: &mut Model) -> Option<Message> {
+    match to_edit {
+        InputTarget::PlaylistName(_index) => todo!(),
+    }
 }

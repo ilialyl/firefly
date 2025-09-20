@@ -10,7 +10,7 @@ use log::info;
 use firefly::{
     data::cache,
     logic::session_state::RunningState,
-    message::{Message, update::update},
+    message::{Message, update::update_global},
     model::Model,
     view::{terminal, view},
 };
@@ -48,9 +48,9 @@ fn main() -> Result<()> {
         let mut current_msg;
 
         // Tick
-        current_msg = update(&mut model, Message::Tick, &msg_tx, &info_tx);
+        current_msg = update_global(&mut model, Message::Tick, &msg_tx, &info_tx);
         while current_msg.is_some() {
-            current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+            current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
         }
 
         // Draw TUI view
@@ -61,22 +61,22 @@ fn main() -> Result<()> {
 
         // Consume message
         while current_msg.is_some() {
-            current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+            current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
         }
 
         // Receive message from other threads and consume it.
         if let Ok(msg) = msg_rx.try_recv() {
-            current_msg = update(&mut model, msg, &msg_tx, &info_tx);
+            current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
             while current_msg.is_some() {
-                current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+                current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
             }
         }
 
         // Receive displayable info from other threads and consume it.
         if let Ok(info) = info_rx.try_recv() {
-            current_msg = update(&mut model, Message::UpdateInfo(info), &msg_tx, &info_tx);
+            current_msg = update_global(&mut model, Message::UpdateInfo(info), &msg_tx, &info_tx);
             while current_msg.is_some() {
-                current_msg = update(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+                current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
             }
         }
     }

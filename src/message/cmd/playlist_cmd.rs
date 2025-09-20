@@ -6,7 +6,7 @@ use crate::{
         playlist::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
         user_input::InputTarget,
     },
-    message::Message,
+    message::{Message, UserInputMessage},
     model::Model,
     view::terminal::CursorMovementDirection,
 };
@@ -14,10 +14,10 @@ use crate::{
 pub fn create_playlist(model: &mut Model) -> Option<Message> {
     let index = model.playlist_ctl.create_playlist();
 
-    Some(Message::EnterEditMode(
+    Some(Message::UserInput(UserInputMessage::EnterEditMode(
         "Playlist".to_string(),
         InputTarget::PlaylistName(index),
-    ))
+    )))
 }
 
 pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
@@ -28,13 +28,13 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
         && !current_playlist_names.contains(&name)
     {
         playlist.rename(name.as_str());
-        return Some(Message::ExitEditMode);
+        return Some(Message::UserInput(UserInputMessage::Exit));
     }
 
-    Some(Message::EnterEditMode(
+    Some(Message::UserInput(UserInputMessage::EnterEditMode(
         "Playlist - Name Taken".to_string(),
         InputTarget::PlaylistName(index),
-    ))
+    )))
 }
 
 pub fn add_tracks(playlist_controller: &mut PlaylistController) -> Option<Message> {

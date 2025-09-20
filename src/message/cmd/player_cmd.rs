@@ -8,7 +8,7 @@ use crate::{
         session_state::RunningState,
         track::FormatConversion,
     },
-    message::Message,
+    message::{Message, PlayerMessage},
     model::Model,
 };
 
@@ -19,7 +19,7 @@ pub fn load_now(
 ) -> Option<Message> {
     if let Some(path) = player::choose_audio_file() {
         model.player.queue.prepend_track(path);
-        return Some(Message::PlayerSkip);
+        return Some(Message::Player(PlayerMessage::Skip));
     }
 
     None

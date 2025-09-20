@@ -2,7 +2,7 @@ pub mod main_tab;
 pub mod playlist_tab;
 pub mod tabs;
 pub mod terminal;
-pub mod user_input_view;
+pub mod userinput_view;
 
 use ratatui::{
     Frame,
