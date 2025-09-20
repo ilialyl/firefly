@@ -37,8 +37,8 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
     )))
 }
 
-pub fn add_tracks(playlist_controller: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected) = playlist_controller.get_selected_playlist() {
+pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    if let Some(selected) = playlist_ctl.get_selected_playlist() {
         if let Some(path_vec) = player::choose_multiple_audio_files() {
             let playlist = selected;
 
@@ -50,10 +50,10 @@ pub fn add_tracks(playlist_controller: &mut PlaylistController) -> Option<Messag
 }
 
 pub fn send_to_player(
-    playlist_controller: &mut PlaylistController,
+    playlist_ctl: &mut PlaylistController,
     player: &mut Player,
 ) -> Option<Message> {
-    if let Some(selected) = playlist_controller.get_selected_playlist() {
+    if let Some(selected) = playlist_ctl.get_selected_playlist() {
         player
             .queue
             .enqueue_tracks(selected.tracks.iter().map(|e| e.to_path_buf()).collect());
@@ -64,32 +64,29 @@ pub fn send_to_player(
 
 pub fn navigate_playlists(
     direction: CursorMovementDirection,
-    playlist_controller: &mut PlaylistController,
+    playlist_ctl: &mut PlaylistController,
 ) {
-    if !matches!(playlist_controller.tab_focus, PlaylistTabFocus::Playlists) {
+    if !matches!(playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
         return;
     }
 
     match direction {
         CursorMovementDirection::Up => {
-            playlist_controller.prev_playlist();
+            playlist_ctl.prev_playlist();
         }
         CursorMovementDirection::Down => {
-            playlist_controller.next_playlist();
+            playlist_ctl.next_playlist();
         }
         _ => {}
     }
 }
 
-pub fn navigate_tracks(
-    direction: CursorMovementDirection,
-    playlist_controller: &mut PlaylistController,
-) {
-    if !matches!(playlist_controller.tab_focus, PlaylistTabFocus::Tracks) {
+pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut PlaylistController) {
+    if !matches!(playlist_ctl.tab_focus, PlaylistTabFocus::Tracks) {
         return;
     }
 
-    if let Some(selected_playlist) = playlist_controller.get_selected_playlist() {
+    if let Some(selected_playlist) = playlist_ctl.get_selected_playlist() {
         match direction {
             CursorMovementDirection::Up => selected_playlist.select_prev_track(),
             CursorMovementDirection::Down => selected_playlist.select_next_track(),
@@ -100,29 +97,29 @@ pub fn navigate_tracks(
 
 pub fn move_cursor(
     direction: CursorMovementDirection,
-    playlist_controller: &mut PlaylistController,
+    playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
-    if playlist_controller.playlist_collection.is_empty() {
+    if playlist_ctl.playlist_collection.is_empty() {
         return None;
     }
 
     match direction {
         CursorMovementDirection::Left => {
-            playlist_controller.tab_focus = PlaylistTabFocus::Playlists;
+            playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
         }
         CursorMovementDirection::Right => {
-            if let Some(selected_playlist) = playlist_controller.get_selected_playlist()
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
                 && !selected_playlist.is_empty()
             {
-                playlist_controller.tab_focus = PlaylistTabFocus::Tracks;
+                playlist_ctl.tab_focus = PlaylistTabFocus::Tracks;
             }
         }
-        _ => match playlist_controller.tab_focus {
+        _ => match playlist_ctl.tab_focus {
             PlaylistTabFocus::Playlists => {
-                navigate_playlists(direction, playlist_controller);
+                navigate_playlists(direction, playlist_ctl);
             }
             PlaylistTabFocus::Tracks => {
-                navigate_tracks(direction, playlist_controller);
+                navigate_tracks(direction, playlist_ctl);
             }
         },
     }
@@ -131,13 +128,13 @@ pub fn move_cursor(
 }
 
 pub fn delete_playlist(
-    playlist_controller: &mut PlaylistController,
+    playlist_ctl: &mut PlaylistController,
     confirmation: Confirmation,
 ) -> Option<Message> {
-    if let Some(_) = playlist_controller.get_selected_playlist() {
+    if let Some(_) = playlist_ctl.get_selected_playlist() {
         match confirmation {
             Confirmation::Yes => {
-                playlist_controller.delete_selected_playlist();
+                playlist_ctl.delete_selected_playlist();
             }
             Confirmation::No => {
                 return Some(Message::AskConfirmation(Box::new(Message::Playlist(
@@ -150,8 +147,8 @@ pub fn delete_playlist(
     None
 }
 
-pub fn rename_playlist(playlist_controller: &mut PlaylistController) -> Option<Message> {
-    if let Some(index) = playlist_controller.selected_playlist {
+pub fn rename_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    if let Some(index) = playlist_ctl.selected_playlist {
         Some(Message::UserInput(UserInputMessage::EnterEditMode(
             "Playlist Rename".to_string(),
             InputTarget::PlaylistName(index),
@@ -159,4 +156,20 @@ pub fn rename_playlist(playlist_controller: &mut PlaylistController) -> Option<M
     } else {
         None
     }
+}
+
+pub fn save_selected_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    playlist_ctl
+        .save_selected_to_file()
+        .expect("Error saving selected playlist to file");
+
+    None
+}
+
+pub fn load_playlists(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    playlist_ctl
+        .load_playlists()
+        .expect("Error loading playlists from files.");
+
+    None
 }

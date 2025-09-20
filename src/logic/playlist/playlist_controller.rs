@@ -1,3 +1,5 @@
+use color_eyre::eyre::Result;
+
 use crate::logic::playlist::{
     Playlist, playlist_collection::PlaylistCollection, playlist_tab_focus::PlaylistTabFocus,
 };
@@ -91,5 +93,17 @@ impl PlaylistController {
             .iter()
             .map(|p| p.name.clone().unwrap_or("New Playlist".to_string()))
             .collect()
+    }
+
+    pub fn save_selected_to_file(&mut self) -> Result<()> {
+        if let Some(playlist) = Self::get_selected_playlist(self) {
+            playlist.save_to_file()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn load_playlists(&mut self) -> Result<()> {
+        self.playlist_collection.load_playlists()
     }
 }

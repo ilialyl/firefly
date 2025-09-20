@@ -44,11 +44,12 @@ pub enum PlayerMessage {
 }
 
 pub enum PlaylistMessage {
+    LoadPlaylists,
     MoveCursor(CursorMovementDirection),
     Create,
     Rename,
     Delete(Confirmation),
-    Save,
+    SaveSelected,
     AddTracks,
     AddDir,
     RemoveTrack,
