@@ -63,6 +63,14 @@ impl PlaylistController {
         }
     }
 
+    pub fn delete_selected_playlist(&mut self) {
+        if !self.playlist_collection.is_empty() {
+            if let Some(idx) = self.selected_playlist {
+                self.playlist_collection.delete(idx);
+            }
+        }
+    }
+
     pub fn get_all_playlist_names(&self) -> Vec<String> {
         self.playlist_collection
             .get_playlists()

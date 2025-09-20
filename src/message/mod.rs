@@ -7,6 +7,7 @@ use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     logic::user_input::{InputTarget, PlaylistIndex, PromptMsg},
+    message::cmd::Confirmation,
     view::terminal::CursorMovementDirection,
 };
 
@@ -18,6 +19,8 @@ pub enum Message {
     UserInput(UserInputMessage),
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
+    AskConfirmation(Box<Message>),
+    Confirm(Confirmation),
     SetBusy,
     UpdateInfo(String),
     CycleTabs,
@@ -44,7 +47,7 @@ pub enum PlaylistMessage {
     MoveCursor(CursorMovementDirection),
     Create,
     Rename,
-    Delete,
+    Delete(Confirmation),
     Save,
     QueueUp,
     AddTracks,

@@ -6,7 +6,7 @@ use crate::{
         playlist::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
         user_input::InputTarget,
     },
-    message::{Message, UserInputMessage},
+    message::{Message, PlaylistMessage, UserInputMessage, cmd::Confirmation},
     model::Model,
     view::terminal::CursorMovementDirection,
 };
@@ -125,6 +125,24 @@ pub fn move_cursor(
                 navigate_tracks(direction, playlist_controller);
             }
         },
+    }
+
+    None
+}
+
+pub fn delete_playlist(
+    playlist_controller: &mut PlaylistController,
+    confirmation: Confirmation,
+) -> Option<Message> {
+    match confirmation {
+        Confirmation::Yes => {
+            playlist_controller.delete_selected_playlist();
+        }
+        Confirmation::No => {
+            return Some(Message::AskConfirmation(Box::new(Message::Playlist(
+                PlaylistMessage::Delete(Confirmation::Yes),
+            ))));
+        }
     }
 
     None

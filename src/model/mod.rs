@@ -5,6 +5,7 @@ use crate::{
         session_state::Session,
         user_input::{InputMode, UserInput},
     },
+    message::Message,
     view::{main_tab::queue_view::QueueViewState, tabs::SelectedTab},
 };
 
@@ -17,6 +18,7 @@ pub struct Model {
     pub queue_view: QueueViewState,
     pub input_mode: InputMode,
     pub user_input: UserInput,
+    pub ask_confirmation: Option<Message>,
 }
 
 impl Default for Model {
@@ -31,6 +33,7 @@ impl Default for Model {
             queue_view: QueueViewState::default(),
             input_mode: InputMode::default(),
             user_input: UserInput::new(),
+            ask_confirmation: None,
         }
     }
 }

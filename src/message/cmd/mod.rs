@@ -20,6 +20,11 @@ pub mod player_cmd;
 pub mod playlist_cmd;
 pub mod userinput_cmd;
 
+pub enum Confirmation {
+    Yes,
+    No,
+}
+
 pub fn tick(
     model: &mut Model,
     msg_tx: &Sender<Message>,
@@ -87,6 +92,20 @@ pub fn tick(
     }
 
     None
+}
+
+pub fn ask_for_confirmation(msg: Message, model: &mut Model) -> Option<Message> {
+    model.ask_confirmation = Some(msg);
+
+    None
+}
+
+pub fn confirmed(answer: Confirmation, model: &mut Model) -> Option<Message> {
+    let message = model.ask_confirmation.take();
+    match answer {
+        Confirmation::Yes => message,
+        Confirmation::No => None,
+    }
 }
 
 pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {

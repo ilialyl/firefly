@@ -72,4 +72,8 @@ impl PlaylistCollection {
     pub fn get_playlists(&self) -> &Vec<Playlist> {
         &self.playlists
     }
+
+    pub fn delete(&mut self, idx: usize) {
+        self.playlists.remove(idx);
+    }
 }

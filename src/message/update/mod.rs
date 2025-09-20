@@ -24,6 +24,8 @@ pub fn update_global(
 ) -> Option<Message> {
     match msg {
         Message::Tick => tick(model, msg_tx, info_tx),
+        Message::AskConfirmation(msg) => ask_for_confirmation(*msg, model),
+        Message::Confirm(answer) => confirmed(answer, model),
         Message::Player(player_msg) => update_player(model, player_msg, msg_tx, info_tx),
         Message::Playlist(playlist_msg) => update_playlist(model, playlist_msg),
         Message::UserInput(userinput_update) => update_userinput(model, userinput_update),

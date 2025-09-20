@@ -18,7 +18,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
 use crate::{
     logic::user_input::InputMode,
-    message::{Message, PlayerMessage, PlaylistMessage, UserInputMessage},
+    message::{Message, PlayerMessage, PlaylistMessage, UserInputMessage, cmd::Confirmation},
     model::Model,
     view::tabs::SelectedTab,
 };
@@ -96,7 +96,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 ))),
                 KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::ToPlayer)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
-                KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::Delete)),
+                KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::Delete(Confirmation::No))),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },
