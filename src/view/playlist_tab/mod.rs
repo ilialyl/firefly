@@ -58,7 +58,8 @@ fn draw_controls(frame: &mut Frame, area: Rect) {
     let controls = [
         "New <n>",
         "Rename <F2>",
-        "Del Playlist <F5>",
+        "Save <F5>",
+        "Del Playlist <F9>",
         "Add Tracks <q/Q>",
         "Remove Track <Del>",
         "Arrange <a>",
