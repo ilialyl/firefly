@@ -1,3 +1,4 @@
+pub mod confirmation_box;
 pub mod main_tab;
 pub mod playlist_tab;
 pub mod tabs;
@@ -52,6 +53,7 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
                 .render(prompt.as_str(), 40, 3, frame, frame.area())
         }
         InputMode::Commands => {}
+        InputMode::Confirmation => confirmation_box::render(frame, frame.area()),
     }
 }
 
@@ -59,5 +61,13 @@ fn center_vertical(area: Rect, height: u16) -> Rect {
     let [area] = Layout::vertical([Constraint::Length(height)])
         .flex(Flex::Center)
         .areas(area);
+    area
+}
+
+pub fn center_xy(area: Rect, percent_x: u16, length_y: u16) -> Rect {
+    let vertical = Layout::vertical([Constraint::Length(length_y)]).flex(Flex::Center);
+    let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
+    let [area] = vertical.areas(area);
+    let [area] = horizontal.areas(area);
     area
 }

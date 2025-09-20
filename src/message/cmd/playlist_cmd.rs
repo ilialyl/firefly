@@ -134,14 +134,16 @@ pub fn delete_playlist(
     playlist_controller: &mut PlaylistController,
     confirmation: Confirmation,
 ) -> Option<Message> {
-    match confirmation {
-        Confirmation::Yes => {
-            playlist_controller.delete_selected_playlist();
-        }
-        Confirmation::No => {
-            return Some(Message::AskConfirmation(Box::new(Message::Playlist(
-                PlaylistMessage::Delete(Confirmation::Yes),
-            ))));
+    if let Some(_) = playlist_controller.get_selected_playlist() {
+        match confirmation {
+            Confirmation::Yes => {
+                playlist_controller.delete_selected_playlist();
+            }
+            Confirmation::No => {
+                return Some(Message::AskConfirmation(Box::new(Message::Playlist(
+                    PlaylistMessage::Delete(Confirmation::Yes),
+                ))));
+            }
         }
     }
 

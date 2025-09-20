@@ -67,6 +67,9 @@ impl PlaylistController {
         if !self.playlist_collection.is_empty() {
             if let Some(idx) = self.selected_playlist {
                 self.playlist_collection.delete(idx);
+                if self.playlist_collection.is_empty() {
+                    self.selected_playlist = None;
+                }
             }
         }
     }

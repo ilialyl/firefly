@@ -9,7 +9,7 @@ use rust_ffmpeg::FFmpegProcess;
 use crate::{
     logic::{
         player::playback_status::PlaybackStatus, session_state::RunningState,
-        track::FormatConversion,
+        track::FormatConversion, user_input::InputMode,
     },
     message::{Message, cmd::player_cmd::skip},
     model::Model,
@@ -96,12 +96,15 @@ pub fn tick(
 
 pub fn ask_for_confirmation(msg: Message, model: &mut Model) -> Option<Message> {
     model.ask_confirmation = Some(msg);
+    model.input_mode = InputMode::Confirmation;
 
     None
 }
 
 pub fn confirmed(answer: Confirmation, model: &mut Model) -> Option<Message> {
     let message = model.ask_confirmation.take();
+    model.input_mode = InputMode::default();
+
     match answer {
         Confirmation::Yes => message,
         Confirmation::No => None,

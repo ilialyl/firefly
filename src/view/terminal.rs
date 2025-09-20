@@ -110,6 +110,11 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
             KeyCode::Esc => Some(Message::UserInput(UserInputMessage::ExitEarly(to_edit))),
             _ => None,
         },
+        InputMode::Confirmation => match key_event.code {
+            KeyCode::Char('y') => Some(Message::Confirm(Confirmation::Yes)),
+            KeyCode::Char('n') => Some(Message::Confirm(Confirmation::No)),
+            _ => None,
+        },
     }
 }
 

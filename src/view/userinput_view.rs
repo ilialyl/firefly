@@ -1,11 +1,11 @@
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Flex, Layout, Position, Rect},
+    layout::{Alignment, Position, Rect},
     style::Style,
     widgets::{Block, Clear, Paragraph, Widget},
 };
 
-use crate::logic::user_input::UserInput;
+use crate::{logic::user_input::UserInput, view::center_xy};
 
 impl UserInput {
     pub fn render(
@@ -21,7 +21,7 @@ impl UserInput {
             .title_alignment(Alignment::Left)
             .border_style(Style::default());
 
-        let area = Self::create_popup_area(area, percent_x, length_y);
+        let area = center_xy(area, percent_x, length_y);
         Clear.render(area, frame.buffer_mut());
 
         let input = Paragraph::new(self.input.as_str());
@@ -34,13 +34,5 @@ impl UserInput {
             // Move one line down, from the border to the input line
             area.y + 1,
         ))
-    }
-
-    fn create_popup_area(area: Rect, percent_x: u16, length_y: u16) -> Rect {
-        let vertical = Layout::vertical([Constraint::Length(length_y)]).flex(Flex::Center);
-        let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
-        let [area] = vertical.areas(area);
-        let [area] = horizontal.areas(area);
-        area
     }
 }
