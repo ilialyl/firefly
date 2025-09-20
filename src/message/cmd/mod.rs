@@ -11,7 +11,7 @@ use crate::{
         player::playback_status::PlaybackStatus, session_state::RunningState,
         track::FormatConversion, user_input::InputMode,
     },
-    message::{Message, cmd::player_cmd::skip},
+    message::{Message, PlaylistMessage, cmd::player_cmd::skip},
     model::Model,
     view::main_tab::queue_view,
 };
@@ -38,6 +38,12 @@ pub fn tick(
             model.player.queue.get().len(),
             area_height,
         );
+    }
+
+    if model.session.state == RunningState::Starting {
+        model.session.state = RunningState::Running;
+
+        return Some(Message::Playlist(PlaylistMessage::LoadPlaylists));
     }
 
     if model.session.state == RunningState::Busy {
