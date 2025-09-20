@@ -76,6 +76,15 @@ impl PlaylistController {
         }
     }
 
+    pub fn delete_playlist(&mut self, index: usize) {
+        self.playlist_collection.delete(index);
+        if self.playlist_collection.is_empty() {
+            self.selected_playlist = None;
+        } else {
+            self.selected_playlist = Some(0);
+        }
+    }
+
     pub fn get_all_playlist_names(&self) -> Vec<String> {
         self.playlist_collection
             .get_playlists()

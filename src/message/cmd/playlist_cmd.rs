@@ -149,3 +149,14 @@ pub fn delete_playlist(
 
     None
 }
+
+pub fn rename_playlist(playlist_controller: &mut PlaylistController) -> Option<Message> {
+    if let Some(index) = playlist_controller.selected_playlist {
+        Some(Message::UserInput(UserInputMessage::EnterEditMode(
+            "Playlist Rename".to_string(),
+            InputTarget::PlaylistName(index),
+        )))
+    } else {
+        None
+    }
+}

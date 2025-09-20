@@ -56,8 +56,16 @@ pub fn apply_input(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
     }
 }
 
-pub fn handle_exit_insert_early(to_edit: InputTarget, _model: &mut Model) -> Option<Message> {
+pub fn handle_exit_insert_early(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
     match to_edit {
-        InputTarget::PlaylistName(_index) => todo!(),
+        InputTarget::PlaylistName(index) => {
+            if let Some(playlist) = model.playlist_ctl.playlist_collection.get_playlist(index) {
+                if playlist.get_name().is_none() {
+                    model.playlist_ctl.delete_playlist(index);
+                }
+            }
+
+            Some(Message::UserInput(UserInputMessage::Exit))
+        }
     }
 }

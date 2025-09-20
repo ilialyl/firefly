@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
-    logic::user_input::{InputTarget, PlaylistIndex, PromptMsg},
+    logic::user_input::{InputTarget, PromptMsg},
     message::cmd::Confirmation,
     view::terminal::CursorMovementDirection,
 };
@@ -49,13 +49,11 @@ pub enum PlaylistMessage {
     Rename,
     Delete(Confirmation),
     Save,
-    QueueUp,
     AddTracks,
     AddDir,
     RemoveTrack,
     ToggleArrangeTracks,
     ToPlayer,
-    NamePlaylist(PlaylistIndex),
 }
 
 pub enum UserInputMessage {
