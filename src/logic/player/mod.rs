@@ -197,7 +197,7 @@ pub fn is_rodio_supported(path: &Path) -> Result<bool> {
     }
 }
 
-pub fn choose_file() -> Option<PathBuf> {
+pub fn choose_audio_file() -> Option<PathBuf> {
     FileDialog::new()
         .add_filter("Tested audio formats", &TESTED_FORMATS)
         .add_filter("Untested audio formats", &UNTESTED_FORMATS)
@@ -205,7 +205,7 @@ pub fn choose_file() -> Option<PathBuf> {
         .pick_file()
 }
 
-pub fn choose_multiple_files() -> Option<Vec<PathBuf>> {
+pub fn choose_multiple_audio_files() -> Option<Vec<PathBuf>> {
     FileDialog::new()
         .add_filter("Tested audio formats", &TESTED_FORMATS)
         .add_filter("Untested audio formats", &UNTESTED_FORMATS)
@@ -217,14 +217,14 @@ pub fn choose_dir() -> Option<PathBuf> {
     FileDialog::new().pick_folder()
 }
 
-pub fn get_metadata(track: &Path, track_temp: &Path) -> Result<TaggedFile> {
+pub fn read_metadata(track: &Path, track_temp: &Path) -> Result<TaggedFile> {
     match Probe::open(track)?.read() {
         Ok(f) => Ok(f),
         Err(_) => Ok(Probe::open(track_temp)?.read()?),
     }
 }
 
-pub fn check_ffmpeg() -> bool {
+pub fn ffmpeg_available() -> bool {
     let output = Command::new("ffmpeg").arg("-version").output();
 
     match output {

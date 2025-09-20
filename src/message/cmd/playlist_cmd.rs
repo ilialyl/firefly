@@ -39,7 +39,7 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
 
 pub fn add_tracks(playlist_controller: &mut PlaylistController) -> Option<Message> {
     if let Some(selected) = playlist_controller.get_selected_playlist() {
-        if let Some(path_vec) = player::choose_multiple_files() {
+        if let Some(path_vec) = player::choose_multiple_audio_files() {
             let playlist = selected;
 
             let new_tracks: Vec<PathBuf> = path_vec.into_iter().filter(|p| p.is_file()).collect();

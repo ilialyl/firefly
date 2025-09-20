@@ -17,7 +17,7 @@ pub fn load_now(
     _msg_tx: &Sender<Message>,
     _info_tx: &Sender<String>,
 ) -> Option<Message> {
-    if let Some(path) = player::choose_file() {
+    if let Some(path) = player::choose_audio_file() {
         model.player.queue.prepend_track(path);
         return Some(Message::PlayerSkip);
     }
@@ -48,7 +48,7 @@ pub fn queue_dir(model: &mut Model) -> Option<Message> {
 }
 
 pub fn queue_files(model: &mut Model) -> Option<Message> {
-    if let Some(path_vec) = player::choose_multiple_files() {
+    if let Some(path_vec) = player::choose_multiple_audio_files() {
         model.player.queue.enqueue_tracks(path_vec);
     }
 
