@@ -52,6 +52,9 @@ pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
 pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     if let Some(playlist) = playlist_ctl.get_selected_playlist() {
         playlist.remove_selected();
+        if playlist.is_empty() {
+            playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
+        }
     }
 
     None
