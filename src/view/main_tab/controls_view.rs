@@ -19,7 +19,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     controls.push(Paragraph::new(" Load Now <N>"));
     controls.push(Paragraph::new(" Queue <Q>"));
     controls.push(Paragraph::new(" Queue Dir <ShiftQ>"));
-    let mut toggle_arrange = Paragraph::new(" Queue Arrange <A>");
+    let mut toggle_arrange = Paragraph::new(" Arrange Queue <A>");
     if model.player.queue.is_arrange() {
         toggle_arrange = toggle_arrange.fg(Color::Rgb(255, 192, 15));
     }
