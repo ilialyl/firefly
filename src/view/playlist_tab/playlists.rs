@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Style, Styled},
+    style::{Color, Style, Styled, Stylize},
     text::Line,
     widgets::Paragraph,
 };
@@ -17,12 +17,16 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .map(|n| Line::from(n))
         .collect();
 
-    if matches!(model.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
-        if let Some(selected_playlist) = model.playlist_ctl.selected_playlist {
-            name_lines[selected_playlist] = name_lines[selected_playlist]
-                .clone()
-                .set_style(Style::default().fg(Color::Rgb(255, 192, 15)))
-        }
+    let mut selected_playlist_style = Style::default().fg(Color::Rgb(255, 192, 15));
+
+    if !matches!(model.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
+        selected_playlist_style = selected_playlist_style.italic();
+    };
+
+    if let Some(selected_playlist) = model.playlist_ctl.selected_playlist {
+        name_lines[selected_playlist] = name_lines[selected_playlist]
+            .clone()
+            .set_style(selected_playlist_style)
     }
 
     let paragraph = Paragraph::new(name_lines);
