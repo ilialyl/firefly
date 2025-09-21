@@ -103,10 +103,16 @@ pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut Pl
         return;
     }
 
+    let arrange_mode = playlist_ctl.arrange_mode;
+
     if let Some(selected_playlist) = playlist_ctl.get_selected_playlist() {
         match direction {
-            CursorMovementDirection::Up => selected_playlist.select_prev_track(),
-            CursorMovementDirection::Down => selected_playlist.select_next_track(),
+            CursorMovementDirection::Up => {
+                selected_playlist.select_prev_track(arrange_mode);
+            }
+            CursorMovementDirection::Down => {
+                selected_playlist.select_next_track(arrange_mode);
+            }
             _ => {}
         }
     }
@@ -132,12 +138,8 @@ pub fn move_cursor(
             }
         }
         _ => match playlist_ctl.tab_focus {
-            PlaylistTabFocus::Playlists => {
-                navigate_playlists(direction, playlist_ctl);
-            }
-            PlaylistTabFocus::Tracks => {
-                navigate_tracks(direction, playlist_ctl);
-            }
+            PlaylistTabFocus::Playlists => navigate_playlists(direction, playlist_ctl),
+            PlaylistTabFocus::Tracks => navigate_tracks(direction, playlist_ctl),
         },
     }
 
@@ -187,6 +189,12 @@ pub fn load_playlists(playlist_ctl: &mut PlaylistController) -> Option<Message> 
     playlist_ctl
         .load_playlists()
         .expect("Error loading playlists from files.");
+
+    None
+}
+
+pub fn toggle_arrange(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    playlist_ctl.arrange_mode = !playlist_ctl.arrange_mode;
 
     None
 }

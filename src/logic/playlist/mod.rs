@@ -81,15 +81,52 @@ impl Playlist {
         playlists_path.join(Self::get_filename(playlist_name))
     }
 
-    pub fn select_next_track(&mut self) {
+    pub fn select_next_track(&mut self, is_arrange: bool) {
+        let mut is_arrange = is_arrange;
+
+        if self.tracks.is_empty() {
+            return;
+        }
+
+        if let Some(selected_index) = self.selected_track
+            && selected_index.eq(&self.tracks.len().checked_sub(1).unwrap_or(0))
+        {
+            is_arrange = false;
+        }
+
         self.selected_track = Some(
             (self.selected_track.unwrap_or(0) + 1)
                 .min(self.tracks.len().checked_sub(1).unwrap_or(0)),
         );
+
+        if let Some(selected_index) = self.selected_track
+            && is_arrange
+        {
+            self.tracks
+                .swap(selected_index, selected_index.checked_sub(1).unwrap_or(0));
+        }
     }
 
-    pub fn select_prev_track(&mut self) {
+    pub fn select_prev_track(&mut self, is_arrange: bool) {
+        let mut is_arrange = is_arrange;
+        if self.tracks.is_empty() {
+            return;
+        }
+
+        if let Some(selected_index) = self.selected_track
+            && selected_index.eq(&0)
+        {
+            is_arrange = false;
+        }
+
         self.selected_track = Some(self.selected_track.unwrap_or(0).checked_sub(1).unwrap_or(0));
+
+        if let Some(selected_index) = self.selected_track
+            && is_arrange
+            && self.tracks.len() > selected_index
+        {
+            self.tracks.swap(selected_index, selected_index + 1);
+        }
     }
 
     pub fn from(file: &Path) -> Result<Playlist> {

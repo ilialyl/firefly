@@ -23,6 +23,7 @@ use crate::{
     view::tabs::SelectedTab,
 };
 
+#[derive(Clone, Copy)]
 pub enum CursorMovementDirection {
     Up,
     Down,

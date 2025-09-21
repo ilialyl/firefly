@@ -8,6 +8,7 @@ pub struct PlaylistController {
     pub selected_playlist: Option<usize>,
     pub playlist_coll: PlaylistCollection,
     pub tab_focus: PlaylistTabFocus,
+    pub arrange_mode: bool,
 }
 
 impl Default for PlaylistController {
@@ -27,6 +28,7 @@ impl Default for PlaylistController {
             selected_playlist,
             playlist_coll,
             tab_focus: PlaylistTabFocus::default(),
+            arrange_mode: false,
         }
     }
 }

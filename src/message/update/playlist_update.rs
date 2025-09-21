@@ -16,7 +16,7 @@ pub fn update_playlist(model: &mut Model, msg: PlaylistMessage) -> Option<Messag
         PlaylistMessage::RemoveTrack => todo!(),
         PlaylistMessage::Rename => rename_playlist(&mut model.playlist_ctl),
         PlaylistMessage::SaveSelected => save_selected_playlist(&mut model.playlist_ctl),
-        PlaylistMessage::ToggleArrangeTracks => todo!(),
+        PlaylistMessage::ToggleArrangeTracks => toggle_arrange(&mut model.playlist_ctl),
         PlaylistMessage::LoadPlaylists => load_playlists(&mut model.playlist_ctl),
     }
 }
