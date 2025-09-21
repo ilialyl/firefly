@@ -1,7 +1,6 @@
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum RunningState {
     #[default]
-    Starting,
     Running,
     Busy,
     Done,

@@ -59,7 +59,7 @@ pub fn apply_input(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
 pub fn handle_exit_insert_early(to_edit: InputTarget, model: &mut Model) -> Option<Message> {
     match to_edit {
         InputTarget::PlaylistName(index) => {
-            if let Some(playlist) = model.playlist_ctl.playlist_collection.get_playlist(index) {
+            if let Some(playlist) = model.playlist_ctl.playlist_coll.get_playlist(index) {
                 if playlist.get_name().is_none() {
                     model.playlist_ctl.delete_playlist(index);
                 }

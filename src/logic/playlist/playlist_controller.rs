@@ -6,15 +6,26 @@ use crate::logic::playlist::{
 
 pub struct PlaylistController {
     pub selected_playlist: Option<usize>,
-    pub playlist_collection: PlaylistCollection,
+    pub playlist_coll: PlaylistCollection,
     pub tab_focus: PlaylistTabFocus,
 }
 
 impl Default for PlaylistController {
     fn default() -> Self {
+        let mut playlist_coll = PlaylistCollection::default();
+        playlist_coll
+            .load_playlists()
+            .expect("Error loading existing playlists");
+
+        let selected_playlist = if playlist_coll.is_empty() {
+            None
+        } else {
+            Some(0)
+        };
+
         PlaylistController {
-            selected_playlist: None,
-            playlist_collection: PlaylistCollection::default(),
+            selected_playlist,
+            playlist_coll,
             tab_focus: PlaylistTabFocus::default(),
         }
     }
@@ -24,12 +35,12 @@ impl PlaylistController {
     pub fn next_playlist(&mut self) {
         self.selected_playlist = Some(
             (self.selected_playlist.unwrap_or(0) + 1)
-                .min(self.playlist_collection.len().checked_sub(1).unwrap_or(0)),
+                .min(self.playlist_coll.len().checked_sub(1).unwrap_or(0)),
         );
     }
 
     pub fn prev_playlist(&mut self) {
-        if self.playlist_collection.is_empty() {
+        if self.playlist_coll.is_empty() {
             self.selected_playlist = None;
         } else {
             self.selected_playlist = Some(
@@ -43,7 +54,7 @@ impl PlaylistController {
 
     pub fn create_playlist(&mut self) -> usize {
         // Create a playlist and return index to it
-        let index = self.playlist_collection.create_playlist();
+        let index = self.playlist_coll.create_playlist();
 
         self.selected_playlist = Some(index);
 
@@ -52,21 +63,21 @@ impl PlaylistController {
 
     pub fn get_selected_playlist(&mut self) -> Option<&mut Playlist> {
         if let Some(idx) = self.selected_playlist {
-            return self.playlist_collection.get_playlist(idx);
+            return self.playlist_coll.get_playlist(idx);
         } else {
             None
         }
     }
 
     pub fn rename_selected_playlist(&mut self, name: &str) {
-        if !self.playlist_collection.is_empty() {
+        if !self.playlist_coll.is_empty() {
             let selected = self.get_selected_playlist().unwrap();
             selected.rename(name);
         }
     }
 
     pub fn delete_selected_playlist(&mut self) {
-        if !self.playlist_collection.is_empty() {
+        if !self.playlist_coll.is_empty() {
             if let Some(index) = self.selected_playlist {
                 Self::delete_playlist(self, index);
             }
@@ -74,12 +85,12 @@ impl PlaylistController {
     }
 
     pub fn delete_playlist(&mut self, index: usize) {
-        if let Some(playlist) = self.playlist_collection.get_playlist(index) {
+        if let Some(playlist) = self.playlist_coll.get_playlist(index) {
             playlist.trash_save_file();
         }
 
-        self.playlist_collection.delete(index);
-        if self.playlist_collection.is_empty() {
+        self.playlist_coll.delete(index);
+        if self.playlist_coll.is_empty() {
             self.selected_playlist = None;
         } else {
             self.selected_playlist = Some(0);
@@ -87,7 +98,7 @@ impl PlaylistController {
     }
 
     pub fn get_all_playlist_names(&self) -> Vec<String> {
-        self.playlist_collection
+        self.playlist_coll
             .get_playlists()
             .iter()
             .map(|p| p.name.clone().unwrap_or("New Playlist".to_string()))
@@ -103,6 +114,6 @@ impl PlaylistController {
     }
 
     pub fn load_playlists(&mut self) -> Result<()> {
-        self.playlist_collection.load_playlists()
+        self.playlist_coll.load_playlists()
     }
 }

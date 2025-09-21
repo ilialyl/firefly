@@ -24,7 +24,7 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
     let current_playlist_names = model.playlist_ctl.get_all_playlist_names();
 
     if let Some(name) = model.user_input.input_history.pop()
-        && let Some(playlist) = model.playlist_ctl.playlist_collection.get_playlist(index)
+        && let Some(playlist) = model.playlist_ctl.playlist_coll.get_playlist(index)
         && !current_playlist_names.contains(&name)
     {
         playlist.rename(name.as_str());
@@ -99,7 +99,7 @@ pub fn move_cursor(
     direction: CursorMovementDirection,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
-    if playlist_ctl.playlist_collection.is_empty() {
+    if playlist_ctl.playlist_coll.is_empty() {
         return None;
     }
 

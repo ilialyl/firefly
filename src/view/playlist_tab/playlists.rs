@@ -9,10 +9,7 @@ use ratatui::{
 use crate::{logic::playlist::playlist_tab_focus::PlaylistTabFocus, model::Model};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
-    let playlists = model
-        .playlist_ctl
-        .playlist_collection
-        .get_playlists();
+    let playlists = model.playlist_ctl.playlist_coll.get_playlists();
 
     let mut name_lines: Vec<Line> = playlists
         .iter()
@@ -20,10 +17,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .map(|n| Line::from(n))
         .collect();
 
-    if matches!(
-        model.playlist_ctl.tab_focus,
-        PlaylistTabFocus::Playlists
-    ) {
+    if matches!(model.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
         if let Some(selected_playlist) = model.playlist_ctl.selected_playlist {
             name_lines[selected_playlist] = name_lines[selected_playlist]
                 .clone()
