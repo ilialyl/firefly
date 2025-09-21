@@ -13,7 +13,7 @@ pub fn update_playlist(model: &mut Model, msg: PlaylistMessage) -> Option<Messag
         PlaylistMessage::Delete(confirmation) => {
             delete_playlist(&mut model.playlist_ctl, confirmation)
         }
-        PlaylistMessage::RemoveTrack => todo!(),
+        PlaylistMessage::RemoveTrack => remove_selected_track(&mut model.playlist_ctl),
         PlaylistMessage::Rename => rename_playlist(&mut model.playlist_ctl),
         PlaylistMessage::SaveSelected => save_selected_playlist(&mut model.playlist_ctl),
         PlaylistMessage::ToggleArrangeTracks => toggle_arrange(&mut model.playlist_ctl),

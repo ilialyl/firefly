@@ -49,6 +49,14 @@ pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     None
 }
 
+pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    if let Some(playlist) = playlist_ctl.get_selected_playlist() {
+        playlist.remove_selected();
+    }
+
+    None
+}
+
 pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     if let Some(selected) = playlist_ctl.get_selected_playlist() {
         if let Some(dir_path) = player::choose_dir() {

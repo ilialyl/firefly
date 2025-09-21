@@ -161,6 +161,16 @@ impl Playlist {
         }
     }
 
+    pub fn remove_selected(&mut self) {
+        if let Some(index) = self.selected_track {
+            if index == self.len() - 1 {
+                self.selected_track = index.checked_sub(1);
+            }
+
+            self.remove(index);
+        }
+    }
+
     pub fn remove(&mut self, idx: usize) {
         self.tracks.remove(idx);
 
