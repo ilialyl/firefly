@@ -24,7 +24,6 @@ impl Default for QueueViewState {
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let queued_tracks = get_queued_tracks(&model.player);
-    let prev_tracks = get_previous_tracks(&model.player);
 
     let chunk = Layout::default()
         .direction(Direction::Vertical)
@@ -33,12 +32,14 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
     let mut lines: Vec<Line> = Vec::new();
 
-    for track in prev_tracks {
-        lines.push(Line::from(Line::styled(
-            track,
-            Style::default().add_modifier(Modifier::CROSSED_OUT),
-        )));
-    }
+    // Code for displaying previous tracks
+    // let prev_tracks = get_previous_tracks(&model.player);
+    // for track in prev_tracks {
+    //     lines.push(Line::from(Line::styled(
+    //         format!(" {}", track),
+    //         Style::default().add_modifier(Modifier::CROSSED_OUT),
+    //     )));
+    // }
 
     let mut on_select = Style::default().fg(Color::Rgb(255, 192, 15));
     if model.player.queue.is_arrange() {
@@ -80,7 +81,7 @@ pub fn scroll(
     scroll_offset.min(max_offset)
 }
 
-fn get_previous_tracks(player: &Player) -> Vec<String> {
+fn _get_previous_tracks(player: &Player) -> Vec<String> {
     let mut tracks: Vec<String> = Vec::new();
     for track in &player.previous {
         if let Some(track_name) = track.file_name().unwrap().to_str() {
