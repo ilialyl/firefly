@@ -4,6 +4,7 @@ use rfd::FileDialog;
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
+    fs,
     ops::{Add, Sub},
     path::{Path, PathBuf},
     process::Command,
@@ -215,6 +216,23 @@ pub fn choose_multiple_audio_files() -> Option<Vec<PathBuf>> {
 
 pub fn choose_dir() -> Option<PathBuf> {
     FileDialog::new().pick_folder()
+}
+
+pub fn filter_dir_for_audio_files(dir: PathBuf) -> Result<Vec<PathBuf>> {
+    let path_vec: Vec<PathBuf> = fs::read_dir(dir)?
+        .filter_map(|r| r.ok())
+        .map(|p| p.path())
+        .filter(|p| p.is_file())
+        .filter_map(|p| {
+            p.clone()
+                .extension()
+                .and_then(|e| e.to_str())
+                .filter(|e| AUDIO_FORMATS.contains(e))
+                .map(|_| p)
+        })
+        .collect();
+
+    Ok(path_vec)
 }
 
 pub fn read_metadata(track: &Path, track_temp: &Path) -> Result<TaggedFile> {

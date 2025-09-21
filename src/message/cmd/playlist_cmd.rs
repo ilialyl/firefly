@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     logic::{
-        player::{self, Player},
+        player::{self, Player, filter_dir_for_audio_files},
         playlist::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
         user_input::InputTarget,
     },
@@ -44,6 +44,23 @@ pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
 
             let new_tracks: Vec<PathBuf> = path_vec.into_iter().filter(|p| p.is_file()).collect();
             new_tracks.iter().for_each(|p| playlist.add(p));
+        }
+    }
+    None
+}
+
+pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    if let Some(selected) = playlist_ctl.get_selected_playlist() {
+        if let Some(dir_path) = player::choose_dir() {
+            let playlist = selected;
+            match filter_dir_for_audio_files(dir_path) {
+                Ok(vec_path) => {
+                    let new_tracks: Vec<PathBuf> =
+                        vec_path.into_iter().filter(|p| p.is_file()).collect();
+                    new_tracks.iter().for_each(|p| playlist.add(p));
+                }
+                Err(e) => log::error!("{}", e),
+            }
         }
     }
     None
