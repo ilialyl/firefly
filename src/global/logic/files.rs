@@ -1,5 +1,5 @@
 use std::{
-    fs::read_dir,
+    fs::{create_dir_all, read_dir},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -7,6 +7,8 @@ use std::{
 use color_eyre::eyre::{Result, eyre};
 use lofty::{file::TaggedFile, probe::Probe};
 use rfd::FileDialog;
+
+use crate::global::logic::data::get_data_dir;
 
 pub const RODIO_SUPPORTED_FORMATS: [&str; 4] = ["flac", "mp3", "ogg", "wav"];
 pub const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
@@ -82,4 +84,17 @@ pub fn ffmpeg_available() -> bool {
         Ok(output) => output.status.success(),
         Err(_) => false,
     }
+}
+
+pub fn get_playlists_path() -> PathBuf {
+    let playlists_path = get_data_dir().join("playlists");
+    if !playlists_path.exists() {
+        log::info!(
+            "Attempting to create directory {}",
+            playlists_path.to_str().unwrap()
+        );
+        create_dir_all(&playlists_path).expect("Failed to create playlist data directory.");
+    }
+
+    playlists_path
 }
