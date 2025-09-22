@@ -118,6 +118,8 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
         InputMode::Confirmation => match key_event.code {
             KeyCode::Char('y') => Some(Message::Confirm(Confirmation::Yes)),
             KeyCode::Char('n') => Some(Message::Confirm(Confirmation::No)),
+            KeyCode::Enter => Some(Message::Confirm(Confirmation::Yes)),
+            KeyCode::Esc => Some(Message::Confirm(Confirmation::No)),
             _ => None,
         },
     }
