@@ -13,6 +13,7 @@ use crate::{
     },
     model::Model,
     player::{self, logic::playback_status::PlaybackStatus},
+    playlist::cmd::playlist_save_confirm_then_resume,
     user_input::logic::InputMode,
 };
 
@@ -131,6 +132,12 @@ pub fn update_info(info: String, model: &mut Model) -> Option<Message> {
 }
 
 pub fn quit(model: &mut Model) -> Option<Message> {
+    if let Some(to_resume) =
+        playlist_save_confirm_then_resume(Message::Quit, &mut model.playlist_ctl)
+    {
+        return Some(to_resume);
+    }
+
     model.session.state = RunningState::Done;
 
     None
@@ -143,6 +150,12 @@ pub fn set_busy(model: &mut Model) -> Option<Message> {
 }
 
 pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
+    if let Some(to_resume) =
+        playlist_save_confirm_then_resume(Message::CycleTabs, &mut model.playlist_ctl)
+    {
+        return Some(to_resume);
+    }
+
     model.selected_tab.cycle_right();
 
     None

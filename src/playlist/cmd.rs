@@ -17,13 +17,27 @@ use crate::{
     user_input::logic::InputTarget,
 };
 
-pub fn create_playlist(model: &mut Model) -> Option<Message> {
-    if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
+pub fn playlist_save_confirm_then_resume(
+    to_resume: Message,
+    playlist_ctl: &mut PlaylistController,
+) -> Option<Message> {
+    if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
         && selected_playlist.is_dirty()
     {
         return Some(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
-            Some(Message::Playlist(PlaylistMessage::Create)),
+            Some(to_resume),
         ))));
+    }
+
+    None
+}
+
+pub fn create_playlist(model: &mut Model) -> Option<Message> {
+    if let Some(to_resume) = playlist_save_confirm_then_resume(
+        Message::Playlist(PlaylistMessage::Create),
+        &mut model.playlist_ctl,
+    ) {
+        return Some(to_resume);
     }
 
     let index = model.playlist_ctl.create_playlist();
@@ -114,22 +128,21 @@ pub fn navigate_playlists(
 
     match direction {
         CursorMovementDirection::Up => {
-            if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
-                && selected_playlist.is_dirty()
-            {
-                return Some(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
-                    Some(Message::Playlist(PlaylistMessage::MoveCursor(direction))),
-                ))));
+            if let Some(to_resume) = playlist_save_confirm_then_resume(
+                Message::Playlist(PlaylistMessage::MoveCursor(direction)),
+                &mut model.playlist_ctl,
+            ) {
+                return Some(to_resume);
             }
+
             model.playlist_ctl.prev_playlist();
         }
         CursorMovementDirection::Down => {
-            if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
-                && selected_playlist.is_dirty()
-            {
-                return Some(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
-                    Some(Message::Playlist(PlaylistMessage::MoveCursor(direction))),
-                ))));
+            if let Some(to_resume) = playlist_save_confirm_then_resume(
+                Message::Playlist(PlaylistMessage::MoveCursor(direction)),
+                &mut model.playlist_ctl,
+            ) {
+                return Some(to_resume);
             }
             model.playlist_ctl.next_playlist();
         }
