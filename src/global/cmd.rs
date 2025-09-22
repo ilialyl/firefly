@@ -91,8 +91,9 @@ pub fn tick(
     None
 }
 
-pub fn ask_for_confirmation(msg: Message, model: &mut Model) -> Option<Message> {
+pub fn ask_for_confirmation(prompt: String, msg: Message, model: &mut Model) -> Option<Message> {
     model.ask_confirmation = Some(msg);
+    model.confirmation_prompt = prompt;
     model.input_mode = InputMode::Confirmation;
 
     None
@@ -101,6 +102,7 @@ pub fn ask_for_confirmation(msg: Message, model: &mut Model) -> Option<Message> 
 pub fn confirmed(answer: Confirmation, model: &mut Model) -> Option<Message> {
     let message = model.ask_confirmation.take();
     model.input_mode = InputMode::default();
+    model.confirmation_prompt.clear();
     model.confirmation = Some(answer);
 
     message

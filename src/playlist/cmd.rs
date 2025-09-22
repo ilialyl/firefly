@@ -210,9 +210,10 @@ pub fn delete_playlist(
                 Confirmation::No => {}
             }
         } else {
-            return Some(Message::AskConfirmation(Box::new(Message::Playlist(
-                PlaylistMessage::Delete,
-            ))));
+            return Some(Message::AskConfirmation(
+                "Delete?".to_string(),
+                Box::new(Message::Playlist(PlaylistMessage::Delete)),
+            ));
         }
     }
 
@@ -276,9 +277,12 @@ pub fn ask_to_save(
                     }
                 }
             } else {
-                return Some(Message::AskConfirmation(Box::new(Message::Playlist(
-                    PlaylistMessage::AskToSave(Box::new(then_call)),
-                ))));
+                return Some(Message::AskConfirmation(
+                    "Save? (discard if not)".to_string(),
+                    Box::new(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
+                        then_call,
+                    )))),
+                ));
             }
         }
     }

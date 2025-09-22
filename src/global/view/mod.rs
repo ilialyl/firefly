@@ -47,7 +47,7 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
                 .render(prompt.as_str(), 40, 3, frame, frame.area())
         }
         InputMode::Commands => {}
-        InputMode::Confirmation => confirmation_box::render(frame, frame.area()),
+        InputMode::Confirmation => confirmation_box::render(model, frame, frame.area()),
     }
 }
 

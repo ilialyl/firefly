@@ -15,7 +15,7 @@ pub enum Message {
     UserInput(UserInputMessage),
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
-    AskConfirmation(Box<Message>),
+    AskConfirmation(String, Box<Message>),
     Confirm(Confirmation),
     SetBusy,
     UpdateInfo(String),
