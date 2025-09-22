@@ -18,6 +18,14 @@ use crate::{
 };
 
 pub fn create_playlist(model: &mut Model) -> Option<Message> {
+    if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
+        && selected_playlist.is_dirty()
+    {
+        return Some(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
+            Some(Message::Playlist(PlaylistMessage::Create)),
+        ))));
+    }
+
     let index = model.playlist_ctl.create_playlist();
 
     Some(Message::UserInput(UserInputMessage::EnterEditMode(
@@ -98,21 +106,37 @@ pub fn send_to_player(
 
 pub fn navigate_playlists(
     direction: CursorMovementDirection,
-    playlist_ctl: &mut PlaylistController,
-) {
-    if !matches!(playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
-        return;
+    model: &mut Model,
+) -> Option<Message> {
+    if !matches!(model.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
+        return None;
     }
 
     match direction {
         CursorMovementDirection::Up => {
-            playlist_ctl.prev_playlist();
+            if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
+                && selected_playlist.is_dirty()
+            {
+                return Some(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
+                    Some(Message::Playlist(PlaylistMessage::MoveCursor(direction))),
+                ))));
+            }
+            model.playlist_ctl.prev_playlist();
         }
         CursorMovementDirection::Down => {
-            playlist_ctl.next_playlist();
+            if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
+                && selected_playlist.is_dirty()
+            {
+                return Some(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
+                    Some(Message::Playlist(PlaylistMessage::MoveCursor(direction))),
+                ))));
+            }
+            model.playlist_ctl.next_playlist();
         }
         _ => {}
     }
+
+    None
 }
 
 pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut PlaylistController) {
@@ -135,28 +159,25 @@ pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut Pl
     }
 }
 
-pub fn move_cursor(
-    direction: CursorMovementDirection,
-    playlist_ctl: &mut PlaylistController,
-) -> Option<Message> {
-    if playlist_ctl.playlist_coll.is_empty() {
+pub fn move_cursor(direction: CursorMovementDirection, model: &mut Model) -> Option<Message> {
+    if model.playlist_ctl.playlist_coll.is_empty() {
         return None;
     }
 
     match direction {
         CursorMovementDirection::Left => {
-            playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
+            model.playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
         }
         CursorMovementDirection::Right => {
-            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
+            if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
                 && !selected_playlist.is_empty()
             {
-                playlist_ctl.tab_focus = PlaylistTabFocus::Tracks;
+                model.playlist_ctl.tab_focus = PlaylistTabFocus::Tracks;
             }
         }
-        _ => match playlist_ctl.tab_focus {
-            PlaylistTabFocus::Playlists => navigate_playlists(direction, playlist_ctl),
-            PlaylistTabFocus::Tracks => navigate_tracks(direction, playlist_ctl),
+        _ => match model.playlist_ctl.tab_focus {
+            PlaylistTabFocus::Playlists => return navigate_playlists(direction, model),
+            PlaylistTabFocus::Tracks => navigate_tracks(direction, &mut model.playlist_ctl),
         },
     }
 
@@ -164,19 +185,21 @@ pub fn move_cursor(
 }
 
 pub fn delete_playlist(
+    confirmation: &mut Option<Confirmation>,
     playlist_ctl: &mut PlaylistController,
-    confirmation: Confirmation,
 ) -> Option<Message> {
     if let Some(_) = playlist_ctl.get_selected_playlist() {
-        match confirmation {
-            Confirmation::Yes => {
-                playlist_ctl.delete_selected_playlist();
+        if let Some(confirm) = confirmation.take() {
+            match confirm {
+                Confirmation::Yes => {
+                    playlist_ctl.delete_selected_playlist();
+                }
+                Confirmation::No => {}
             }
-            Confirmation::No => {
-                return Some(Message::AskConfirmation(Box::new(Message::Playlist(
-                    PlaylistMessage::Delete(Confirmation::Yes),
-                ))));
-            }
+        } else {
+            return Some(Message::AskConfirmation(Box::new(Message::Playlist(
+                PlaylistMessage::Delete,
+            ))));
         }
     }
 
@@ -212,6 +235,40 @@ pub fn load_playlists(playlist_ctl: &mut PlaylistController) -> Option<Message> 
 
 pub fn toggle_arrange(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     playlist_ctl.arrange_mode = !playlist_ctl.arrange_mode;
+
+    None
+}
+
+pub fn ask_to_save(
+    confirmation: &mut Option<Confirmation>,
+    then_call: Option<Message>,
+    playlist_ctl: &mut PlaylistController,
+) -> Option<Message> {
+    if let Some(current_playlist) = playlist_ctl.get_selected_playlist() {
+        if current_playlist.is_dirty() {
+            if let Some(confirm) = confirmation.take() {
+                match confirm {
+                    Confirmation::Yes => {
+                        playlist_ctl
+                            .save_selected_to_file()
+                            .expect("Error saving current playlist to file.");
+
+                        return then_call;
+                    }
+                    Confirmation::No => {
+                        current_playlist
+                            .reload_from_file()
+                            .expect("Error restoring file to the state before modification.");
+                        return then_call;
+                    }
+                }
+            } else {
+                return Some(Message::AskConfirmation(Box::new(Message::Playlist(
+                    PlaylistMessage::AskToSave(Box::new(then_call)),
+                ))));
+            }
+        }
+    }
 
     None
 }

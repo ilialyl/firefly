@@ -4,7 +4,6 @@ use std::{
 };
 
 use color_eyre::eyre::Result;
-use log::info;
 
 use firefly::{
     global::{
@@ -47,9 +46,6 @@ fn main() -> Result<()> {
     let mut model = Model::default();
     let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
     let (info_tx, info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
-
-    info!("\n\n\nStarting a new session...");
-    info!("Cache directory: {}", &cache_dir.to_str().unwrap());
 
     while model.session.state != RunningState::Done {
         let mut current_msg;

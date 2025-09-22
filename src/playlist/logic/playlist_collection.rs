@@ -10,6 +10,8 @@ pub struct PlaylistCollection {
 
 impl Default for PlaylistCollection {
     fn default() -> Self {
+        log::debug!("Initialized PlaylistCollection");
+
         PlaylistCollection {
             playlists: Vec::<Playlist>::new(),
         }
@@ -18,12 +20,14 @@ impl Default for PlaylistCollection {
 
 impl PlaylistCollection {
     pub fn load_playlists(&mut self) -> Result<()> {
+        log::debug!("Loading Playlists");
         let mut playlists: Vec<Playlist> = Vec::new();
         let playlist_paths = Self::get_playlist_files()?;
         for path in playlist_paths {
             let playlist = Playlist::from(&path);
             if let Ok(p) = playlist {
                 playlists.push(p);
+                log::debug!("Loading Playlist: {:?}", path);
             }
         }
 
@@ -34,6 +38,7 @@ impl PlaylistCollection {
 
     pub fn get_playlist_files() -> Result<Vec<PathBuf>> {
         let playlists_path = get_playlists_path();
+        log::info!("Playlist Directory: {}", playlists_path.to_str().unwrap());
         let entries = fs::read_dir(playlists_path)?;
 
         let json_files: Vec<PathBuf> = entries

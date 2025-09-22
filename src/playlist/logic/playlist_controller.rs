@@ -24,6 +24,8 @@ impl Default for PlaylistController {
             Some(0)
         };
 
+        log::debug!("Initialized PlaylistController");
+
         PlaylistController {
             selected_playlist,
             playlist_coll,

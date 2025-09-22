@@ -100,11 +100,9 @@ pub fn ask_for_confirmation(msg: Message, model: &mut Model) -> Option<Message> 
 pub fn confirmed(answer: Confirmation, model: &mut Model) -> Option<Message> {
     let message = model.ask_confirmation.take();
     model.input_mode = InputMode::default();
+    model.confirmation = Some(answer);
 
-    match answer {
-        Confirmation::Yes => message,
-        Confirmation::No => None,
-    }
+    message
 }
 
 pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {

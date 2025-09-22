@@ -11,13 +11,15 @@ use std::{
 use color_eyre::eyre::{Result, eyre};
 use serde::{Deserialize, Serialize};
 
-use crate::global::logic::data::get_data_dir;
+use crate::global::logic::files::get_playlists_path;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Playlist {
     name: Option<String>,
     pub tracks: Vec<PathBuf>,
     pub selected_track: Option<usize>,
+    dirty_flag: bool,
+    path: Option<PathBuf>,
 }
 
 impl Default for Playlist {
@@ -26,18 +28,24 @@ impl Default for Playlist {
             name: None,
             tracks: Vec::<PathBuf>::new(),
             selected_track: None,
+            dirty_flag: true,
+            path: None,
         }
     }
 }
 
 impl Playlist {
-    pub fn save_to_file(&self) -> Result<()> {
+    pub fn save_to_file(&mut self) -> Result<()> {
+        self.dirty_flag = false;
+
         let json_data = serde_json::to_string(&self)?;
         if let Some(name) = &self.name {
             let path = Self::get_path_from_name(name);
 
-            let mut file = File::create(path)?;
+            let mut file = File::create(&path)?;
             file.write(json_data.as_bytes())?;
+
+            self.path = Some(path);
 
             Ok(())
         } else {
@@ -104,6 +112,8 @@ impl Playlist {
         {
             self.tracks
                 .swap(selected_index, selected_index.checked_sub(1).unwrap_or(0));
+
+            self.dirty_flag = true;
         }
     }
 
@@ -126,12 +136,28 @@ impl Playlist {
             && self.tracks.len() > selected_index
         {
             self.tracks.swap(selected_index, selected_index + 1);
+
+            self.dirty_flag = true;
         }
+    }
+
+    pub fn set_path_loaded_from(&mut self, path: PathBuf) {
+        self.path = Some(path);
+    }
+
+    pub fn reload_from_file(&mut self) -> Result<()> {
+        if let Some(path) = self.path.take() {
+            let playlist = Self::from(&path)?;
+            *self = playlist;
+        }
+
+        Ok(())
     }
 
     pub fn from(file: &Path) -> Result<Playlist> {
         let json_data = fs::read_to_string(file)?;
-        let playlist: Playlist = serde_json::from_str(&json_data)?;
+        let mut playlist: Playlist = serde_json::from_str(&json_data)?;
+        playlist.set_path_loaded_from(file.to_path_buf());
 
         Ok(playlist)
     }
@@ -149,6 +175,8 @@ impl Playlist {
         }
 
         self.name = Some(name.to_string());
+
+        self.save_to_file().expect("Error saving after rename.");
     }
 
     pub fn add(&mut self, track: &Path) {
@@ -158,6 +186,8 @@ impl Playlist {
             }
 
             self.tracks.push(track.to_path_buf());
+
+            self.dirty_flag = true;
         }
     }
 
@@ -177,6 +207,8 @@ impl Playlist {
         if self.is_empty() {
             self.selected_track = None;
         }
+
+        self.dirty_flag = true;
     }
 
     pub fn as_vec_string(&mut self) -> Vec<String> {
@@ -203,17 +235,8 @@ impl Playlist {
     pub fn is_empty(&self) -> bool {
         self.tracks.is_empty()
     }
-}
 
-fn get_playlists_path() -> PathBuf {
-    let playlists_path = get_data_dir().join("playlists");
-    if !playlists_path.exists() {
-        log::info!(
-            "Attempting to create directory {}",
-            playlists_path.to_str().unwrap()
-        );
-        fs::create_dir_all(&playlists_path).expect("Failed to create playlist data directory.");
+    pub fn is_dirty(&self) -> bool {
+        self.dirty_flag
     }
-
-    playlists_path
 }

@@ -101,7 +101,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::ToPlayer)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
                 KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
-                KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete(Confirmation::No))),
+                KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },

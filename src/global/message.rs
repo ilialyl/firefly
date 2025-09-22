@@ -44,13 +44,14 @@ pub enum PlaylistMessage {
     MoveCursor(CursorMovementDirection),
     Create,
     Rename,
-    Delete(Confirmation),
+    Delete,
     SaveSelected,
     AddTracks,
     AddDir,
     RemoveTrack,
     ToggleArrangeTracks,
     ToPlayer,
+    AskToSave(Box<Option<Message>>),
 }
 
 pub enum UserInputMessage {
