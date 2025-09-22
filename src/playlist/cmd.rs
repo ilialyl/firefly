@@ -3,11 +3,14 @@ use std::path::PathBuf;
 use crate::{
     global::{
         cmd::Confirmation,
-        logic::terminal::CursorMovementDirection,
+        logic::{
+            files::{choose_dir, choose_multiple_audio_files, filter_dir_for_audio_files},
+            terminal::CursorMovementDirection,
+        },
         message::{Message, PlaylistMessage, UserInputMessage},
     },
     model::Model,
-    player::logic::{Player, choose_dir, choose_multiple_audio_files, filter_dir_for_audio_files},
+    player::logic::Player,
     playlist::logic::{
         playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus,
     },

@@ -17,12 +17,12 @@ use rodio::{Decoder, Sink};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
 use tokio::runtime::Runtime;
 
-use crate::{
-    global::{
-        logic::data::{TEMP_FILE_PREFIX, get_cache_dir},
-        message::Message,
+use crate::global::{
+    logic::{
+        data::{TEMP_FILE_PREFIX, get_cache_dir},
+        files::is_rodio_supported,
     },
-    player::logic::is_rodio_supported,
+    message::Message,
 };
 
 #[derive(PartialEq, Clone, Copy)]

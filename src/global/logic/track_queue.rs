@@ -2,7 +2,7 @@ use std::{collections::VecDeque, fs, path::PathBuf};
 
 use color_eyre::eyre::{Result, eyre};
 
-use crate::player::logic::AUDIO_FORMATS;
+use crate::global::logic::files::AUDIO_FORMATS;
 
 pub struct TrackQueue {
     queue: VecDeque<PathBuf>,

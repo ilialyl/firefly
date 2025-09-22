@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod data;
+pub mod files;
 pub mod logger;
 pub mod session_state;
 pub mod terminal;
