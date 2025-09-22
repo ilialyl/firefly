@@ -4,39 +4,46 @@ use std::{
 };
 
 use color_eyre::eyre::Result;
-use firefly::{cli, setup_logger, view};
 use log::info;
 
 use firefly::{
-    data::cache,
-    logic::session_state::RunningState,
-    message::{Message, update::update_global},
+    global::{
+        logic::{
+            cli::{clear_cache, cli},
+            data::get_cache_dir,
+            logger::setup_logger,
+            session_state::RunningState,
+            terminal::{handle_events, init_terminal, install_panic_hook, restore_terminal},
+        },
+        message::Message,
+        update::update_global,
+        view::render_tui,
+    },
     model::Model,
-    view::{terminal, view},
 };
 
 fn main() -> Result<()> {
     color_eyre::install()?;
     setup_logger()?;
 
-    let cache_dir = cache::get_cache_dir();
+    let cache_dir = get_cache_dir();
     if !cache_dir.exists() {
         fs::create_dir(&cache_dir).expect("Failed to create cache directory.");
     }
 
-    let cli_command = cli::cli().get_matches();
+    let cli_command = cli().get_matches();
 
     match cli_command.subcommand() {
         Some(("clean", _)) => {
-            cli::clear_cache(&cache_dir)?;
+            clear_cache(&cache_dir)?;
             println!("Success");
             return Ok(());
         }
         _ => {}
     };
 
-    view::terminal::install_panic_hook();
-    let mut terminal = view::terminal::init_terminal()?;
+    install_panic_hook();
+    let mut terminal = init_terminal()?;
     let mut model = Model::default();
     let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
     let (info_tx, info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
@@ -54,10 +61,10 @@ fn main() -> Result<()> {
         }
 
         // Draw TUI view
-        terminal.draw(|f| view(&mut model, f))?;
+        terminal.draw(|f| render_tui(&mut model, f))?;
 
         // Handle terminal events
-        current_msg = terminal::handle_events(&model)?;
+        current_msg = handle_events(&model)?;
 
         // Consume message
         while current_msg.is_some() {
@@ -81,7 +88,7 @@ fn main() -> Result<()> {
         }
     }
 
-    view::terminal::restore_terminal()?;
+    restore_terminal()?;
 
     println!("Thank you for using Firefly.");
     println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");

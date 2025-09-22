@@ -1,12 +1,8 @@
 use crate::{
-    logic::{
-        player::Player,
-        playlist::playlist_controller::PlaylistController,
-        session_state::Session,
-        user_input::{InputMode, UserInput},
-    },
-    message::Message,
-    view::{player_tab::queue_view::QueueViewState, tabs::SelectedTab},
+    global::{logic::session_state::Session, message::Message, view::tabs::SelectedTab},
+    player::{logic::Player, view::queue::QueueViewState},
+    playlist::logic::playlist_controller::PlaylistController,
+    user_input::logic::{InputMode, UserInput},
 };
 
 pub struct Model {
