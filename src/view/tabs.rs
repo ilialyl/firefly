@@ -14,7 +14,7 @@ use crate::model::Model;
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter, EnumCount)]
 pub enum SelectedTab {
     #[default]
-    #[strum(to_string = "Main")]
+    #[strum(to_string = "Player")]
     Main,
     #[strum(to_string = "Playlist")]
     Playlist,

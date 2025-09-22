@@ -1,5 +1,5 @@
 pub mod confirmation_box;
-pub mod main_tab;
+pub mod player_tab;
 pub mod playlist_tab;
 pub mod tabs;
 pub mod terminal;
@@ -26,7 +26,7 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
         .split(frame.area());
 
     Block::new()
-        .title(Line::style(Line::from("Player"), Style::new()).centered())
+        .title(Line::style(Line::from("Firefly"), Style::new()).centered())
         .render(outer_layout[0], frame.buffer_mut());
 
     tabs::draw(model, outer_layout[0], frame.buffer_mut());
@@ -42,7 +42,7 @@ pub fn render(model: &mut Model, frame: &mut Frame) {
         .render(outer_layout[0], frame.buffer_mut());
 
     match model.selected_tab {
-        SelectedTab::Main => main_tab::draw(model, frame, outer_layout[1]),
+        SelectedTab::Main => player_tab::draw(model, frame, outer_layout[1]),
         SelectedTab::Playlist => playlist_tab::draw(model, frame, outer_layout[1]),
     }
 

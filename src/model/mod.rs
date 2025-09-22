@@ -6,7 +6,7 @@ use crate::{
         user_input::{InputMode, UserInput},
     },
     message::Message,
-    view::{main_tab::queue_view::QueueViewState, tabs::SelectedTab},
+    view::{player_tab::queue_view::QueueViewState, tabs::SelectedTab},
 };
 
 pub struct Model {

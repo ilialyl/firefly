@@ -13,7 +13,7 @@ use crate::{
     },
     message::{Message, cmd::player_cmd::skip},
     model::Model,
-    view::main_tab::queue_view,
+    view::player_tab::queue_view,
 };
 
 pub mod player_cmd;
