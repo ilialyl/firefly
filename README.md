@@ -44,7 +44,7 @@ Build from source.
 - [FFmpeg](https://ffmpeg.org/) (only if the file type you want to play isn't listed above)
 #### Steps
 1. Clone this repository
-2. run `cargo run --release`
+2. run `cargo run --release --bin firefly`
 
 ### Others
 Building from source is possible but instruction is omitted due to unknown list of dependencies.
