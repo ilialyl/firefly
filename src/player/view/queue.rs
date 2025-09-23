@@ -61,26 +61,6 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     model.queue_view.area_height = Some(chunk[0].height as usize);
 }
 
-pub fn scroll(
-    selected: usize,
-    mut scroll_offset: usize,
-    content_len: usize,
-    view_height: usize,
-) -> usize {
-    // if selected is above the viewport, scroll up
-    if selected < scroll_offset {
-        scroll_offset = selected;
-    }
-    // if selected is below the viewport, scroll down
-    else if selected >= scroll_offset + view_height {
-        scroll_offset = selected + 1 - view_height;
-    }
-
-    // clamp at bottom
-    let max_offset = content_len.saturating_sub(view_height);
-    scroll_offset.min(max_offset)
-}
-
 fn _get_previous_tracks(player: &Player) -> Vec<String> {
     let mut tracks: Vec<String> = Vec::new();
     for track in &player.previous {

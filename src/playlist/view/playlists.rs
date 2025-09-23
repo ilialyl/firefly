@@ -29,7 +29,8 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
             .set_style(selected_playlist_style)
     }
 
-    let paragraph = Paragraph::new(name_lines);
+    let paragraph =
+        Paragraph::new(name_lines).scroll((model.playlist_view.playlists_scroll_offset as u16, 0));
 
     frame.render_widget(paragraph, area);
 }

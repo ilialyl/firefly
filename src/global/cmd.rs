@@ -10,6 +10,7 @@ use crate::{
     global::{
         logic::{session_state::RunningState, track::FormatConversion},
         message::Message,
+        view::scroll,
     },
     model::Model,
     player::{self, logic::playback_status::PlaybackStatus},
@@ -27,15 +28,7 @@ pub fn tick(
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Option<Message> {
-    // Scroll queue view
-    if let Some(area_height) = model.queue_view.area_height.take() {
-        model.queue_view.scroll_offset = player::view::queue::scroll(
-            model.player.queue.get_selected(),
-            model.queue_view.scroll_offset,
-            model.player.queue.get().len(),
-            area_height,
-        );
-    }
+    update_scroll_offsets(model);
 
     if model.session.state == RunningState::Busy {
         return None;
@@ -161,4 +154,35 @@ pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
     model.selected_tab.cycle_right();
 
     None
+}
+
+fn update_scroll_offsets(model: &mut Model) {
+    if let Some(queue_area_h) = model.queue_view.area_height.take() {
+        model.queue_view.scroll_offset = scroll(
+            model.player.queue.get_selected(),
+            model.queue_view.scroll_offset,
+            model.player.queue.get().len(),
+            queue_area_h,
+        );
+    }
+
+    if let Some(playlist_area_h) = model.playlist_view.playlists_area_height.take() {
+        model.playlist_view.playlists_scroll_offset = scroll(
+            model.playlist_ctl.selected_playlist.unwrap_or(0),
+            model.playlist_view.playlists_scroll_offset,
+            model.playlist_ctl.playlist_coll.len(),
+            playlist_area_h,
+        );
+    }
+
+    if let Some(playlist_tracks_area_h) = model.playlist_view.tracks_area_height.take() {
+        if let Some(current_playlist) = model.playlist_ctl.get_selected_playlist() {
+            model.playlist_view.tracks_scroll_offset = scroll(
+                current_playlist.selected_track.unwrap_or(0),
+                model.playlist_view.tracks_scroll_offset,
+                current_playlist.len(),
+                playlist_tracks_area_h,
+            );
+        }
+    }
 }

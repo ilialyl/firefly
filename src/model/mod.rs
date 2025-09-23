@@ -3,7 +3,7 @@ use crate::{
         cmd::Confirmation, logic::session_state::Session, message::Message, view::tabs::SelectedTab,
     },
     player::{logic::Player, view::queue::QueueViewState},
-    playlist::logic::playlist_controller::PlaylistController,
+    playlist::{logic::playlist_controller::PlaylistController, view::PlaylistViewState},
     user_input::logic::{InputMode, UserInput},
 };
 
@@ -14,6 +14,7 @@ pub struct Model {
     pub info_display: String,
     pub selected_tab: SelectedTab,
     pub queue_view: QueueViewState,
+    pub playlist_view: PlaylistViewState,
     pub input_mode: InputMode,
     pub user_input: UserInput,
     pub ask_confirmation: Option<Message>,
@@ -32,6 +33,7 @@ impl Default for Model {
             info_display: String::new(),
             selected_tab: SelectedTab::default(),
             queue_view: QueueViewState::default(),
+            playlist_view: PlaylistViewState::default(),
             input_mode: InputMode::default(),
             user_input: UserInput::new(),
             ask_confirmation: None,
