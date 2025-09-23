@@ -96,8 +96,8 @@ impl PlaylistController {
         self.playlist_coll.delete(index);
         if self.playlist_coll.is_empty() {
             self.selected_playlist = None;
-        } else {
-            self.selected_playlist = Some(0);
+        } else if self.playlist_coll.len() > 0 {
+            self.selected_playlist = Some(index - 1);
         }
     }
 
