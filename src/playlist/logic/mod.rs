@@ -159,6 +159,10 @@ impl Playlist {
         let mut playlist: Playlist = serde_json::from_str(&json_data)?;
         playlist.set_path_loaded_from(file.to_path_buf());
 
+        if !playlist.is_empty() {
+            playlist.selected_track = Some(0);
+        }
+
         Ok(playlist)
     }
 
