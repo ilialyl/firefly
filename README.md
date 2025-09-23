@@ -30,8 +30,9 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 
 ## Usage
 ### Windows
-#### Requires [FFmpeg](https://ffmpeg.org/)
 - [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) (Extract first)
+#### Optional Dependencies
+- [FFmpeg](https://ffmpeg.org/) (If you want to play unsupported file types.)
 
 ### Fedora Linux
 Build from source.
