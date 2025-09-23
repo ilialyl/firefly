@@ -1,8 +1,9 @@
-# Terminal Audio Player
-Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and [Ratatui](https://ratatui.rs/) for interface.
-![example_img](example_img/firefly_v0-5-0.png)
-## Features (v0.5.1)
+# Firefly, Terminal Audio Player
+Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and UI built with [Ratatui](https://ratatui.rs/).
+![example_img](example_img/firefly_v0-6-0.gif)
+## Features (v0.6.0)
 - Play, Pause, Rewind, and Seek.
+- Persistent Playlists
 - Volume control from 0-200%
 - Track Looping
 - File Dialog
@@ -11,20 +12,18 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Skip Forward or Backward
 - Metadata display (Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
 
-### Formats supported by Rodio playback backend, [Symphonia](https://github.com/pdeljanov/Symphonia)
-- FLAC
-- MP3
-- Vorbis (ogg)
-- WAV
+### Formats Supported
+- FLAC ([Symphonia](https://github.com/pdeljanov/Symphonia))
+- MP3 ([Symphonia](https://github.com/pdeljanov/Symphonia))
+- WAV ([Symphonia](https://github.com/pdeljanov/Symphonia))
+- Opus ([opus-rs](https://github.com/SpaceManiac/opus-rs))
 
-It can still play other formats by converting formats not supported by Rodio to FLAC using [rust_ffmpeg](https://github.com/RustNSparks/ffmpeg-suite-rs). (Does not overwrite)
-### Tested Converted Formats
-- Opus
-- OGA
+It can still play other formats by converting formats not supported by Rodio to FLAC using [rust_ffmpeg](https://github.com/RustNSparks/ffmpeg-suite-rs).
+
 Temporary FLAC files stay on disk for reuse, which can be cleared by running `cargo run --release -- clean` or `firefly clean`
 
 ### Planned Features
-- [ ] Playlists
+- [x] Playlists (v0.6.0)
 - [ ] YTDLP integration
 - [ ] Music Library
 - [ ] Graphical user interface (GUI)
@@ -33,7 +32,6 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 ### Windows
 #### Requires [FFmpeg](https://ffmpeg.org/)
 - [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) (Extract first)
-- Build from source
 
 ### Fedora Linux
 Build from source.
@@ -41,7 +39,8 @@ Build from source.
 - [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 - [wayland-devel](https://packages.fedoraproject.org/pkgs/wayland/wayland-devel/)
 - [alsa-lib-devel](https://packages.fedoraproject.org/pkgs/alsa-lib/alsa-lib-devel/)
-- [FFmpeg](https://ffmpeg.org/)
+- [opus-devel](https://packages.fedoraproject.org/pkgs/opus/opus-devel/)
+- [FFmpeg](https://ffmpeg.org/) (only if the file type you want to play isn't listed above)
 #### Steps
 1. Clone this repository
 2. run `cargo run --release`

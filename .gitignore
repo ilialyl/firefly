@@ -2,3 +2,4 @@
 firefly_temp*.flac
 *.log
 /firefly_temp
+src/bin/sandbox.rs
