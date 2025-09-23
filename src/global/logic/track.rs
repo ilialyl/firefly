@@ -97,9 +97,10 @@ impl Track {
     }
 
     pub fn get_source(&self) -> Result<Box<dyn Source<Item = f32> + Send>> {
-        let file = File::open(self.get_path()?)?;
+        let path = self.get_path()?;
+        let file = File::open(&path)?;
         if is_opus(&self.get_path()?)? {
-            let source = get_opus_source(file);
+            let source = get_opus_source(&path);
             return Ok(source);
         } else {
             let source = Decoder::new(file)?;
