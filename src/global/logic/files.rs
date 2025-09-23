@@ -10,7 +10,7 @@ use rfd::FileDialog;
 
 use crate::global::logic::data::get_data_dir;
 
-pub const RODIO_SUPPORTED_FORMATS: [&str; 4] = ["flac", "mp3", "ogg", "wav"];
+pub const RODIO_SUPPORTED_FORMATS: [&str; 5] = ["flac", "mp3", "ogg", "wav", "opus"];
 pub const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
 pub const UNTESTED_FORMATS: [&str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
 pub const AUDIO_FORMATS: [&str; 11] = [
@@ -21,6 +21,22 @@ pub fn is_rodio_supported(path: &Path) -> Result<bool> {
     if path.is_file() {
         if let Some(extension) = path.extension().and_then(|e| e.to_str()) {
             if RODIO_SUPPORTED_FORMATS.contains(&extension) {
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Err(eyre!("file has no extension"))
+        }
+    } else {
+        Err(eyre!("path is not a file"))
+    }
+}
+
+pub fn is_opus(path: &Path) -> Result<bool> {
+    if path.is_file() {
+        if let Some(extension) = path.extension().and_then(|e| e.to_str()) {
+            if extension == "opus" {
                 Ok(true)
             } else {
                 Ok(false)

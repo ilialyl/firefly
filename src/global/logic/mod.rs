@@ -2,6 +2,7 @@ pub mod cli;
 pub mod data;
 pub mod files;
 pub mod logger;
+pub mod opus;
 pub mod session_state;
 pub mod terminal;
 pub mod track;

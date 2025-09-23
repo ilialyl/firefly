@@ -13,14 +13,15 @@ use lofty::{
     tag::Accessor,
 };
 use log::{debug, info};
-use rodio::{Decoder, Sink};
+use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
 use tokio::runtime::Runtime;
 
 use crate::global::{
     logic::{
         data::{TEMP_FILE_PREFIX, get_cache_dir},
-        files::is_rodio_supported,
+        files::{is_opus, is_rodio_supported},
+        opus::get_opus_source,
     },
     message::Message,
 };
@@ -95,11 +96,15 @@ impl Track {
         tagged_file.properties().duration()
     }
 
-    pub fn get_source(&self) -> Result<Decoder<File>> {
+    pub fn get_source(&self) -> Result<Box<dyn Source<Item = f32> + Send>> {
         let file = File::open(self.get_path()?)?;
-        let source = Decoder::new(file)?;
-
-        Ok(source)
+        if is_opus(&self.get_path()?)? {
+            let source = get_opus_source(file);
+            return Ok(source);
+        } else {
+            let source = Decoder::new(file)?;
+            return Ok(Box::new(source));
+        }
     }
 
     pub fn get_path(&self) -> Result<PathBuf> {
