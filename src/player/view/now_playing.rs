@@ -31,7 +31,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
             String::new(),
             get_status_str(&model.player.status),
             get_loop_status_str(&model.player.looping),
-            model.info_display.clone(),
+            model.status_msg.clone(),
             get_volume_str(model.player.sink.volume()),
         ];
 
@@ -74,7 +74,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
             String::new(),
             get_status_str(&model.player.status),
             get_loop_status_str(&model.player.looping),
-            model.info_display.clone(),
+            model.status_msg.clone(),
             get_volume_str(model.player.sink.volume()),
         ];
     }

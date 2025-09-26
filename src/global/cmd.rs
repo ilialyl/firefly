@@ -116,7 +116,7 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
 }
 
 pub fn update_info(info: String, model: &mut Model) -> Option<Message> {
-    model.info_display = info;
+    model.status_msg = info;
 
     None
 }
