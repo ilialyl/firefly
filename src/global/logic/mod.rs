@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod confirmation;
 pub mod data;
 pub mod files;
 pub mod logger;

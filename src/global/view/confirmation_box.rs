@@ -9,7 +9,7 @@ use crate::{global::view::center_xy, model::Model};
 
 pub fn render(model: &Model, frame: &mut Frame, area: Rect) {
     let popup_block = Block::bordered()
-        .title(format!("{} ", model.confirmation_prompt))
+        .title(format!("{} ", model.confirmation.prompt))
         .title_alignment(Alignment::Left)
         .border_style(Style::default());
 

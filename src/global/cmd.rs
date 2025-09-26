@@ -8,7 +8,7 @@ use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     global::{
-        logic::{session_state::RunningState, track::FormatConversion},
+        logic::{confirmation::Response, session_state::RunningState, track::FormatConversion},
         message::Message,
         view::scroll,
     },
@@ -17,11 +17,6 @@ use crate::{
     playlist::cmd::playlist_save_confirm_then_resume,
     user_input::logic::InputMode,
 };
-
-pub enum Confirmation {
-    Yes,
-    No,
-}
 
 pub fn tick(
     model: &mut Model,
@@ -85,18 +80,18 @@ pub fn tick(
 }
 
 pub fn ask_for_confirmation(prompt: String, msg: Message, model: &mut Model) -> Option<Message> {
-    model.ask_confirmation = Some(msg);
-    model.confirmation_prompt = prompt;
+    model.confirmation.msg = Some(msg);
+    model.confirmation.prompt = prompt;
     model.input_mode = InputMode::Confirmation;
 
     None
 }
 
-pub fn confirmed(answer: Confirmation, model: &mut Model) -> Option<Message> {
-    let message = model.ask_confirmation.take();
+pub fn confirmed(answer: Response, model: &mut Model) -> Option<Message> {
+    let message = model.confirmation.msg.take();
     model.input_mode = InputMode::default();
-    model.confirmation_prompt.clear();
-    model.confirmation = Some(answer);
+    model.confirmation.prompt.clear();
+    model.confirmation.response = Some(answer);
 
     message
 }
@@ -176,12 +171,13 @@ fn update_scroll_offsets(model: &mut Model) {
     }
 
     if let Some(playlist_tracks_area_h) = model.playlist_view.tracks_area_height.take()
-        && let Some(current_playlist) = model.playlist_ctl.get_selected_playlist() {
-            model.playlist_view.tracks_scroll_offset = scroll(
-                current_playlist.selected_track.unwrap_or(0),
-                model.playlist_view.tracks_scroll_offset,
-                current_playlist.len(),
-                playlist_tracks_area_h,
-            );
-        }
+        && let Some(current_playlist) = model.playlist_ctl.get_selected_playlist()
+    {
+        model.playlist_view.tracks_scroll_offset = scroll(
+            current_playlist.selected_track.unwrap_or(0),
+            model.playlist_view.tracks_scroll_offset,
+            current_playlist.len(),
+            playlist_tracks_area_h,
+        );
+    }
 }

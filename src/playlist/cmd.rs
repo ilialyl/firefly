@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use crate::{
     global::{
-        cmd::Confirmation,
         logic::{
+            confirmation::Response,
             files::{choose_dir, choose_multiple_audio_files, filter_dir_for_audio_files},
             terminal::CursorMovementDirection,
         },
@@ -200,16 +200,16 @@ pub fn move_cursor(direction: CursorMovementDirection, model: &mut Model) -> Opt
 }
 
 pub fn delete_playlist(
-    confirmation: &mut Option<Confirmation>,
+    confirmation: &mut Option<Response>,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
     if playlist_ctl.get_selected_playlist().is_some() {
         if let Some(confirm) = confirmation.take() {
             match confirm {
-                Confirmation::Yes => {
+                Response::Yes => {
                     playlist_ctl.delete_selected_playlist();
                 }
-                Confirmation::No => {}
+                Response::No => {}
             }
         } else {
             return Some(Message::AskConfirmation(
@@ -254,7 +254,7 @@ pub fn toggle_arrange(playlist_ctl: &mut PlaylistController) -> Option<Message> 
 }
 
 pub fn ask_to_save(
-    confirmation: &mut Option<Confirmation>,
+    confirmation: &mut Option<Response>,
     then_call: Option<Message>,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
@@ -263,14 +263,14 @@ pub fn ask_to_save(
     {
         if let Some(confirm) = confirmation.take() {
             match confirm {
-                Confirmation::Yes => {
+                Response::Yes => {
                     playlist_ctl
                         .save_selected_to_file()
                         .expect("Error saving current playlist to file.");
 
                     return then_call;
                 }
-                Confirmation::No => {
+                Response::No => {
                     current_playlist
                         .reload_from_file()
                         .expect("Error restoring file to the state before modification.");

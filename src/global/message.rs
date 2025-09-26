@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
-    global::{cmd::Confirmation, logic::terminal::CursorMovementDirection},
+    global::logic::{confirmation::Response, terminal::CursorMovementDirection},
     user_input::logic::{InputTarget, PromptMsg},
 };
 
@@ -16,7 +16,7 @@ pub enum Message {
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
     AskConfirmation(String, Box<Message>),
-    Confirm(Confirmation),
+    Confirm(Response),
     SetBusy,
     UpdateInfo(String),
     CycleTabs,

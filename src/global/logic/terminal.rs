@@ -18,7 +18,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
 use crate::{
     global::{
-        cmd::Confirmation,
+        logic::confirmation::Response,
         message::{Message, PlayerMessage, PlaylistMessage, UserInputMessage},
         view::tabs::SelectedTab,
     },
@@ -116,10 +116,10 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
             _ => None,
         },
         InputMode::Confirmation => match key_event.code {
-            KeyCode::Char('y') => Some(Message::Confirm(Confirmation::Yes)),
-            KeyCode::Char('n') => Some(Message::Confirm(Confirmation::No)),
-            KeyCode::Enter => Some(Message::Confirm(Confirmation::Yes)),
-            KeyCode::Esc => Some(Message::Confirm(Confirmation::No)),
+            KeyCode::Char('y') => Some(Message::Confirm(Response::Yes)),
+            KeyCode::Char('n') => Some(Message::Confirm(Response::No)),
+            KeyCode::Enter => Some(Message::Confirm(Response::Yes)),
+            KeyCode::Esc => Some(Message::Confirm(Response::No)),
             _ => None,
         },
     }
