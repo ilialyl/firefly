@@ -46,14 +46,14 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         on_select = on_select.add_modifier(Modifier::BOLD);
     }
 
-    for (idx, track) in queued_tracks.into_iter().enumerate() {
+    queued_tracks.iter().enumerate().for_each(|(idx, track)| {
         let text = format!(" {}", track);
         if model.player.queue.get_selected() == idx {
             lines.push(Line::from(text.clone()).style(on_select));
         } else {
             lines.push(Line::from(text).style(Style::new()));
         }
-    }
+    });
 
     let paragraph = Paragraph::new(lines).scroll((model.queue_view.scroll_offset as u16, 0));
 
@@ -63,26 +63,26 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
 fn _get_previous_tracks(player: &Player) -> Vec<String> {
     let mut tracks: Vec<String> = Vec::new();
-    for track in &player.previous {
+    player.previous.iter().for_each(|track| {
         if let Some(track_name) = track.file_name().unwrap().to_str() {
             tracks.push(track_name.to_string());
         } else {
             tracks.push("[Invalid UTF-8 name]".into());
         }
-    }
+    });
 
     tracks
 }
 
 fn get_queued_tracks(player: &Player) -> Vec<String> {
     let mut tracks: Vec<String> = Vec::new();
-    for track in player.queue.get() {
+    player.queue.get().iter().for_each(|track| {
         if let Some(track_name) = track.file_name().unwrap().to_str() {
             tracks.push(track_name.to_string());
         } else {
             tracks.push("[Invalid UTF-8 name]".into());
         }
-    }
+    });
 
     tracks
 }

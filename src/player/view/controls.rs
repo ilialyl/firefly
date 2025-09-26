@@ -57,7 +57,8 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
         })
         .collect();
 
-    for (idx, control) in controls.into_iter().enumerate() {
-        frame.render_widget(control, grid[idx])
-    }
+    controls
+        .iter()
+        .enumerate()
+        .for_each(|(idx, ctl)| frame.render_widget(ctl, grid[idx]));
 }
