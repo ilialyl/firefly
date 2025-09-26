@@ -69,7 +69,7 @@ pub fn choose_dir() -> Option<PathBuf> {
     FileDialog::new().pick_folder()
 }
 
-pub fn filter_dir_for_audio_files(dir: PathBuf) -> Result<Vec<PathBuf>> {
+pub fn filter_dir_for_audio_files(dir: &Path) -> Result<Vec<PathBuf>> {
     let path_vec: Vec<PathBuf> = read_dir(dir)?
         .filter_map(|r| r.ok())
         .map(|p| p.path())

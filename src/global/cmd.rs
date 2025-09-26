@@ -175,8 +175,8 @@ fn update_scroll_offsets(model: &mut Model) {
         );
     }
 
-    if let Some(playlist_tracks_area_h) = model.playlist_view.tracks_area_height.take() {
-        if let Some(current_playlist) = model.playlist_ctl.get_selected_playlist() {
+    if let Some(playlist_tracks_area_h) = model.playlist_view.tracks_area_height.take()
+        && let Some(current_playlist) = model.playlist_ctl.get_selected_playlist() {
             model.playlist_view.tracks_scroll_offset = scroll(
                 current_playlist.selected_track.unwrap_or(0),
                 model.playlist_view.tracks_scroll_offset,
@@ -184,5 +184,4 @@ fn update_scroll_offsets(model: &mut Model) {
                 playlist_tracks_area_h,
             );
         }
-    }
 }

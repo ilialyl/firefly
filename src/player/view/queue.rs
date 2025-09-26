@@ -8,18 +8,10 @@ use ratatui::{
 
 use crate::{model::Model, player::logic::Player};
 
+#[derive(Default)]
 pub struct QueueViewState {
     pub scroll_offset: usize,
     pub area_height: Option<usize>,
-}
-
-impl Default for QueueViewState {
-    fn default() -> Self {
-        QueueViewState {
-            scroll_offset: 0,
-            area_height: None,
-        }
-    }
 }
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {

@@ -87,10 +87,7 @@ impl OpusOggSource {
                     }
 
                     // Estimate number of samples per channel for sizing (best-effort)
-                    let nb = match self.decoder.get_nb_samples(&pkt.data) {
-                        Ok(n) => n,
-                        Err(_) => 960, // fallback
-                    };
+                    let nb = self.decoder.get_nb_samples(&pkt.data).unwrap_or(960);
 
                     let needed = nb * (self.channels as usize);
                     let mut out = vec![0.0f32; needed];

@@ -101,16 +101,16 @@ impl Track {
         let file = File::open(&path)?;
         if is_opus(&self.get_path()?)? {
             let source = get_opus_source(&path);
-            return Ok(source);
+            Ok(source)
         } else {
             let source = Decoder::new(file)?;
-            return Ok(Box::new(source));
+            Ok(Box::new(source))
         }
     }
 
     pub fn get_path(&self) -> Result<PathBuf> {
         let mut path = &self.real_path;
-        if !is_rodio_supported(&path)? {
+        if !is_rodio_supported(path)? {
             path = &self.temp_path;
         }
 
@@ -137,7 +137,7 @@ impl Track {
             .unwrap();
         thread::spawn(move || {
             let runtime = Runtime::new().unwrap();
-            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(async { process.await })));
+            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(process)));
             cloned_msg_tx
                 .send(Message::ConversionStarted(ffmpeg_handle.clone()))
                 .unwrap();
@@ -169,16 +169,11 @@ impl Track {
         });
     }
 
-    fn build_conversion_process<'a>(
-        real_path: PathBuf,
-        temp_path: PathBuf,
-    ) -> impl Future<Output = FFmpegProcess> + 'a {
-        async move {
-            FFmpegBuilder::convert(real_path, temp_path)
-                .audio_filter(AudioFilter::loudnorm())
-                .spawn()
-                .await
-                .unwrap()
-        }
+    async fn build_conversion_process(real_path: PathBuf, temp_path: PathBuf) -> FFmpegProcess {
+        FFmpegBuilder::convert(real_path, temp_path)
+            .audio_filter(AudioFilter::loudnorm())
+            .spawn()
+            .await
+            .unwrap()
     }
 }

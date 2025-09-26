@@ -14,22 +14,12 @@ use ratatui::{
 
 use crate::model::Model;
 
+#[derive(Default)]
 pub struct PlaylistViewState {
     pub playlists_scroll_offset: usize,
     pub playlists_area_height: Option<usize>,
     pub tracks_scroll_offset: usize,
     pub tracks_area_height: Option<usize>,
-}
-
-impl Default for PlaylistViewState {
-    fn default() -> Self {
-        PlaylistViewState {
-            playlists_scroll_offset: 0,
-            playlists_area_height: None,
-            tracks_scroll_offset: 0,
-            tracks_area_height: None,
-        }
-    }
 }
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {

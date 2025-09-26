@@ -14,7 +14,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let mut name_lines: Vec<Line> = playlists
         .iter()
         .map(|p| p.get_name().unwrap_or("New Playlist".to_string()))
-        .map(|n| Line::from(n))
+        .map(Line::from)
         .collect();
 
     let mut selected_playlist_style = Style::default().fg(Color::Rgb(255, 192, 15));

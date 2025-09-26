@@ -35,7 +35,7 @@ impl Default for Model {
             queue_view: QueueViewState::default(),
             playlist_view: PlaylistViewState::default(),
             input_mode: InputMode::default(),
-            user_input: UserInput::new(),
+            user_input: UserInput::default(),
             ask_confirmation: None,
             confirmation: None,
             confirmation_prompt: String::new(),

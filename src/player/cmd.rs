@@ -161,11 +161,10 @@ pub fn skip(
         .load_next_track(msg_tx, info_tx)
         .expect("Error loading next track.");
 
-    if let Some(ref mut current_track) = model.player.current {
-        if current_track.conversion_status != FormatConversion::Running {
+    if let Some(ref mut current_track) = model.player.current
+        && current_track.conversion_status != FormatConversion::Running {
             model.player.reload().expect("Error reloading track.");
         }
-    }
 
     None
 }
@@ -225,11 +224,10 @@ pub fn previous_track(
         .load_prev_track(msg_tx, info_tx)
         .expect("Error loading previous track.");
 
-    if let Some(ref mut current_track) = model.player.current {
-        if current_track.conversion_status != FormatConversion::Running {
+    if let Some(ref mut current_track) = model.player.current
+        && current_track.conversion_status != FormatConversion::Running {
             model.player.reload().expect("Error reloading track.");
         }
-    }
 
     None
 }

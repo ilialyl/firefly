@@ -66,14 +66,15 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
 }
 
 pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected) = playlist_ctl.get_selected_playlist() {
-        if let Some(path_vec) = choose_multiple_audio_files() {
-            let playlist = selected;
+    if let Some(selected) = playlist_ctl.get_selected_playlist()
+        && let Some(path_vec) = choose_multiple_audio_files()
+    {
+        let playlist = selected;
 
-            let new_tracks: Vec<PathBuf> = path_vec.into_iter().filter(|p| p.is_file()).collect();
-            new_tracks.iter().for_each(|p| playlist.add(p));
-        }
+        let new_tracks: Vec<PathBuf> = path_vec.into_iter().filter(|p| p.is_file()).collect();
+        new_tracks.iter().for_each(|p| playlist.add(p));
     }
+
     None
 }
 
@@ -89,19 +90,20 @@ pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Me
 }
 
 pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected) = playlist_ctl.get_selected_playlist() {
-        if let Some(dir_path) = choose_dir() {
-            let playlist = selected;
-            match filter_dir_for_audio_files(dir_path) {
-                Ok(vec_path) => {
-                    let new_tracks: Vec<PathBuf> =
-                        vec_path.into_iter().filter(|p| p.is_file()).collect();
-                    new_tracks.iter().for_each(|p| playlist.add(p));
-                }
-                Err(e) => log::error!("{}", e),
+    if let Some(selected) = playlist_ctl.get_selected_playlist()
+        && let Some(dir_path) = choose_dir()
+    {
+        let playlist = selected;
+        match filter_dir_for_audio_files(&dir_path) {
+            Ok(vec_path) => {
+                let new_tracks: Vec<PathBuf> =
+                    vec_path.into_iter().filter(|p| p.is_file()).collect();
+                new_tracks.iter().for_each(|p| playlist.add(p));
             }
+            Err(e) => log::error!("{}", e),
         }
     }
+
     None
 }
 
@@ -201,7 +203,7 @@ pub fn delete_playlist(
     confirmation: &mut Option<Confirmation>,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
-    if let Some(_) = playlist_ctl.get_selected_playlist() {
+    if playlist_ctl.get_selected_playlist().is_some() {
         if let Some(confirm) = confirmation.take() {
             match confirm {
                 Confirmation::Yes => {
@@ -221,14 +223,12 @@ pub fn delete_playlist(
 }
 
 pub fn rename_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(index) = playlist_ctl.selected_playlist {
-        Some(Message::UserInput(UserInputMessage::EnterEditMode(
+    playlist_ctl.selected_playlist.map(|index| {
+        Message::UserInput(UserInputMessage::EnterEditMode(
             "Playlist Rename".to_string(),
             InputTarget::PlaylistName(index),
-        )))
-    } else {
-        None
-    }
+        ))
+    })
 }
 
 pub fn save_selected_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
@@ -258,32 +258,32 @@ pub fn ask_to_save(
     then_call: Option<Message>,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
-    if let Some(current_playlist) = playlist_ctl.get_selected_playlist() {
-        if current_playlist.is_dirty() {
-            if let Some(confirm) = confirmation.take() {
-                match confirm {
-                    Confirmation::Yes => {
-                        playlist_ctl
-                            .save_selected_to_file()
-                            .expect("Error saving current playlist to file.");
+    if let Some(current_playlist) = playlist_ctl.get_selected_playlist()
+        && current_playlist.is_dirty()
+    {
+        if let Some(confirm) = confirmation.take() {
+            match confirm {
+                Confirmation::Yes => {
+                    playlist_ctl
+                        .save_selected_to_file()
+                        .expect("Error saving current playlist to file.");
 
-                        return then_call;
-                    }
-                    Confirmation::No => {
-                        current_playlist
-                            .reload_from_file()
-                            .expect("Error restoring file to the state before modification.");
-                        return then_call;
-                    }
+                    return then_call;
                 }
-            } else {
-                return Some(Message::AskConfirmation(
-                    "Save? (discard if not)".to_string(),
-                    Box::new(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
-                        then_call,
-                    )))),
-                ));
+                Confirmation::No => {
+                    current_playlist
+                        .reload_from_file()
+                        .expect("Error restoring file to the state before modification.");
+                    return then_call;
+                }
             }
+        } else {
+            return Some(Message::AskConfirmation(
+                "Save? (discard if not)".to_string(),
+                Box::new(Message::Playlist(PlaylistMessage::AskToSave(Box::new(
+                    then_call,
+                )))),
+            ));
         }
     }
 

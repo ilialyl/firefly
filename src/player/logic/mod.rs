@@ -29,6 +29,12 @@ pub struct Player {
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
 
+impl Default for Player {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Player {
     pub fn new() -> Player {
         let (stream, sink) = Self::get_sink();

@@ -43,13 +43,13 @@ impl Playlist {
             let path = Self::get_path_from_name(name);
 
             let mut file = File::create(&path)?;
-            file.write(json_data.as_bytes())?;
+            file.write_all(json_data.as_bytes())?;
 
             self.path = Some(path);
 
             Ok(())
         } else {
-            return Err(eyre!("Playlist name is not set."));
+            Err(eyre!("Playlist name is not set."))
         }
     }
 
@@ -97,21 +97,19 @@ impl Playlist {
         }
 
         if let Some(selected_index) = self.selected_track
-            && selected_index.eq(&self.tracks.len().checked_sub(1).unwrap_or(0))
+            && selected_index.eq(&self.tracks.len().saturating_sub(1))
         {
             is_arrange = false;
         }
 
-        self.selected_track = Some(
-            (self.selected_track.unwrap_or(0) + 1)
-                .min(self.tracks.len().checked_sub(1).unwrap_or(0)),
-        );
+        self.selected_track =
+            Some((self.selected_track.unwrap_or(0) + 1).min(self.tracks.len().saturating_sub(1)));
 
         if let Some(selected_index) = self.selected_track
             && is_arrange
         {
             self.tracks
-                .swap(selected_index, selected_index.checked_sub(1).unwrap_or(0));
+                .swap(selected_index, selected_index.saturating_sub(1));
 
             self.dirty_flag = true;
         }
@@ -129,7 +127,7 @@ impl Playlist {
             is_arrange = false;
         }
 
-        self.selected_track = Some(self.selected_track.unwrap_or(0).checked_sub(1).unwrap_or(0));
+        self.selected_track = Some(self.selected_track.unwrap_or(0).saturating_sub(1));
 
         if let Some(selected_index) = self.selected_track
             && is_arrange

@@ -21,15 +21,15 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
                     .to_str()
                     .unwrap_or("[Invalid UTF-8 name]")
             })
-            .map(|n| Line::from(n))
+            .map(Line::from)
             .collect();
 
-        if matches!(tab_focus, PlaylistTabFocus::Tracks) {
-            if let Some(selected_track_idx) = selected_playlist.selected_track {
-                name_lines[selected_track_idx] = name_lines[selected_track_idx]
-                    .clone()
-                    .set_style(Style::default().fg(Color::Rgb(255, 192, 15)))
-            }
+        if matches!(tab_focus, PlaylistTabFocus::Tracks)
+            && let Some(selected_track_idx) = selected_playlist.selected_track
+        {
+            name_lines[selected_track_idx] = name_lines[selected_track_idx]
+                .clone()
+                .set_style(Style::default().fg(Color::Rgb(255, 192, 15)))
         }
 
         let paragraph =

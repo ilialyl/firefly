@@ -39,7 +39,7 @@ impl PlaylistController {
     pub fn next_playlist(&mut self) {
         self.selected_playlist = Some(
             (self.selected_playlist.unwrap_or(0) + 1)
-                .min(self.playlist_coll.len().checked_sub(1).unwrap_or(0)),
+                .min(self.playlist_coll.len().saturating_sub(1)),
         );
     }
 
@@ -47,12 +47,7 @@ impl PlaylistController {
         if self.playlist_coll.is_empty() {
             self.selected_playlist = None;
         } else {
-            self.selected_playlist = Some(
-                self.selected_playlist
-                    .unwrap_or(0)
-                    .checked_sub(1)
-                    .unwrap_or(0),
-            );
+            self.selected_playlist = Some(self.selected_playlist.unwrap_or(0).saturating_sub(1));
         }
     }
 
@@ -67,7 +62,7 @@ impl PlaylistController {
 
     pub fn get_selected_playlist(&mut self) -> Option<&mut Playlist> {
         if let Some(idx) = self.selected_playlist {
-            return self.playlist_coll.get_playlist(idx);
+            self.playlist_coll.get_playlist(idx)
         } else {
             None
         }
@@ -81,10 +76,10 @@ impl PlaylistController {
     }
 
     pub fn delete_selected_playlist(&mut self) {
-        if !self.playlist_coll.is_empty() {
-            if let Some(index) = self.selected_playlist {
-                Self::delete_playlist(self, index);
-            }
+        if !self.playlist_coll.is_empty()
+            && let Some(index) = self.selected_playlist
+        {
+            Self::delete_playlist(self, index);
         }
     }
 
@@ -96,7 +91,7 @@ impl PlaylistController {
         self.playlist_coll.delete(index);
         if self.playlist_coll.is_empty() {
             self.selected_playlist = None;
-        } else if self.playlist_coll.len() > 0 {
+        } else if !self.playlist_coll.is_empty() {
             self.selected_playlist = Some(index - 1);
         }
     }

@@ -21,6 +21,7 @@ use firefly::{
     model::Model,
 };
 
+#[allow(clippy::single_match)]
 fn main() -> Result<()> {
     color_eyre::install()?;
     setup_logger()?;

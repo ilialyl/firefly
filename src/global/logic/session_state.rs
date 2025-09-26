@@ -6,14 +6,8 @@ pub enum RunningState {
     Done,
 }
 
+#[derive(Default)]
 pub struct Session {
     pub state: RunningState,
 }
 
-impl Default for Session {
-    fn default() -> Self {
-        Self {
-            state: RunningState::default(),
-        }
-    }
-}

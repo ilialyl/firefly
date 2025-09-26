@@ -179,12 +179,12 @@ fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
 fn get_track_name_str(path: &Path) -> String {
     if let Some(os_name) = path.file_name() {
         if let Some(name) = os_name.to_str() {
-            return name.to_string();
+            name.to_string()
         } else {
-            return "[Invalid UTF-8 name]".to_string();
+            "[Invalid UTF-8 name]".to_string()
         }
     } else {
-        return "[No file name]".to_string();
+        "[No file name]".to_string()
     }
 }
 

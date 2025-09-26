@@ -13,7 +13,7 @@ pub enum InputMode {
 pub enum InputTarget {
     PlaylistName(PlaylistIndex),
 }
-
+#[derive(Default)]
 pub struct UserInput {
     /// Current value of the input box
     pub input: String,
@@ -24,14 +24,6 @@ pub struct UserInput {
 }
 
 impl UserInput {
-    pub fn new() -> Self {
-        Self {
-            input: String::new(),
-            input_history: Vec::new(),
-            character_index: 0,
-        }
-    }
-
     pub fn move_cursor_left(&mut self) {
         let cursor_moved_left = self.character_index.saturating_sub(1);
         self.character_index = self.clamp_cursor(cursor_moved_left);

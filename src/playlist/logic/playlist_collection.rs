@@ -59,7 +59,7 @@ impl PlaylistCollection {
         // Create a new playlist and returns index to it
         self.playlists.push(Playlist::default());
 
-        (self.playlists.len() - 1) as usize
+        self.playlists.len() - 1
     }
 
     pub fn len(&self) -> usize {
