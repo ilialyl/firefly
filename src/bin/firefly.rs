@@ -86,8 +86,12 @@ fn main() -> Result<()> {
 
     restore_terminal()?;
 
+    // If cache dir is not empty
+    if fs::read_dir(&cache_dir).unwrap().count() != 0 {
+        println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");
+    }
+
     println!("Thank you for using Firefly.");
-    println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");
 
     Ok(())
 }
