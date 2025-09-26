@@ -100,7 +100,7 @@ impl PlaylistController {
         self.playlist_coll
             .get_playlists()
             .iter()
-            .map(|p| p.name.clone().unwrap_or("New Playlist".to_string()))
+            .map(|p| p.get_name().unwrap_or("New Playlist".to_string()))
             .collect()
     }
 

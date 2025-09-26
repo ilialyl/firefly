@@ -41,7 +41,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     queued_tracks.iter().enumerate().for_each(|(idx, track)| {
         let text = format!(" {}", track);
         if model.player.queue.get_selected() == idx {
-            lines.push(Line::from(text.clone()).style(on_select));
+            lines.push(Line::from(text).style(on_select));
         } else {
             lines.push(Line::from(text).style(Style::new()));
         }

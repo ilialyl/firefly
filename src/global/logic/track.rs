@@ -1,6 +1,6 @@
 use std::{
     fs::{self, File},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex, mpsc::Sender},
     thread,
     time::Duration,
@@ -44,12 +44,12 @@ pub struct Track {
 }
 
 impl Track {
-    pub fn new(path: PathBuf, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
-        let temp_path = Self::get_temp_file(path.clone());
-        let tagged_file = Probe::open(path.clone()).unwrap().read().unwrap();
+    pub fn new(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
+        let temp_path = Self::get_temp_file(path);
+        let tagged_file = Probe::open(path).unwrap().read().unwrap();
 
         let conversion_status;
-        if !is_rodio_supported(&path)? {
+        if !is_rodio_supported(path)? {
             if temp_path.exists() {
                 debug!("Path {:?} exists, skipping conversion", temp_path);
                 conversion_status = FormatConversion::Done;
@@ -61,7 +61,7 @@ impl Track {
         }
 
         let track = Track {
-            real_path: path.clone(),
+            real_path: path.to_path_buf(),
             temp_path,
             pos: Duration::from_secs(0),
             duration: Self::read_duration(&tagged_file),
@@ -77,7 +77,7 @@ impl Track {
         Ok(track)
     }
 
-    pub fn get_temp_file(path: PathBuf) -> PathBuf {
+    pub fn get_temp_file(path: &Path) -> PathBuf {
         let file_name = path
             .file_stem()
             .expect("Original path has no file name")
@@ -122,10 +122,8 @@ impl Track {
     }
 
     fn convert_format(&self, msg_tx: &Sender<Message>, info_tx: &Sender<String>) {
-        let process = Self::build_conversion_process(
-            self.real_path.to_path_buf(),
-            self.temp_path.to_path_buf(),
-        );
+        let process =
+            Self::build_conversion_process(self.real_path.clone(), self.temp_path.clone());
 
         let cloned_temp_path = self.temp_path.to_path_buf();
         let cloned_msg_tx = msg_tx.clone();

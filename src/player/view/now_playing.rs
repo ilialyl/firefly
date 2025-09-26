@@ -20,12 +20,6 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
     let player_text: Vec<String>;
 
     if let Some(ref mut current_track) = model.player.current {
-        // let path = current_track.real_path.clone();
-        // let pos = current_track.pos.clone();
-        // let dur = current_track.duration.clone();
-        // let status = model.player.status.clone();
-        // let looping = model.player.looping;
-
         player_text = vec![
             get_track_name_str(&current_track.real_path),
             String::new(),

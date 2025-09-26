@@ -1,4 +1,8 @@
-use std::{collections::VecDeque, fs, path::PathBuf};
+use std::{
+    collections::VecDeque,
+    fs,
+    path::{Path, PathBuf},
+};
 
 use color_eyre::eyre::{Result, eyre};
 
@@ -37,8 +41,8 @@ impl TrackQueue {
         self.arrange_mode
     }
 
-    pub fn prepend_track(&mut self, path: PathBuf) {
-        self.queue.push_front(path);
+    pub fn prepend_track(&mut self, path: &Path) {
+        self.queue.push_front(path.to_path_buf());
     }
 
     pub fn enqueue_tracks(&mut self, path_vec: Vec<PathBuf>) {
@@ -50,7 +54,7 @@ impl TrackQueue {
         self.queue.pop_front()
     }
 
-    pub fn enqueue_dir(&mut self, dir: PathBuf) {
+    pub fn enqueue_dir(&mut self, dir: &Path) {
         if let Ok(entries) = fs::read_dir(dir) {
             let path_vec: Vec<PathBuf> = entries
                 .filter_map(|r| r.ok())

@@ -3,7 +3,7 @@ use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
     ops::{Add, Sub},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex, mpsc::Sender},
     time::Duration,
 };
@@ -52,7 +52,7 @@ impl Player {
 
     pub fn new_track(
         &mut self,
-        track: PathBuf,
+        track: &Path,
         msg_tx: &Sender<Message>,
         info_tx: &Sender<String>,
     ) -> Result<()> {
@@ -152,7 +152,7 @@ impl Player {
             self.previous.push(current.real_path.clone());
         }
 
-        self.new_track(path, msg_tx, info_tx)?;
+        self.new_track(&path, msg_tx, info_tx)?;
 
         Ok(())
     }
@@ -168,10 +168,10 @@ impl Player {
         };
 
         if let Some(ref mut current) = self.current {
-            self.queue.prepend_track(current.real_path.clone());
+            self.queue.prepend_track(&current.real_path);
         }
 
-        self.new_track(prev, msg_tx, info_tx)?;
+        self.new_track(&prev, msg_tx, info_tx)?;
 
         Ok(())
     }

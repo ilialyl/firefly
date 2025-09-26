@@ -21,7 +21,7 @@ pub fn load_now(
     _info_tx: &Sender<String>,
 ) -> Option<Message> {
     if let Some(path) = choose_audio_file() {
-        model.player.queue.prepend_track(path);
+        model.player.queue.prepend_track(&path);
         return Some(Message::Player(PlayerMessage::Skip));
     }
 
@@ -44,7 +44,7 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
 
 pub fn queue_dir(model: &mut Model) -> Option<Message> {
     if let Some(dir) = choose_dir() {
-        model.player.queue.enqueue_dir(dir);
+        model.player.queue.enqueue_dir(&dir);
     }
 
     None
@@ -162,9 +162,10 @@ pub fn skip(
         .expect("Error loading next track.");
 
     if let Some(ref mut current_track) = model.player.current
-        && current_track.conversion_status != FormatConversion::Running {
-            model.player.reload().expect("Error reloading track.");
-        }
+        && current_track.conversion_status != FormatConversion::Running
+    {
+        model.player.reload().expect("Error reloading track.");
+    }
 
     None
 }
@@ -225,9 +226,10 @@ pub fn previous_track(
         .expect("Error loading previous track.");
 
     if let Some(ref mut current_track) = model.player.current
-        && current_track.conversion_status != FormatConversion::Running {
-            model.player.reload().expect("Error reloading track.");
-        }
+        && current_track.conversion_status != FormatConversion::Running
+    {
+        model.player.reload().expect("Error reloading track.");
+    }
 
     None
 }
