@@ -9,11 +9,10 @@ use std::{
 };
 
 use color_eyre::eyre::{Result, eyre};
-use serde::{Deserialize, Serialize};
 
 use crate::global::logic::files::get_playlists_path;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Debug)]
 pub struct Playlist {
     name: Option<String>,
     pub tracks: Vec<PathBuf>,
@@ -38,7 +37,7 @@ impl Playlist {
     pub fn save_to_file(&mut self) -> Result<()> {
         self.dirty_flag = false;
 
-        let json_data = serde_json::to_string(&self)?;
+        let json_data = serde_json::to_string(&self.tracks)?;
         if let Some(name) = &self.name {
             let path = Self::get_path_from_name(name);
 
@@ -153,8 +152,21 @@ impl Playlist {
     }
 
     pub fn from(file: &Path) -> Result<Playlist> {
-        let json_data = fs::read_to_string(file)?;
-        let mut playlist: Playlist = serde_json::from_str(&json_data)?;
+        let json_data = fs::read_to_string(&file)?;
+
+        let mut playlist = Playlist {
+            tracks: serde_json::from_str(&json_data)?,
+            name: Some(
+                file.file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap_or("[Invalid UTF-8 name]")
+                    .to_owned(),
+            ),
+            dirty_flag: false,
+            ..Default::default()
+        };
+
         playlist.set_path_loaded_from(file.to_path_buf());
 
         if !playlist.is_empty() {
