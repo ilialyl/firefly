@@ -5,14 +5,14 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 ## Features (v0.6.1)
 - Play, Pause, Rewind, and Seek.
 - Persistent Playlists
-- Volume control from 0-200%
+- Volume Control from 0-200%
 - Track Looping
 - File Dialog
 - Track and Directory queuing
-- Queue arrangement
+- Queue Arrangement
 - Queue Shuffle
 - Skip Forward or Backward
-- Metadata display (Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
+- Metadata Display (Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
 
 ### Formats Supported
 - FLAC ([Symphonia](https://github.com/pdeljanov/Symphonia))
