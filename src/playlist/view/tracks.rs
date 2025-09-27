@@ -1,9 +1,8 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Style, Styled},
-    text::Line,
-    widgets::Paragraph,
+    style::{Style, Stylize},
+    widgets::{List, ListItem, ListState, StatefulWidget},
 };
 
 use crate::{model::Model, playlist::logic::playlist_tab_focus::PlaylistTabFocus};
@@ -12,7 +11,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let tab_focus = model.playlist_ctl.tab_focus;
 
     if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
-        let mut name_lines: Vec<Line> = selected_playlist
+        let track_entries: Vec<ListItem> = selected_playlist
             .tracks
             .iter()
             .map(|e| {
@@ -21,20 +20,20 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
                     .to_str()
                     .unwrap_or("[Invalid UTF-8 name]")
             })
-            .map(Line::from)
+            .map(ListItem::from)
             .collect();
 
-        if matches!(tab_focus, PlaylistTabFocus::Tracks)
-            && let Some(selected_track_idx) = selected_playlist.selected_track
-        {
-            name_lines[selected_track_idx] = name_lines[selected_track_idx]
-                .clone()
-                .set_style(Style::default().fg(Color::Rgb(255, 192, 15)))
-        }
+        let highlight = if matches!(tab_focus, PlaylistTabFocus::Tracks) {
+            Style::default().reversed()
+        } else {
+            Style::default()
+        };
 
-        let paragraph =
-            Paragraph::new(name_lines).scroll((model.playlist_view.tracks_scroll_offset as u16, 0));
+        let list = List::new(track_entries).highlight_style(highlight);
 
-        frame.render_widget(paragraph, area);
+        let mut list_state = ListState::default();
+        list_state.select(selected_playlist.selected_track);
+
+        StatefulWidget::render(list, area, frame.buffer_mut(), &mut list_state);
     }
 }

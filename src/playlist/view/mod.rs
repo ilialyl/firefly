@@ -14,14 +14,6 @@ use ratatui::{
 
 use crate::model::Model;
 
-#[derive(Default)]
-pub struct PlaylistViewState {
-    pub playlists_scroll_offset: usize,
-    pub playlists_area_height: Option<usize>,
-    pub tracks_scroll_offset: usize,
-    pub tracks_area_height: Option<usize>,
-}
-
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let outer_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -60,9 +52,6 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     draw_controls(frame, outer_chunks[1]);
     playlists::draw(model, frame, left_panel_chunks[0]);
     tracks::draw(model, frame, right_panel_chunks[0]);
-
-    model.playlist_view.playlists_area_height = Some(left_panel_chunks[0].height as usize);
-    model.playlist_view.tracks_area_height = Some(right_panel_chunks[0].height as usize);
 }
 
 fn draw_controls(frame: &mut Frame, area: Rect) {
