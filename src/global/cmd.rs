@@ -29,7 +29,7 @@ pub fn tick(
         return None;
     }
 
-    if model.player.sink.is_paused() && !model.player.looping {
+    if model.player.sink.is_paused()     {
         model.player.status = PlaybackStatus::Paused;
     } else if !model.player.sink.empty() {
         model.player.status = PlaybackStatus::Playing;
