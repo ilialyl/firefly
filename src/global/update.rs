@@ -24,8 +24,10 @@ pub fn update_global(
         Message::SetBusy => set_busy(model),
         Message::ConversionStarted(handle) => conversion_started(handle, model),
         Message::ConversionEnded => conversion_ended(model),
-        Message::UpdateInfo(info) => update_info(info, model),
+        Message::UpdateStatusMsg(info) => update_status_msg(info, model),
         Message::CycleTabs => cycle_tabs(model),
+        Message::AcknowledgeInfo => acknowledge_info(model),
+        Message::DisplayInfo(info) => display_info(info, model),
         Message::Quit => quit(model),
     }
 }

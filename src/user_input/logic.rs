@@ -7,6 +7,7 @@ pub enum InputMode {
     Commands,
     Insert(PromptMsg, InputTarget),
     Confirmation,
+    Info,
 }
 
 #[derive(Clone, Copy)]

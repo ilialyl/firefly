@@ -25,6 +25,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
     }
     controls.push(toggle_arrange);
 
+    controls.push(Paragraph::new(" Shuffle Queue <M>"));
     controls.push(Paragraph::new(" Move Queue Up <↑>"));
     controls.push(Paragraph::new(" Move Queue Down <↓>"));
     controls.push(Paragraph::new(" Prev/Skip <P/S>"));

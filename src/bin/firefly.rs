@@ -78,7 +78,12 @@ fn main() -> Result<()> {
 
         // Receive displayable info from other threads and consume it.
         if let Ok(info) = info_rx.try_recv() {
-            current_msg = update_global(&mut model, Message::UpdateInfo(info), &msg_tx, &info_tx);
+            current_msg = update_global(
+                &mut model,
+                Message::UpdateStatusMsg(info),
+                &msg_tx,
+                &info_tx,
+            );
             while current_msg.is_some() {
                 current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
             }

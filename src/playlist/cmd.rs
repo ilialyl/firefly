@@ -236,7 +236,7 @@ pub fn save_selected_playlist(playlist_ctl: &mut PlaylistController) -> Option<M
         .save_selected_to_file()
         .expect("Error saving selected playlist to file");
 
-    None
+    Some(Message::DisplayInfo("Saved successfully".to_string()))
 }
 
 pub fn load_playlists(playlist_ctl: &mut PlaylistController) -> Option<Message> {

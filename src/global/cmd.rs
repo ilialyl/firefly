@@ -112,7 +112,7 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn update_info(info: String, model: &mut Model) -> Option<Message> {
+pub fn update_status_msg(info: String, model: &mut Model) -> Option<Message> {
     model.status_msg = info;
 
     None
@@ -144,6 +144,19 @@ pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
     }
 
     model.selected_tab.cycle_right();
+
+    None
+}
+
+pub fn acknowledge_info(model: &mut Model) -> Option<Message> {
+    model.input_mode = InputMode::default();
+
+    None
+}
+
+pub fn display_info(info: String, model: &mut Model) -> Option<Message> {
+    model.info_msg = info;
+    model.input_mode = InputMode::Info;
 
     None
 }

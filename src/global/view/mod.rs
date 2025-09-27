@@ -1,4 +1,5 @@
 pub mod confirmation_box;
+pub mod info_box;
 pub mod tabs;
 
 use ratatui::{
@@ -48,6 +49,9 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         }
         InputMode::Commands => {}
         InputMode::Confirmation => confirmation_box::render(model, frame, frame.area()),
+        InputMode::Info => {
+            info_box::render(model, frame, frame.area());
+        }
     }
 }
 

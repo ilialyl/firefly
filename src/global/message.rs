@@ -18,8 +18,10 @@ pub enum Message {
     AskConfirmation(String, Box<Message>),
     Confirm(Response),
     SetBusy,
-    UpdateInfo(String),
+    UpdateStatusMsg(String),
     CycleTabs,
+    AcknowledgeInfo,
+    DisplayInfo(String),
 }
 
 pub enum PlayerMessage {
