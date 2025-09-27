@@ -75,6 +75,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 KeyCode::Down => Some(Message::Player(PlayerMessage::MoveQueueDown)),
                 KeyCode::Char('a') => Some(Message::Player(PlayerMessage::ToggleArrange)),
                 KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
+                KeyCode::Char('m') => Some(Message::Player(PlayerMessage::ShuffleQueue)),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },

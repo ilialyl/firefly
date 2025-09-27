@@ -27,5 +27,6 @@ pub fn update_player(
         PlayerMessage::ToggleLoop => toggle_loop(model),
         PlayerMessage::DecreaseVolume => decrease_volume(model),
         PlayerMessage::IncreaseVolume => increase_volume(model),
+        PlayerMessage::ShuffleQueue => shuffle_queue(model),
     }
 }

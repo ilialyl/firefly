@@ -37,6 +37,7 @@ pub enum PlayerMessage {
     MoveQueueDown,
     QueueFiles,
     QueueDir,
+    ShuffleQueue,
 }
 
 pub enum PlaylistMessage {

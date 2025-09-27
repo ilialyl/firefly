@@ -233,3 +233,9 @@ pub fn previous_track(
 
     None
 }
+
+pub fn shuffle_queue(model: &mut Model) -> Option<Message> {
+    model.player.queue.shuffle();
+
+    None
+}

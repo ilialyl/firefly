@@ -956,6 +956,7 @@ dependencies = [
  "once_cell",
  "opus",
  "platform-dirs",
+ "rand",
  "ratatui",
  "rfd",
  "rodio",

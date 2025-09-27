@@ -4,6 +4,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use rand::rng;
+use rand::seq::SliceRandom;
+
 use color_eyre::eyre::{Result, eyre};
 
 use crate::global::logic::files::AUDIO_FORMATS;
@@ -108,5 +111,12 @@ impl TrackQueue {
 
     pub fn toggle_arrange(&mut self) {
         self.arrange_mode = !self.arrange_mode;
+    }
+
+    pub fn shuffle(&mut self) {
+        let mut rng = rng();
+        let mut vec: Vec<PathBuf> = self.queue.to_owned().into_iter().collect();
+        vec.shuffle(&mut rng);
+        self.queue = vec.into_iter().collect();
     }
 }

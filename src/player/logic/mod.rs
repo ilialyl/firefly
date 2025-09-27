@@ -175,4 +175,8 @@ impl Player {
 
         Ok(())
     }
+
+    pub fn shuffle(&mut self) {
+        self.queue.shuffle();
+    }
 }
