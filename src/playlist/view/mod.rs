@@ -22,7 +22,11 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
     let inner_chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(vec![Constraint::Percentage(20), Constraint::Percentage(80)])
+        .constraints(vec![
+            Constraint::Percentage(20),
+            Constraint::Fill(1),
+            Constraint::Length(1),
+        ])
         .split(outer_chunks[0]);
 
     Block::bordered()
@@ -51,7 +55,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
     draw_controls(frame, outer_chunks[1]);
     playlists::draw(model, frame, left_panel_chunks[0]);
-    tracks::draw(model, frame, right_panel_chunks[0]);
+    tracks::draw(model, frame, right_panel_chunks[0], inner_chunks[2]);
 }
 
 fn draw_controls(frame: &mut Frame, area: Rect) {

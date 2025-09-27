@@ -2,12 +2,14 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Style, Stylize},
-    widgets::{List, ListItem, ListState, StatefulWidget},
+    widgets::{
+        List, ListItem, ListState, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
+    },
 };
 
 use crate::{model::Model, playlist::logic::playlist_tab_focus::PlaylistTabFocus};
 
-pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
+pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_area: Rect) {
     let tab_focus = model.playlist_ctl.tab_focus;
 
     if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
@@ -34,6 +36,17 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         let mut list_state = ListState::default();
         list_state.select(selected_playlist.selected_track);
 
-        StatefulWidget::render(list, area, frame.buffer_mut(), &mut list_state);
+        StatefulWidget::render(list, entries_area, frame.buffer_mut(), &mut list_state);
+
+        let mut scrollbar_state = ScrollbarState::new(selected_playlist.len())
+            .position(selected_playlist.selected_track.unwrap_or(0));
+
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓")),
+            scrollbar_area,
+            &mut scrollbar_state,
+        );
     }
 }
