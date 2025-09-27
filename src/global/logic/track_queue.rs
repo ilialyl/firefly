@@ -9,10 +9,10 @@ use rand::seq::SliceRandom;
 
 use color_eyre::eyre::{Result, eyre};
 
-use crate::global::logic::files::AUDIO_FORMATS;
+use crate::global::logic::{files::AUDIO_FORMATS, mini_track::MiniTrack};
 
 pub struct TrackQueue {
-    queue: VecDeque<PathBuf>,
+    tracks: VecDeque<MiniTrack>,
     selected_index: usize,
     arrange_mode: bool,
 }
@@ -20,7 +20,7 @@ pub struct TrackQueue {
 impl Default for TrackQueue {
     fn default() -> Self {
         Self {
-            queue: VecDeque::new() as VecDeque<PathBuf>,
+            tracks: VecDeque::new() as VecDeque<MiniTrack>,
             selected_index: 0,
             arrange_mode: false,
         }
@@ -28,12 +28,12 @@ impl Default for TrackQueue {
 }
 
 impl TrackQueue {
-    pub fn get(&self) -> &VecDeque<PathBuf> {
-        &self.queue
+    pub fn get(&self) -> &VecDeque<MiniTrack> {
+        &self.tracks
     }
 
-    pub fn front(&self) -> Option<&PathBuf> {
-        self.queue.front()
+    pub fn front_path(&self) -> Option<&PathBuf> {
+        self.tracks.front().map(|t| &t.path)
     }
 
     pub fn get_selected(&self) -> usize {
@@ -45,21 +45,26 @@ impl TrackQueue {
     }
 
     pub fn prepend_track(&mut self, path: &Path) {
-        self.queue.push_front(path.to_path_buf());
+        self.tracks.push_front(MiniTrack::new(path));
     }
 
     pub fn enqueue_tracks(&mut self, path_vec: Vec<PathBuf>) {
-        let new_tracks: Vec<PathBuf> = path_vec.into_iter().filter(|p| p.is_file()).collect();
-        self.queue.extend(new_tracks);
+        let new_tracks: Vec<MiniTrack> = path_vec
+            .iter()
+            .filter(|p| p.is_file())
+            .map(|p| MiniTrack::new(p))
+            .collect();
+
+        self.tracks.extend(new_tracks);
     }
 
     pub fn dequeue(&mut self) -> Option<PathBuf> {
-        self.queue.pop_front()
+        self.tracks.pop_front().map(|t| t.path)
     }
 
     pub fn enqueue_dir(&mut self, dir: &Path) {
         if let Ok(entries) = fs::read_dir(dir) {
-            let path_vec: Vec<PathBuf> = entries
+            let new_tracks: Vec<MiniTrack> = entries
                 .filter_map(|r| r.ok())
                 .map(|p| p.path())
                 .filter(|p| p.is_file())
@@ -70,20 +75,22 @@ impl TrackQueue {
                         .filter(|e| AUDIO_FORMATS.contains(e))
                         .map(|_| p)
                 })
+                .map(|p| MiniTrack::new(&p))
                 .collect();
-            self.queue.extend(path_vec);
+
+            self.tracks.extend(new_tracks);
         }
     }
 
     pub fn move_selected_up(&mut self) -> Result<()> {
-        if self.selected_index == 0 || self.queue.is_empty() {
+        if self.selected_index == 0 || self.tracks.is_empty() {
             return Err(eyre!("Cannot move track up, minimum index reached."));
         }
 
         self.selected_index = self.selected_index.saturating_sub(1);
 
-        if self.arrange_mode && self.queue.len() > self.selected_index {
-            self.queue
+        if self.arrange_mode && self.tracks.len() > self.selected_index {
+            self.tracks
                 .swap(self.selected_index, self.selected_index + 1);
         }
 
@@ -91,14 +98,14 @@ impl TrackQueue {
     }
 
     pub fn move_selected_down(&mut self) -> Result<()> {
-        if self.queue.is_empty() || self.selected_index == self.queue.len() - 1 {
+        if self.tracks.is_empty() || self.selected_index == self.tracks.len() - 1 {
             return Err(eyre!("Cannot move track down, maximum index reached."));
         }
 
-        self.selected_index = (self.selected_index + 1).min(self.queue.len() - 1);
+        self.selected_index = (self.selected_index + 1).min(self.tracks.len() - 1);
 
         if self.arrange_mode {
-            self.queue
+            self.tracks
                 .swap(self.selected_index, self.selected_index - 1);
         }
 
@@ -106,7 +113,7 @@ impl TrackQueue {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.queue.is_empty()
+        self.tracks.is_empty()
     }
 
     pub fn toggle_arrange(&mut self) {
@@ -115,8 +122,8 @@ impl TrackQueue {
 
     pub fn shuffle(&mut self) {
         let mut rng = rng();
-        let mut vec: Vec<PathBuf> = self.queue.to_owned().into_iter().collect();
+        let mut vec: Vec<MiniTrack> = self.tracks.clone().into_iter().collect();
         vec.shuffle(&mut rng);
-        self.queue = vec.into_iter().collect();
+        self.tracks = vec.into_iter().collect();
     }
 }

@@ -8,7 +8,12 @@ use ratatui::{
 use crate::{model::Model, player::logic::Player};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
-    let queue_entries: Vec<ListItem> = get_queued_tracks(&model.player)
+    let queue_entries: Vec<ListItem> = model
+        .player
+        .queue
+        .get()
+        .iter()
+        .map(|t| t.title.clone())
         .into_iter()
         .map(ListItem::from)
         .collect();
@@ -29,19 +34,6 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 fn _get_previous_tracks(player: &Player) -> Vec<String> {
     let mut tracks: Vec<String> = Vec::new();
     player.previous.iter().for_each(|track| {
-        if let Some(track_name) = track.file_name().unwrap().to_str() {
-            tracks.push(track_name.to_string());
-        } else {
-            tracks.push("[Invalid UTF-8 name]".into());
-        }
-    });
-
-    tracks
-}
-
-fn get_queued_tracks(player: &Player) -> Vec<String> {
-    let mut tracks: Vec<String> = Vec::new();
-    player.queue.get().iter().for_each(|track| {
         if let Some(track_name) = track.file_name().unwrap().to_str() {
             tracks.push(track_name.to_string());
         } else {

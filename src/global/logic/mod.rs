@@ -3,6 +3,7 @@ pub mod confirmation;
 pub mod data;
 pub mod files;
 pub mod logger;
+pub mod mini_track;
 pub mod opus;
 pub mod session_state;
 pub mod terminal;

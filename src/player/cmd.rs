@@ -154,7 +154,7 @@ pub fn skip(
 
     model.session.state = RunningState::Running;
 
-    log::info!("Trying to load {:?}.", model.player.queue.front());
+    log::info!("Trying to load {:?}.", model.player.queue.front_path());
     model.player.sink.clear();
     model
         .player
