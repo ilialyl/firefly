@@ -92,7 +92,7 @@ impl PlaylistController {
         if self.playlist_coll.is_empty() {
             self.selected_playlist = None;
         } else if !self.playlist_coll.is_empty() {
-            self.selected_playlist = Some(index - 1);
+            self.selected_playlist = Some(index.saturating_sub(1));
         }
     }
 
