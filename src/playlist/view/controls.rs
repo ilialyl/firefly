@@ -3,10 +3,10 @@ use ratatui::{
     layout::{Alignment, Rect},
     style::Style,
     text::{Line, Text},
-    widgets::{Block, Padding, Paragraph, Widget},
+    widgets::{Block, Clear, Padding, Paragraph, Widget},
 };
 
-pub fn draw(frame: &mut Frame, desc_area: Rect) {
+pub fn draw(frame: &mut Frame, area: Rect) {
     let controls = get_controls();
     let max_len = controls
         .iter()
@@ -30,7 +30,8 @@ pub fn draw(frame: &mut Frame, desc_area: Rect) {
             .border_style(Style::default()),
     );
 
-    para.render(desc_area, frame.buffer_mut());
+    Clear.render(area, frame.buffer_mut());
+    para.render(area, frame.buffer_mut());
 }
 
 fn get_controls() -> Vec<(String, String)> {
