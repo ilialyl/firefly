@@ -1,3 +1,4 @@
+pub mod controls;
 pub mod playlists;
 pub mod tracks;
 
@@ -53,12 +54,19 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .margin(2)
         .split(inner_chunks[1]);
 
-    draw_controls(frame, outer_chunks[1]);
+    draw_mini_controls(frame, outer_chunks[1]);
     playlists::draw(model, frame, left_panel_chunks[0]);
     tracks::draw(model, frame, right_panel_chunks[0], inner_chunks[2]);
+
+    let control_area = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Percentage(60), Constraint::Percentage(40)])
+        .split(right_panel_chunks[0]);
+
+    controls::draw(frame, control_area[1]);
 }
 
-fn draw_controls(frame: &mut Frame, area: Rect) {
+fn draw_mini_controls(frame: &mut Frame, area: Rect) {
     let controls = [
         "New <n>",
         "Rename <F2>",
