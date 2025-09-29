@@ -38,6 +38,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
 
     controls.push(Paragraph::new(" Volume <=/->"));
     controls.push(Paragraph::new(" Loop <L>"));
+    controls.push(Paragraph::new(" Switch Tab <TAB>"));
     controls.push(Paragraph::new(" Quit <Esc>"));
 
     let rows = Layout::default()
