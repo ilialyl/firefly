@@ -65,8 +65,8 @@ pub fn choose_multiple_audio_files() -> Option<Vec<PathBuf>> {
         .pick_files()
 }
 
-pub fn choose_dir() -> Option<PathBuf> {
-    FileDialog::new().pick_folder()
+pub fn choose_dirs() -> Option<Vec<PathBuf>> {
+    FileDialog::new().pick_folders()
 }
 
 pub fn filter_dir_for_audio_files(dir: &Path) -> Result<Vec<PathBuf>> {

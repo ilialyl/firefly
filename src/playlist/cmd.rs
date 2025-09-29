@@ -4,7 +4,7 @@ use crate::{
     global::{
         logic::{
             confirmation::Response,
-            files::{choose_dir, choose_multiple_audio_files, filter_dir_for_audio_files},
+            files::{choose_dirs, choose_multiple_audio_files, filter_dir_for_audio_files},
             terminal::CursorMovementDirection,
         },
         message::{Message, PlaylistMessage, UserInputMessage},
@@ -90,17 +90,18 @@ pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Me
 }
 
 pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected) = playlist_ctl.get_selected_playlist()
-        && let Some(dir_path) = choose_dir()
+    if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
+        && let Some(dir_paths) = choose_dirs()
     {
-        let playlist = selected;
-        match filter_dir_for_audio_files(&dir_path) {
-            Ok(vec_path) => {
-                let new_tracks: Vec<PathBuf> =
-                    vec_path.into_iter().filter(|p| p.is_file()).collect();
-                new_tracks.iter().for_each(|p| playlist.add(p));
+        for dir in dir_paths {
+            match filter_dir_for_audio_files(&dir) {
+                Ok(vec_path) => {
+                    let new_tracks: Vec<PathBuf> =
+                        vec_path.into_iter().filter(|p| p.is_file()).collect();
+                    new_tracks.iter().for_each(|p| selected_playlist.add(p));
+                }
+                Err(e) => log::error!("{}", e),
             }
-            Err(e) => log::error!("{}", e),
         }
     }
 

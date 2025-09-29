@@ -5,7 +5,7 @@ use tokio::runtime::Runtime;
 use crate::{
     global::{
         logic::{
-            files::{choose_audio_file, choose_dir, choose_multiple_audio_files},
+            files::{choose_audio_file, choose_dirs, choose_multiple_audio_files},
             session_state::RunningState,
             track::FormatConversion,
         },
@@ -43,8 +43,10 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
 }
 
 pub fn queue_dir(model: &mut Model) -> Option<Message> {
-    if let Some(dir) = choose_dir() {
-        model.player.queue.enqueue_dir(&dir);
+    if let Some(dirs) = choose_dirs() {
+        for dir in dirs {
+            model.player.queue.enqueue_dir(&dir);
+        }
     }
 
     None
