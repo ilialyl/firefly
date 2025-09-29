@@ -70,12 +70,10 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
 fn draw_mini_controls(frame: &mut Frame, area: Rect) {
     let controls = [
+        "Show Controls <c>",
         "New <n>",
         "Rename <F2>",
-        "Save <F5>",
-        "Del Playlist <F9>",
         "Add Tracks <q/Q>",
-        "Remove Track <Del>",
         "Arrange <a>",
         "Send to Player <F1>",
     ];
