@@ -18,6 +18,7 @@ pub struct Model {
     pub user_input: UserInput,
     pub confirmation: Confirmation,
     pub info_msg: String,
+    pub show_controls: bool,
 }
 
 impl Default for Model {
@@ -33,6 +34,7 @@ impl Default for Model {
             user_input: UserInput::default(),
             confirmation: Confirmation::default(),
             info_msg: String::new(),
+            show_controls: false,
         }
     }
 }

@@ -55,6 +55,7 @@ pub enum PlaylistMessage {
     ToggleArrangeTracks,
     ToPlayer,
     AskToSave(Box<Option<Message>>),
+    ToggleControlPanel,
 }
 
 pub enum UserInputMessage {

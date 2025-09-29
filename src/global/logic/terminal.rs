@@ -82,6 +82,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
 
             SelectedTab::Playlist => match key_event.code {
                 KeyCode::Esc => Some(Message::Quit),
+                KeyCode::Char('c') => Some(Message::Playlist(PlaylistMessage::ToggleControlPanel)),
                 KeyCode::Char('a') => Some(Message::Playlist(PlaylistMessage::ToggleArrangeTracks)),
                 KeyCode::Char('n') => Some(Message::Playlist(PlaylistMessage::Create)),
                 KeyCode::Char('Q') => Some(Message::Playlist(PlaylistMessage::AddDir)),
@@ -101,8 +102,8 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 ))),
                 KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::ToPlayer)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
-                KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
                 KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
+                KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },

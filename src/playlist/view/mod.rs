@@ -63,7 +63,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .constraints(vec![Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(right_panel_chunks[0]);
 
-    controls::draw(frame, control_area[1]);
+    if model.show_controls {
+        controls::draw(frame, control_area[1]);
+    }
 }
 
 fn draw_mini_controls(frame: &mut Frame, area: Rect) {

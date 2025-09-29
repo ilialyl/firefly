@@ -289,3 +289,9 @@ pub fn ask_to_save(
 
     None
 }
+
+pub fn toggle_control_panel(model: &mut Model) -> Option<Message> {
+    model.show_controls = !model.show_controls;
+
+    None
+}
