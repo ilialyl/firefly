@@ -26,7 +26,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
             format!(
                 "{} / {}",
                 duration_as_str(&current_track.pos),
-                duration_as_str(&current_track.duration)
+                duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
             ),
             String::new(),
             get_status_str(&model.player.status),
@@ -36,7 +36,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
         ];
 
         if current_track.has_title {
-            let meta_text = get_metadata_text_vec(&current_track.tagged_file);
+            let meta_text = get_metadata_text_vec(&current_track.tagged_file.as_mut().unwrap());
 
             let metadata_margin = 2;
 

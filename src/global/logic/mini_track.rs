@@ -17,18 +17,23 @@ impl MiniTrack {
     }
 
     pub fn get_title(path: &Path) -> String {
-        Probe::open(path)
-            .unwrap()
-            .read()
-            .unwrap()
-            .primary_tag()
-            .and_then(|tag| tag.title())
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| {
-                path.file_stem()
-                    .and_then(|stem| stem.to_str())
-                    .unwrap_or("[Invalid UTF-8 name]")
-                    .to_string()
-            })
+        if let Ok(tagged_file) = Probe::open(path).unwrap().read() {
+            tagged_file
+                .primary_tag()
+                .and_then(|tag| tag.title())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| {
+                    path.file_stem()
+                        .and_then(|stem| stem.to_str())
+                        .unwrap_or("[Invalid UTF-8 name]")
+                        .to_string()
+                })
+        } else {
+            return path
+                .file_stem()
+                .and_then(|stem| stem.to_str())
+                .unwrap_or("[Invalid UTF-8 name]")
+                .to_string();
+        }
     }
 }

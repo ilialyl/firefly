@@ -82,7 +82,7 @@ pub fn rewind(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
     }
 
     let track_dur = if let Some(ref mut current_track) = model.player.current {
-        current_track.duration
+        current_track.duration.unwrap_or(Duration::from_secs(0))
     } else {
         return None;
     };
@@ -113,7 +113,7 @@ pub fn seek(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
     }
 
     let track_dur = if let Some(ref mut current_track) = model.player.current {
-        current_track.duration
+        current_track.duration.unwrap_or(Duration::from_secs(0))
     } else {
         return None;
     };
@@ -133,7 +133,7 @@ pub fn seek(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
         let duration = current_track.duration;
         model
             .player
-            .seek(&duration, seek_dur)
+            .seek(&duration.unwrap_or(Duration::from_secs(0)), seek_dur)
             .expect("Error seeking.");
     }
 

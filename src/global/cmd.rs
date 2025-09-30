@@ -47,7 +47,8 @@ pub fn tick(
         // Reload track when track ends if looped
         // Set position, duration, and status to default if not looped
         if model.player.sink.empty()
-            && current_track.duration.saturating_sub(current_track.pos) < Duration::from_secs(3)
+            && let Some(dur) = current_track.duration
+            && dur.saturating_sub(current_track.pos) < Duration::from_secs(3)
         {
             if model.player.looping {
                 if let Err(e) = model.player.reload() {
@@ -104,7 +105,7 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
     if let Some(ref mut current_track) = model.player.current {
         current_track.conversion_status = FormatConversion::Done;
-        current_track.tagged_file = Some()
+        current_track.reload_after_conversion();
         model
             .player
             .reload()

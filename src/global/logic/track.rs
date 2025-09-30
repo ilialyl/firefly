@@ -37,8 +37,8 @@ pub struct Track {
     pub real_path: PathBuf,
     temp_path: PathBuf,
     pub pos: Duration,
-    pub duration: Duration,
-    pub tagged_file: TaggedFile,
+    pub duration: Option<Duration>,
+    pub tagged_file: Option<TaggedFile>,
     pub conversion_status: FormatConversion,
     pub has_title: bool,
 }
@@ -46,7 +46,7 @@ pub struct Track {
 impl Track {
     pub fn new(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
         let temp_path = Self::get_temp_file(path);
-        let tagged_file = Probe::open(path).unwrap().read().unwrap();
+        let mut tagged_file = Probe::open(path).unwrap().read().ok();
 
         let conversion_status;
         if !is_rodio_supported(path)? {
@@ -59,13 +59,20 @@ impl Track {
         } else {
             conversion_status = FormatConversion::Unnecessary;
         }
+        let mut has_title = false;
+        let mut duration = None;
+
+        if let Some(ref mut tagged) = tagged_file {
+            duration = Some(Self::read_duration(&tagged));
+            has_title = tagged.primary_tag().unwrap().title().is_some();
+        }
 
         let track = Track {
             real_path: path.to_path_buf(),
             temp_path,
             pos: Duration::from_secs(0),
-            duration: Self::read_duration(&tagged_file),
-            has_title: tagged_file.primary_tag().unwrap().title().is_some(),
+            duration,
+            has_title,
             conversion_status,
             tagged_file,
         };
@@ -75,6 +82,16 @@ impl Track {
         }
 
         Ok(track)
+    }
+
+    pub fn reload_after_conversion(&mut self) {
+        let tagged_file = Probe::open(&self.temp_path).unwrap().read().unwrap();
+        let duration = Self::read_duration(&tagged_file);
+        let has_title = tagged_file.primary_tag().unwrap().title().is_some();
+
+        self.tagged_file = Some(tagged_file);
+        self.duration = Some(duration);
+        self.has_title = has_title;
     }
 
     pub fn get_temp_file(path: &Path) -> PathBuf {
