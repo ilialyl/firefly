@@ -1,5 +1,6 @@
 use std::{
     sync::{Arc, Mutex, mpsc::Sender},
+    thread,
     time::Duration,
 };
 
@@ -103,6 +104,7 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
     if let Some(ref mut current_track) = model.player.current {
         current_track.conversion_status = FormatConversion::Done;
+        current_track.tagged_file = Some()
         model
             .player
             .reload()
@@ -114,6 +116,8 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
 
 pub fn update_status_msg(info: String, model: &mut Model) -> Option<Message> {
     model.status_msg = info;
+    debug!("Updated info message to {}", model.status_msg);
+    debug!("Info message length: {}", model.status_msg.len());
 
     None
 }
@@ -154,9 +158,15 @@ pub fn acknowledge_info(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn display_info(info: String, model: &mut Model) -> Option<Message> {
-    model.info_msg = info;
-    model.input_mode = InputMode::Info;
+pub fn display_info(info: String, info_tx: &Sender<String>) -> Option<Message> {
+    info_tx.send(info.clone()).unwrap();
+
+    let cloned_tx = info_tx.clone();
+    thread::spawn(move || {
+        thread::sleep(Duration::from_secs(2));
+        debug!("Clearing info message.");
+        cloned_tx.send(String::new()).unwrap();
+    });
 
     None
 }

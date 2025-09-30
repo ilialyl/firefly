@@ -27,7 +27,7 @@ pub fn update_global(
         Message::UpdateStatusMsg(info) => update_status_msg(info, model),
         Message::CycleTabs => cycle_tabs(model),
         Message::AcknowledgeInfo => acknowledge_info(model),
-        Message::DisplayInfo(info) => display_info(info, model),
+        Message::DisplayInfo(info) => display_info(info, info_tx),
         Message::Quit => quit(model),
     }
 }

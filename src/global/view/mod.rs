@@ -26,14 +26,14 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
 
     tabs::draw(model, outer_layout[0], frame.buffer_mut());
 
+    let top_right_text = if model.status_msg.is_empty() {
+        format!("v{}", env!("CARGO_PKG_VERSION"))
+    } else {
+        model.status_msg.clone()
+    };
+
     Block::new()
-        .title(
-            Line::style(
-                Line::from(format!("v{}", env!("CARGO_PKG_VERSION"))),
-                Style::new(),
-            )
-            .right_aligned(),
-        )
+        .title(Line::style(Line::from(top_right_text), Style::new()).right_aligned())
         .render(outer_layout[0], frame.buffer_mut());
 
     match model.selected_tab {
@@ -68,24 +68,4 @@ pub fn center_xy(area: Rect, percent_x: u16, length_y: u16) -> Rect {
     let [area] = vertical.areas(area);
     let [area] = horizontal.areas(area);
     area
-}
-
-pub fn scroll(
-    selected: usize,
-    mut scroll_offset: usize,
-    content_len: usize,
-    view_height: usize,
-) -> usize {
-    // if selected is above the viewport, scroll up
-    if selected < scroll_offset {
-        scroll_offset = selected;
-    }
-    // if selected is below the viewport, scroll down
-    else if selected >= scroll_offset + view_height {
-        scroll_offset = selected + 1 - view_height;
-    }
-
-    // clamp at bottom
-    let max_offset = content_len.saturating_sub(view_height);
-    scroll_offset.min(max_offset)
 }
