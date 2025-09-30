@@ -118,7 +118,7 @@ pub fn send_to_player(
             .enqueue_tracks(selected.tracks.iter().map(|e| e.to_path_buf()).collect());
     }
 
-    None
+    Some(Message::DisplayInfo("Sent to Player".to_string()))
 }
 
 pub fn navigate_playlists(
