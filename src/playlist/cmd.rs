@@ -112,13 +112,29 @@ pub fn send_to_player(
     playlist_ctl: &mut PlaylistController,
     player: &mut Player,
 ) -> Option<Message> {
-    if let Some(selected) = playlist_ctl.get_selected_playlist() {
-        player
-            .queue
-            .enqueue_tracks(selected.tracks.iter().map(|e| e.to_path_buf()).collect());
+    match playlist_ctl.tab_focus {
+        PlaylistTabFocus::Playlists => {
+            if let Some(selected) = playlist_ctl.get_selected_playlist() {
+                player
+                    .queue
+                    .enqueue_tracks(selected.tracks.iter().map(|e| e.to_path_buf()).collect());
+                Some(Message::DisplayInfo("Sent Playlist to Player".to_string()))
+            } else {
+                None
+            }
+        }
+        PlaylistTabFocus::Tracks => {
+            if let Some(playlist) = playlist_ctl.get_selected_playlist()
+                && let Some(index) = playlist.selected_track
+                && let Some(track) = playlist.tracks.get(index)
+            {
+                player.queue.enqueue_tracks(vec![track.clone()]);
+                Some(Message::DisplayInfo("Sent Track to Player".to_string()))
+            } else {
+                None
+            }
+        }
     }
-
-    Some(Message::DisplayInfo("Sent to Player".to_string()))
 }
 
 pub fn navigate_playlists(
