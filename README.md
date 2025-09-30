@@ -26,9 +26,9 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 
 ### Planned Features
 - [x] Playlists (v0.6.0)
-- [ ] YTDLP integration
-- [ ] Music Library
-- [ ] Graphical user interface (GUI)
+- [ ] ~~YTDLP integration~~ - Users still need links
+- [ ] ~~Music Library~~ - File explorers are more reliable
+- [ ] ~~Graphical user interface (GUI)~~ - TUI keeps the RAM low
 
 ## Usage
 ### Windows
