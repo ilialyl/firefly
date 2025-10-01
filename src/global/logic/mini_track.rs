@@ -29,11 +29,11 @@ impl MiniTrack {
                         .to_string()
                 })
         } else {
-            return path
+            path
                 .file_stem()
                 .and_then(|stem| stem.to_str())
                 .unwrap_or("[Invalid UTF-8 name]")
-                .to_string();
+                .to_string()
         }
     }
 }

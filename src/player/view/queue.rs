@@ -14,7 +14,6 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .get()
         .iter()
         .map(|t| t.title.clone())
-        .into_iter()
         .map(ListItem::from)
         .collect();
 

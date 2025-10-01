@@ -152,7 +152,7 @@ impl Playlist {
     }
 
     pub fn from(file: &Path) -> Result<Playlist> {
-        let json_data = fs::read_to_string(&file)?;
+        let json_data = fs::read_to_string(file)?;
 
         let mut playlist = Playlist {
             tracks: serde_json::from_str(&json_data)?,

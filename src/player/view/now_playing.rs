@@ -36,7 +36,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
         ];
 
         if current_track.has_title {
-            let meta_text = get_metadata_text_vec(&current_track.tagged_file.as_mut().unwrap());
+            let meta_text = get_metadata_text_vec(current_track.tagged_file.as_mut().unwrap());
 
             let metadata_margin = 2;
 

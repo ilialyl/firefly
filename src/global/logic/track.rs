@@ -63,7 +63,7 @@ impl Track {
         let mut duration = None;
 
         if let Some(ref mut tagged) = tagged_file {
-            duration = Some(Self::read_duration(&tagged));
+            duration = Some(Self::read_duration(tagged));
             has_title = tagged.primary_tag().unwrap().title().is_some();
         }
 
