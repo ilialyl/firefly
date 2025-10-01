@@ -23,6 +23,7 @@ use firefly::{
 
 #[allow(clippy::single_match)]
 fn main() -> Result<()> {
+    dpi::enable_dpi_awareness();
     color_eyre::install()?;
     setup_logger()?;
 
@@ -100,4 +101,24 @@ fn main() -> Result<()> {
     println!("Thank you for using Firefly.");
 
     Ok(())
+}
+
+#[cfg(target_os = "windows")]
+mod dpi {
+    use windows_sys::Win32::Foundation::E_FAIL;
+    use windows_sys::Win32::UI::HiDpi::{PROCESS_PER_MONITOR_DPI_AWARE, SetProcessDpiAwareness};
+
+    pub fn enable_dpi_awareness() {
+        unsafe {
+            let result = SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+            if result != 0 && result != E_FAIL {
+                eprintln!("Failed to set DPI awareness, error code: {}", result);
+            }
+        }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+mod dpi {
+    pub fn enable_dpi_awareness() {}
 }
