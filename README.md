@@ -26,6 +26,7 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 
 ### Planned Features
 - [x] Playlists (v0.6.0)
+- [ ] Album art display for supported terminals
 - [ ] ~~YTDLP integration~~ - Users still need links
 - [ ] ~~Music Library~~ - File explorers are more reliable
 - [ ] GUI (at a separate repository, [rye](https://github.com/ilialyl/rye))
