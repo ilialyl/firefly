@@ -28,3 +28,8 @@ serde_json = "1.0.143"
 opus = "0.3.0"
 ogg = "0.9.2"
 rand = "0.9.2"
+[dependencies.windows-sys]
+version = ">=0.59, <=0.61"
+features = [
+    "Win32_UI_HiDpi"
+]
