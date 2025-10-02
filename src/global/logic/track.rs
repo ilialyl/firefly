@@ -28,6 +28,7 @@ use crate::global::{
     logic::{
         data::{TEMP_FILE_PREFIX, get_cache_dir},
         files::{is_opus, is_rodio_supported},
+        image::crop_to_square,
         opus::get_opus_source,
     },
     message::Message,
@@ -95,7 +96,7 @@ impl Track {
                             .ok()
                             .and_then(|r| r.decode().ok())
                         {
-                            let protocol = picker.new_resize_protocol(dyn_img);
+                            let protocol = picker.new_resize_protocol(crop_to_square(dyn_img));
                             let _ = msg_tx_clone.send(Message::ImageDecoded(protocol, id));
                         }
                     });
