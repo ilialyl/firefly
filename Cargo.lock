@@ -1127,7 +1127,7 @@ dependencies = [
 
 [[package]]
 name = "firefly"
-version = "0.6.3"
+version = "0.7.0"
 dependencies = [
  "clap",
  "color-eyre",
@@ -1154,7 +1154,7 @@ dependencies = [
  "strum 0.27.2",
  "strum_macros 0.27.2",
  "tokio",
- "windows-sys 0.60.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

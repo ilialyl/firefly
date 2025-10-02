@@ -1,4 +1,5 @@
 use color_eyre::eyre::{Result, eyre};
+use ratatui_image::picker::Picker;
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
@@ -53,10 +54,11 @@ impl Player {
     pub fn new_track(
         &mut self,
         track: &Path,
+        picker: Arc<Picker>,
         msg_tx: &Sender<Message>,
         info_tx: &Sender<String>,
     ) -> Result<()> {
-        self.current = Some(Track::new(track, msg_tx, info_tx)?);
+        self.current = Some(Track::new(track, picker, msg_tx, info_tx)?);
 
         Ok(())
     }
@@ -140,6 +142,7 @@ impl Player {
 
     pub fn load_next_track(
         &mut self,
+        picker: Arc<Picker>,
         msg_tx: &Sender<Message>,
         info_tx: &Sender<String>,
     ) -> Result<()> {
@@ -152,13 +155,14 @@ impl Player {
             self.previous.push(current.real_path.clone());
         }
 
-        self.new_track(&path, msg_tx, info_tx)?;
+        self.new_track(&path, picker, msg_tx, info_tx)?;
 
         Ok(())
     }
 
     pub fn load_prev_track(
         &mut self,
+        picker: Arc<Picker>,
         msg_tx: &Sender<Message>,
         info_tx: &Sender<String>,
     ) -> Result<()> {
@@ -171,7 +175,7 @@ impl Player {
             self.queue.prepend_track(&current.real_path);
         }
 
-        self.new_track(&prev, msg_tx, info_tx)?;
+        self.new_track(&prev, picker, msg_tx, info_tx)?;
 
         Ok(())
     }

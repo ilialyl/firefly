@@ -160,7 +160,7 @@ pub fn skip(
     model.player.sink.clear();
     model
         .player
-        .load_next_track(msg_tx, info_tx)
+        .load_next_track(model.picker.clone(), msg_tx, info_tx)
         .expect("Error loading next track.");
 
     if let Some(ref mut current_track) = model.player.current
@@ -224,7 +224,7 @@ pub fn previous_track(
     model.player.sink.clear();
     model
         .player
-        .load_prev_track(msg_tx, info_tx)
+        .load_prev_track(model.picker.clone(), msg_tx, info_tx)
         .expect("Error loading previous track.");
 
     if let Some(ref mut current_track) = model.player.current

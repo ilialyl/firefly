@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use ratatui_image::picker::Picker;
+
 use crate::{
     global::{
         logic::{confirmation::Confirmation, session_state::Session},
@@ -19,11 +23,13 @@ pub struct Model {
     pub confirmation: Confirmation,
     pub info_msg: String,
     pub show_controls: bool,
+    pub picker: Arc<Picker>,
 }
 
 impl Default for Model {
     fn default() -> Self {
         log::debug!("Initialized Model");
+        let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         Self {
             player: Player::new(),
             playlist_ctl: PlaylistController::default(),
@@ -35,6 +41,7 @@ impl Default for Model {
             confirmation: Confirmation::default(),
             info_msg: String::new(),
             show_controls: false,
+            picker: Arc::new(picker),
         }
     }
 }

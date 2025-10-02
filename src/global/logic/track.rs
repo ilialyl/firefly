@@ -55,7 +55,12 @@ pub struct Track {
 }
 
 impl Track {
-    pub fn new(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
+    pub fn new(
+        path: &Path,
+        picker: Arc<Picker>,
+        msg_tx: &Sender<Message>,
+        info_tx: &Sender<String>,
+    ) -> Result<Track> {
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
         let temp_path = Self::get_temp_file(path);
@@ -90,10 +95,8 @@ impl Track {
                             .ok()
                             .and_then(|r| r.decode().ok())
                         {
-                            if let Ok(picker) = Picker::from_query_stdio() {
-                                let protocol = picker.new_resize_protocol(dyn_img);
-                                let _ = msg_tx_clone.send(Message::ImageDecoded(protocol, id));
-                            }
+                            let protocol = picker.new_resize_protocol(dyn_img);
+                            let _ = msg_tx_clone.send(Message::ImageDecoded(protocol, id));
                         }
                     });
                 }
