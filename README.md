@@ -24,12 +24,10 @@ It can still play other formats by converting formats not supported by Rodio to 
 
 Temporary FLAC files stay on disk for reuse, which can be cleared by running `cargo run --release -- clean` or `firefly clean`
 
-### Planned Features
+### Roadmap
 - [x] Playlists (v0.6.0)
 - [ ] Album art display for supported terminals
-- [ ] ~~YTDLP integration~~ - Users still need links
-- [ ] ~~Music Library~~ - File explorers are more reliable
-- [ ] GUI (at a separate repository, [rye](https://github.com/ilialyl/rye))
+- [ ] UI overhaul
 
 ## Usage
 ### Windows
