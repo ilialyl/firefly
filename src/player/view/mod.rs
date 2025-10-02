@@ -1,5 +1,5 @@
-pub mod album_art;
 pub mod controls;
+pub mod cover_art;
 pub mod now_playing;
 pub mod queue;
 
@@ -34,7 +34,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .margin(2)
         .split(right_panel);
 
-    album_art::draw(left_panel_chunks[0], frame, model);
+    cover_art::draw(left_panel_chunks[0], frame, model);
     queue::draw(left_panel_chunks[1], frame, model);
     now_playing::draw(right_panel_chunks[0], frame, model);
     controls::draw(right_panel_chunks[1], frame, model);
