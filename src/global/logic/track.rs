@@ -1,18 +1,25 @@
 use std::{
     fs::{self, File},
+    io::Cursor,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, mpsc::Sender},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU32, Ordering},
+        mpsc::Sender,
+    },
     thread,
     time::Duration,
 };
 
 use color_eyre::eyre::Result;
+use image::ImageReader;
 use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
     probe::Probe,
     tag::Accessor,
 };
 use log::{debug, info};
+use ratatui_image::{picker::Picker, protocol::StatefulProtocol};
 use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
 use tokio::runtime::Runtime;
@@ -33,6 +40,8 @@ pub enum FormatConversion {
     Unnecessary,
 }
 
+static TRACK_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
+
 pub struct Track {
     pub real_path: PathBuf,
     temp_path: PathBuf,
@@ -41,10 +50,14 @@ pub struct Track {
     pub tagged_file: Option<TaggedFile>,
     pub conversion_status: FormatConversion,
     pub has_title: bool,
+    pub img: Option<StatefulProtocol>,
+    pub id: u32,
 }
 
 impl Track {
     pub fn new(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
+        let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+
         let temp_path = Self::get_temp_file(path);
         let mut tagged_file = Probe::open(path).unwrap().read().ok();
 
@@ -64,7 +77,27 @@ impl Track {
 
         if let Some(ref mut tagged) = tagged_file {
             duration = Some(Self::read_duration(tagged));
-            has_title = tagged.primary_tag().unwrap().title().is_some();
+            if let Some(ref tag) = tagged.primary_tag() {
+                has_title = tag.title().is_some();
+
+                if let Some(picture) = tag.pictures().first() {
+                    let picture_data = picture.data().to_vec();
+                    let msg_tx_clone = msg_tx.clone();
+
+                    thread::spawn(move || {
+                        if let Some(dyn_img) = ImageReader::new(Cursor::new(&picture_data))
+                            .with_guessed_format()
+                            .ok()
+                            .and_then(|r| r.decode().ok())
+                        {
+                            if let Ok(picker) = Picker::from_query_stdio() {
+                                let protocol = picker.new_resize_protocol(dyn_img);
+                                let _ = msg_tx_clone.send(Message::ImageDecoded(protocol, id));
+                            }
+                        }
+                    });
+                }
+            }
         }
 
         let track = Track {
@@ -75,6 +108,8 @@ impl Track {
             has_title,
             conversion_status,
             tagged_file,
+            img: None,
+            id,
         };
 
         if track.conversion_status == FormatConversion::Running {

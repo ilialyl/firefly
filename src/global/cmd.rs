@@ -5,6 +5,7 @@ use std::{
 };
 
 use log::debug;
+use ratatui_image::protocol::StatefulProtocol;
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
@@ -168,6 +169,16 @@ pub fn display_info(info: String, info_tx: &Sender<String>) -> Option<Message> {
         debug!("Clearing info message.");
         cloned_tx.send(String::new()).unwrap();
     });
+
+    None
+}
+
+pub fn set_track_img(img: StatefulProtocol, id: u32, model: &mut Model) -> Option<Message> {
+    if let Some(current_track) = model.player.current.as_mut() {
+        if id == current_track.id {
+            current_track.img = Some(img);
+        }
+    }
 
     None
 }

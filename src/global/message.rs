@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use ratatui_image::protocol::StatefulProtocol;
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
@@ -22,6 +23,7 @@ pub enum Message {
     CycleTabs,
     AcknowledgeInfo,
     DisplayInfo(String),
+    ImageDecoded(StatefulProtocol, u32),
 }
 
 pub enum PlayerMessage {
