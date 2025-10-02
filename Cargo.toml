@@ -28,6 +28,8 @@ serde_json = "1.0.143"
 opus = "0.3.0"
 ogg = "0.9.2"
 rand = "0.9.2"
+ratatui-image = "8.0.1"
+image = "0.25.8"
 [dependencies.windows-sys]
 version = ">=0.59, <=0.61"
 features = [

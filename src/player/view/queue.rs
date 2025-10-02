@@ -2,12 +2,12 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Style, Stylize},
-    widgets::{List, ListItem, ListState, StatefulWidget},
+    widgets::{Block, List, ListItem, ListState, Padding, StatefulWidget},
 };
 
 use crate::{model::Model, player::logic::Player};
 
-pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
+pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let queue_entries: Vec<ListItem> = model
         .player
         .queue
@@ -27,7 +27,12 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let mut list_state = ListState::default();
     list_state.select(Some(model.player.queue.get_selected()));
 
-    StatefulWidget::render(list, area, frame.buffer_mut(), &mut list_state);
+    StatefulWidget::render(
+        list.block(Block::default().title("Queue").padding(Padding::uniform(1))),
+        area,
+        frame.buffer_mut(),
+        &mut list_state,
+    );
 }
 
 fn _get_previous_tracks(player: &Player) -> Vec<String> {

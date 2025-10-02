@@ -7,7 +7,7 @@ use ratatui::{
 
 use crate::{global::logic::session_state::RunningState, model::Model};
 
-pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
+pub fn draw(area: Rect, frame: &mut Frame, model: &Model) {
     let mut controls: Vec<Paragraph<'_>> = Vec::new();
 
     let mut toggle_play = Paragraph::new(" Play/Pause <Space>");
@@ -45,7 +45,7 @@ pub fn draw(frame: &mut Frame, chunk: Rect, model: &Model) {
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(1); 4])
         .spacing(1)
-        .split(chunk);
+        .split(area);
 
     let grid: Vec<Rect> = rows
         .iter()

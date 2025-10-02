@@ -1,4 +1,4 @@
-use std::{path::Path, rc::Rc, time::Duration};
+use std::{path::Path, time::Duration};
 
 use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
@@ -16,7 +16,20 @@ use crate::{
     global::view::center_vertical, model::Model, player::logic::playback_status::PlaybackStatus,
 };
 
-pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
+pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
+    let constraints = match &mut model.player.current {
+        Some(current_track) if current_track.has_title => {
+            vec![Constraint::Percentage(60), Constraint::Percentage(40)]
+        }
+        _ => vec![Constraint::Percentage(100)],
+    };
+
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(constraints)
+        .margin(2)
+        .split(area);
+
     let player_text: Vec<String>;
 
     if let Some(ref mut current_track) = model.player.current {
@@ -46,7 +59,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
                     (metadata_margin * 2) + meta_text.len() as u16,
                 )])
                 .margin(1)
-                .split(chunk[1]);
+                .split(chunks[1]);
 
             Block::bordered()
                 .title(Line::style(Line::from("Metadata"), Style::new()))
@@ -79,7 +92,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, chunk: Rc<[Rect]>) {
         ];
     }
 
-    let centered_area = center_vertical(chunk[0], player_text.len() as u16);
+    let centered_area = center_vertical(chunks[0], player_text.len() as u16);
 
     let player_para = Paragraph::new(player_text.join("\n"))
         .centered()
