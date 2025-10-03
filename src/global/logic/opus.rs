@@ -8,54 +8,34 @@ use ogg::reading::PacketReader;
 use opus::{Channels as OpusChannels, Decoder as OpusDecoder};
 use rodio::source::{SeekError, Source};
 
-// This file was vibe-coded.
+// This file was 99% vibe-coded.
 
-// opus_seek_example.rs
-// A simple Ogg-Opus decoder + rodio Source with a basic (linear) seek implementation.
-//
-// Notes:
-// - This implementation requires creating the source from a filesystem path
-//   (OpusOggSource::from_path). Seeking is implemented by reopening the file,
-//   decoding from the start and skipping decoded samples until the target.
-//   That makes seeking correct but linear in time (not fast random access).
-// - This example does NOT implement full RFC7845 mapping-family handling or
-//   pre-skip trimming — it's suitable for many common .opus files (mono/stereo).
-// - Use OpusOggSource::seek_seconds(seconds) to seek to a time before appending
-//   to a rodio::Sink. Seeking while the source is owned by a Sink is possible
-//   only if you control playback (remove/reappend).
-
-/// A Source that decodes Ogg-Opus packets on-the-fly and supports a simple seek.
 pub struct OpusOggSource {
     path: PathBuf,
     packet_reader: PacketReader<BufReader<File>>,
     decoder: OpusDecoder,
     channels: u16,
-    sample_rate: u32, // always 48000 for Opus decoding
-    // decoded samples (interleaved) awaiting iteration
+    sample_rate: u32,
     decoded_buf: Vec<f32>,
     decoded_pos: usize,
     finished: bool,
 }
 
 impl OpusOggSource {
-    /// Create from a path. We read the OpusHead and OpusTags and initialize decoder state.
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn std::error::Error>> {
         let path = path.as_ref().to_path_buf();
         let file = File::open(&path)?;
         let reader = BufReader::new(file);
         let mut pr = PacketReader::new(reader);
 
-        // Read ID header (OpusHead)
         let id_packet = pr.read_packet()?.ok_or("unexpected EOF reading OpusHead")?;
         if id_packet.data.len() < 10 || &id_packet.data[0..8] != b"OpusHead" {
             return Err("not an Ogg Opus stream (missing OpusHead)".into());
         }
         let channels = id_packet.data[9] as u16;
 
-        // Skip comment header (OpusTags)
         let _ = pr.read_packet()?;
 
-        // Opus decoders operate at 48 kHz internally
         let sample_rate = 48_000;
         let opus_channels = if channels == 1 {
             OpusChannels::Mono
@@ -77,7 +57,6 @@ impl OpusOggSource {
         })
     }
 
-    /// Decode the next available packet and fill decoded_buf.
     fn decode_next_packet(&mut self) -> Result<bool, Box<dyn std::error::Error>> {
         loop {
             match self.packet_reader.read_packet()? {
@@ -86,13 +65,10 @@ impl OpusOggSource {
                         continue;
                     }
 
-                    // Estimate number of samples per channel for sizing (best-effort)
                     let nb = self.decoder.get_nb_samples(&pkt.data).unwrap_or(960);
-
                     let needed = nb * (self.channels as usize);
                     let mut out = vec![0.0f32; needed];
 
-                    // decode_float returns number of samples per channel decoded
                     let decoded_per_chan = self.decoder.decode_float(&pkt.data, &mut out, false)?;
                     let total = decoded_per_chan * (self.channels as usize);
                     out.truncate(total);
@@ -102,7 +78,6 @@ impl OpusOggSource {
                     return Ok(true);
                 }
                 None => {
-                    // EOF
                     self.finished = true;
                     return Ok(false);
                 }
@@ -168,6 +143,7 @@ impl Source for OpusOggSource {
         let reader = BufReader::new(file);
         let mut pr = PacketReader::new(reader);
 
+        // Read headers
         let id_packet = pr
             .read_packet()
             .map_err(|_| SeekError::NotSupported {
@@ -197,13 +173,28 @@ impl Source for OpusOggSource {
             })?;
 
         let mut cum_samples_per_chan: usize = 0;
+
+        // Phase 1: Skip packets without decoding until we're close
+        // We'll start decoding when we're within ~1 second of target
+        let decode_threshold = target_samples_per_chan.saturating_sub(sample_rate as usize);
+
         loop {
             match pr.read_packet() {
                 Ok(Some(pkt)) => {
                     if pkt.data.is_empty() {
                         continue;
                     }
+
+                    // Estimate samples for this packet
                     let nb = decoder.get_nb_samples(&pkt.data).unwrap_or(960);
+
+                    // If we're still far from target, just skip
+                    if cum_samples_per_chan < decode_threshold {
+                        cum_samples_per_chan += nb;
+                        continue;
+                    }
+
+                    // We're close now, start decoding
                     let mut out = vec![0.0f32; nb * (channels as usize)];
                     let decoded_per_chan = decoder
                         .decode_float(&pkt.data, &mut out, false)
@@ -213,8 +204,8 @@ impl Source for OpusOggSource {
                     let total = decoded_per_chan * (channels as usize);
                     out.truncate(total);
 
-                    if cum_samples_per_chan + (decoded_per_chan as usize) > target_samples_per_chan
-                    {
+                    // Check if this packet contains our target
+                    if cum_samples_per_chan + decoded_per_chan > target_samples_per_chan {
                         let start_in_packet =
                             target_samples_per_chan.saturating_sub(cum_samples_per_chan);
                         let start_index = start_in_packet * (channels as usize);
@@ -230,9 +221,9 @@ impl Source for OpusOggSource {
                         self.sample_rate = sample_rate;
                         self.finished = false;
                         return Ok(());
-                    } else {
-                        cum_samples_per_chan += decoded_per_chan as usize;
                     }
+
+                    cum_samples_per_chan += decoded_per_chan;
                 }
                 Ok(None) => {
                     self.decoded_buf.clear();
