@@ -10,10 +10,10 @@ use ratatui::{
 use crate::{model::Model, player::logic::playback_status::PlaybackStatus};
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let play_str = if matches!(model.player.status, PlaybackStatus::Playing) {
-        "◃◃ ⏸︎ ▹▹"
-    } else {
-        "◃◃ ► ▹▹"
+    let play_str = match model.player.status {
+        PlaybackStatus::Playing => "Playing",
+        PlaybackStatus::Idle => "Idle",
+        PlaybackStatus::Paused => "Paused",
     };
 
     let quality_str = if let Some(ref mut current_track) = model.player.current
