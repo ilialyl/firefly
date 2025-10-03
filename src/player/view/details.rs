@@ -20,8 +20,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     if let Some(ref mut current_track) = model.player.current
         && let Some(tagged_file) = current_track.tagged_file.as_mut()
     {
-        let metadata = get_metadata_text_vec(&tagged_file).join("\n");
-        frame.render_widget(Paragraph::new(metadata), area);
+        let metadata = get_metadata_text_vec(&tagged_file);
+        let height = metadata.len() + 1;
+        frame.render_widget(
+            Paragraph::new(metadata.join("\n")),
+            center_vertical(area, height as u16),
+        );
     }
 }
 
