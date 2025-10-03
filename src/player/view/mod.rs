@@ -1,5 +1,6 @@
 pub mod controls;
 pub mod cover_art;
+pub mod details;
 pub mod now_playing;
 pub mod queue;
 
@@ -10,6 +11,7 @@ use ratatui::{
 };
 
 use crate::model::Model;
+use crate::playlist;
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let panels = Layout::default()
@@ -30,7 +32,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
     let right_panel_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(60), Constraint::Percentage(40)])
+        .constraints(vec![Constraint::Percentage(40), Constraint::Percentage(60)])
         .margin(2)
         .split(right_panel);
 
@@ -42,6 +44,6 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
     cover_art::draw(cover_art_area[0], frame, model);
     queue::draw(left_panel_chunks[1], frame, model);
-    now_playing::draw(right_panel_chunks[0], frame, model);
-    controls::draw(right_panel_chunks[1], frame, model);
+    details::draw(right_panel_chunks[0], frame, model);
+    playlist::view::draw(right_panel_chunks[1], frame, model);
 }

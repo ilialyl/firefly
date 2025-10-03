@@ -1137,6 +1137,7 @@ dependencies = [
  "glob",
  "humantime",
  "image",
+ "libc",
  "lofty",
  "log",
  "ogg",
@@ -1154,7 +1155,7 @@ dependencies = [
  "strum 0.27.2",
  "strum_macros 0.27.2",
  "tokio",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -1656,9 +1657,9 @@ checksum = "7a79a3332a6609480d7d0c9eab957bca6b455b91bb84e66d19f5ff66294b85b8"
 
 [[package]]
 name = "libc"
-version = "0.2.174"
+version = "0.2.176"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
+checksum = "58f929b4d672ea937a23a1ab494143d968337a5f47e56d0815df1e0890ddf174"
 
 [[package]]
 name = "libfuzzer-sys"

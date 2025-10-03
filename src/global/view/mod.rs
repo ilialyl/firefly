@@ -11,20 +11,24 @@ use ratatui::{
 };
 
 use crate::{
-    global::view::tabs::SelectedTab, model::Model, player, playlist, user_input::logic::InputMode,
+    model::Model,
+    player::{self, view::now_playing},
+    user_input::logic::InputMode,
 };
 
 pub fn render_tui(model: &mut Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1), Constraint::Fill(1)])
+        .constraints(vec![
+            Constraint::Length(1),
+            Constraint::Fill(1),
+            Constraint::Length(1),
+        ])
         .split(frame.area());
 
     Block::new()
         .title(Line::style(Line::from("Firefly"), Style::new()).centered())
         .render(outer_layout[0], frame.buffer_mut());
-
-    tabs::draw(model, outer_layout[0], frame.buffer_mut());
 
     let top_right_text = if model.status_msg.is_empty() {
         format!("v{}", env!("CARGO_PKG_VERSION"))
@@ -36,10 +40,8 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         .title(Line::style(Line::from(top_right_text), Style::new()).right_aligned())
         .render(outer_layout[0], frame.buffer_mut());
 
-    match model.selected_tab {
-        SelectedTab::Main => player::view::draw(model, frame, outer_layout[1]),
-        SelectedTab::Playlist => playlist::view::draw(model, frame, outer_layout[1]),
-    }
+    player::view::draw(model, frame, outer_layout[1]);
+    now_playing::draw(outer_layout[2], frame, model);
 
     match model.input_mode.clone() {
         InputMode::Insert(prompt, _) => {

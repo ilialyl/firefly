@@ -1,15 +1,7 @@
 use log::debug;
-use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Style,
-    text::Line,
-    widgets::{Tabs, Widget},
-};
-use strum::{EnumCount, IntoEnumIterator};
+use ratatui::text::Line;
+use strum::EnumCount;
 use strum_macros::{Display, EnumCount, EnumIter, FromRepr};
-
-use crate::model::Model;
 
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter, EnumCount)]
 pub enum SelectedTab {
@@ -35,15 +27,4 @@ impl SelectedTab {
     pub fn title(self) -> Line<'static> {
         format!("  {self}  ").into()
     }
-}
-
-pub fn draw(model: &mut Model, area: Rect, buf: &mut Buffer) {
-    let titles = SelectedTab::iter().map(SelectedTab::title);
-    let selected_tab_index = model.selected_tab as usize;
-    Tabs::new(titles)
-        .select(selected_tab_index)
-        .style(Style::new())
-        .padding("", "")
-        .divider(" ")
-        .render(area, buf);
 }

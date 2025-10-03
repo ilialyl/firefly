@@ -1,5 +1,6 @@
 use std::{
-    fs,
+    fs::{self, OpenOptions},
+    os::fd::AsRawFd,
     sync::mpsc::{self, Receiver, Sender},
 };
 
@@ -26,6 +27,7 @@ fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
     setup_logger()?;
+    // suppress_alsa_errors();
 
     let cache_dir = get_cache_dir();
     if !cache_dir.exists() {
@@ -121,4 +123,11 @@ mod dpi {
 #[cfg(not(target_os = "windows"))]
 mod dpi {
     pub fn enable_dpi_awareness() {}
+}
+
+fn suppress_alsa_errors() {
+    unsafe {
+        let devnull = OpenOptions::new().write(true).open("/dev/null").unwrap();
+        libc::dup2(devnull.as_raw_fd(), 2); // Redirect stderr (fd 2) to /dev/null
+    }
 }

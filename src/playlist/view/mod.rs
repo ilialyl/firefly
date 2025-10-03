@@ -13,14 +13,10 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
+use crate::global::view::tabs::SelectedTab;
 use crate::model::Model;
 
-pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
-    let outer_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Fill(1), Constraint::Length(1)])
-        .split(area);
-
+pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let inner_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![
@@ -28,15 +24,21 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
             Constraint::Fill(1),
             Constraint::Length(1),
         ])
-        .split(outer_chunks[0]);
+        .split(area);
 
-    Block::bordered()
+    let (playlists_block, tracks_block) = if matches!(model.selected_tab, SelectedTab::Playlist) {
+        (Block::bordered(), Block::bordered())
+    } else {
+        (Block::new(), Block::new())
+    };
+
+    playlists_block
         .title(Line::style(Line::from("Playlists"), Style::new()))
         .border_style(Style::default())
         .title_alignment(Alignment::Left)
         .render(inner_chunks[0], frame.buffer_mut());
 
-    Block::bordered()
+    tracks_block
         .title(Line::style(Line::from("Tracks"), Style::new()))
         .title_alignment(Alignment::Right)
         .border_style(Style::default())
@@ -54,7 +56,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .margin(2)
         .split(inner_chunks[1]);
 
-    draw_mini_controls(frame, outer_chunks[1]);
+    // draw_mini_controls(frame, outer_chunks[1]);
     playlists::draw(model, frame, left_panel_chunks[0]);
     tracks::draw(model, frame, right_panel_chunks[0], inner_chunks[2]);
 
@@ -68,7 +70,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     }
 }
 
-fn draw_mini_controls(frame: &mut Frame, area: Rect) {
+fn _draw_mini_controls(frame: &mut Frame, area: Rect) {
     let controls = [
         "Show Controls <c>",
         "New <n>",
