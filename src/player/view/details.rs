@@ -17,89 +17,12 @@ use crate::{
 };
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let constraints = match &mut model.player.current {
-        Some(current_track) if current_track.has_title => {
-            vec![Constraint::Percentage(60), Constraint::Percentage(40)]
-        }
-        _ => vec![Constraint::Percentage(100)],
-    };
-
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(constraints)
-        .margin(2)
-        .split(area);
-
-    let player_text: Vec<String>;
-
-    if let Some(ref mut current_track) = model.player.current {
-        player_text = vec![
-            get_track_name_str(&current_track.real_path),
-            String::new(),
-            format!(
-                "{} / {}",
-                duration_as_str(&current_track.pos),
-                duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
-            ),
-            String::new(),
-            get_status_str(&model.player.status),
-            get_loop_status_str(&model.player.looping),
-            model.status_msg.clone(),
-            get_volume_str(model.player.sink.volume()),
-        ];
-
-        if current_track.has_title {
-            let meta_text = get_metadata_text_vec(current_track.tagged_file.as_mut().unwrap());
-
-            let metadata_margin = 2;
-
-            let metadata_border_area = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(vec![Constraint::Length(
-                    (metadata_margin * 2) + meta_text.len() as u16,
-                )])
-                .margin(1)
-                .split(chunks[1]);
-
-            Block::bordered()
-                .title(Line::style(Line::from("Metadata"), Style::new()))
-                .border_style(Style::default())
-                .title_alignment(Alignment::Right)
-                .render(metadata_border_area[0], frame.buffer_mut());
-
-            let metadata_chunk = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(vec![Constraint::Percentage(100)])
-                .margin(metadata_margin)
-                .split(metadata_border_area[0]);
-
-            let centered_area = center_vertical(metadata_chunk[0], meta_text.len() as u16);
-
-            let meta_para = Paragraph::new(meta_text.join("\n"));
-
-            frame.render_widget(meta_para, centered_area);
-        }
-    } else {
-        player_text = vec![
-            "[Empty]".to_string(),
-            String::new(),
-            "0:00 / 0:00".to_string(),
-            String::new(),
-            get_status_str(&model.player.status),
-            get_loop_status_str(&model.player.looping),
-            model.status_msg.clone(),
-            get_volume_str(model.player.sink.volume()),
-        ];
+    if let Some(ref mut current_track) = model.player.current
+        && let Some(tagged_file) = current_track.tagged_file.as_mut()
+    {
+        let metadata = get_metadata_text_vec(&tagged_file).join("\n");
+        frame.render_widget(Paragraph::new(metadata), area);
     }
-
-    let centered_area = center_vertical(chunks[0], player_text.len() as u16);
-
-    let player_para = Paragraph::new(player_text.join("\n"))
-        .centered()
-        .alignment(Alignment::Center)
-        .style(Style::new());
-
-    frame.render_widget(player_para, centered_area);
 }
 
 fn get_metadata_text_vec(tag: &TaggedFile) -> Vec<String> {
@@ -207,21 +130,5 @@ fn get_loop_status_str(loop_status: &bool) -> String {
     match loop_status {
         true => "[Looped]".into(),
         false => "".into(),
-    }
-}
-
-fn get_volume_str(volume: f32) -> String {
-    format!("Volume: {}%", (volume * 100.00).ceil() as i32)
-}
-
-pub fn duration_as_str(dur: &Duration) -> String {
-    let sec = dur.as_secs() % 60;
-    let min = (dur.as_secs() / 60) % 60;
-    let hour = dur.as_secs() / 3600;
-
-    if hour > 0 {
-        format!("{:02}:{:02}:{:02}", hour, min, sec)
-    } else {
-        format!("{:02}:{:02}", min, sec)
     }
 }

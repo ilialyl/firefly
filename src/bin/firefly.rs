@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
     setup_logger()?;
-    // suppress_alsa_errors();
+    suppress_alsa_errors();
 
     let cache_dir = get_cache_dir();
     if !cache_dir.exists() {

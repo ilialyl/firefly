@@ -11,6 +11,7 @@ use ratatui::{
 };
 
 use crate::{
+    global::view::tabs::SelectedTab,
     model::Model,
     player::{self, view::now_playing},
     user_input::logic::InputMode,
@@ -20,9 +21,9 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
-            Constraint::Length(1),
+            Constraint::Length(2),
             Constraint::Fill(1),
-            Constraint::Length(1),
+            Constraint::Length(3),
         ])
         .split(frame.area());
 
@@ -41,7 +42,17 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         .render(outer_layout[0], frame.buffer_mut());
 
     player::view::draw(model, frame, outer_layout[1]);
-    now_playing::draw(outer_layout[2], frame, model);
+
+    if matches!(model.selected_tab, SelectedTab::Main) {
+        Block::bordered().render(outer_layout[2], frame.buffer_mut());
+    }
+
+    let now_playing_chunk = Layout::default()
+        .constraints(vec![Constraint::Percentage(100)])
+        .margin(1)
+        .split(outer_layout[2]);
+
+    now_playing::draw(now_playing_chunk[0], frame, model);
 
     match model.input_mode.clone() {
         InputMode::Insert(prompt, _) => {
