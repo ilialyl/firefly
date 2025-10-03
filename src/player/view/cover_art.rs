@@ -1,4 +1,9 @@
-use ratatui::{Frame, layout::Rect};
+use ratatui::{
+    Frame,
+    layout::Rect,
+    style::Stylize,
+    widgets::{Block, Widget},
+};
 use ratatui_image::{Resize, StatefulImage};
 
 use crate::model::Model;
@@ -9,5 +14,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     {
         let widget = StatefulImage::default().resize(Resize::Scale(None));
         frame.render_stateful_widget(widget, area, img);
+    } else {
+        Block::bordered().render(area, frame.buffer_mut());
     }
 }
