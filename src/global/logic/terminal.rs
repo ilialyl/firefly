@@ -87,6 +87,7 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 KeyCode::Char('n') => Some(Message::Playlist(PlaylistMessage::Create)),
                 KeyCode::Char('Q') => Some(Message::Playlist(PlaylistMessage::AddDir)),
                 KeyCode::Char('q') => Some(Message::Playlist(PlaylistMessage::AddTracks)),
+                KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::ToPlayer)),
                 KeyCode::Delete => Some(Message::Playlist(PlaylistMessage::RemoveTrack)),
                 KeyCode::Right => Some(Message::Playlist(PlaylistMessage::MoveCursor(
                     CursorMovementDirection::Right,
@@ -100,7 +101,6 @@ fn handle_keys(key_event: KeyEvent, model: &Model) -> Option<Message> {
                 KeyCode::Down => Some(Message::Playlist(PlaylistMessage::MoveCursor(
                     CursorMovementDirection::Down,
                 ))),
-                KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::ToPlayer)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
                 KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
                 KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
