@@ -49,9 +49,9 @@ pub struct Track {
     pub tagged_file: Option<TaggedFile>,
     pub conversion_status: FormatConversion,
     pub picture: Option<Picture>,
-    pub dyn_img: Option<StatefulProtocol>,
+    pub protocol: Option<StatefulProtocol>,
     pub has_title: bool,
-    pub decoding_in_progress: bool,
+    pub started_decoding: bool,
     pub id: u32,
 }
 
@@ -96,10 +96,10 @@ impl Track {
             has_title,
             conversion_status,
             tagged_file,
-            dyn_img: None,
+            protocol: None,
             id,
             picture,
-            decoding_in_progress: false,
+            started_decoding: false,
         };
 
         if track.conversion_status == FormatConversion::Running {

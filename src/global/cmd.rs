@@ -1,16 +1,22 @@
 use std::{
+    io::Cursor,
     sync::{Arc, Mutex, mpsc::Sender},
     thread,
     time::Duration,
 };
 
+use image::ImageReader;
+use lofty::picture::Picture;
 use log::debug;
-use ratatui_image::protocol::StatefulProtocol;
+use ratatui_image::{picker::Picker, protocol::StatefulProtocol};
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     global::{
-        logic::{confirmation::Response, session_state::RunningState, track::FormatConversion},
+        logic::{
+            confirmation::Response, image::crop_to_square, session_state::RunningState,
+            track::FormatConversion,
+        },
         message::Message,
     },
     model::Model,
@@ -39,11 +45,19 @@ pub fn tick(
     }
 
     if let Some(ref mut current_track) = model.player.current {
-        let status = current_track.conversion_status;
         // Update playback status
+        let status = current_track.conversion_status;
 
         // Update playback position
         current_track.sync_pos(&model.player.sink);
+
+        // Create Protocol if the track has cover art, if not already
+        if !current_track.started_decoding
+            && let Some(picture) = current_track.picture.as_mut()
+        {
+            current_track.started_decoding = true;
+            create_protocol(picture, current_track.id, model.picker.clone(), msg_tx);
+        }
 
         // Reload track when track ends if looped
         // Set position, duration, and status to default if not looped
@@ -173,12 +187,32 @@ pub fn display_info(info: String, info_tx: &Sender<String>) -> Option<Message> {
     None
 }
 
-pub fn set_track_img(img: StatefulProtocol, id: u32, model: &mut Model) -> Option<Message> {
+pub fn set_track_protocol(
+    protocol: StatefulProtocol,
+    id: u32,
+    model: &mut Model,
+) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_mut() {
         if id == current_track.id {
-            current_track.dyn_img = Some(img);
+            current_track.protocol = Some(protocol);
         }
     }
 
     None
+}
+
+pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: &Sender<Message>) {
+    let picture_data = picture.data().to_vec();
+    let msg_tx = msg_tx.clone();
+
+    thread::spawn(move || {
+        if let Some(dyn_img) = ImageReader::new(Cursor::new(&picture_data))
+            .with_guessed_format()
+            .ok()
+            .and_then(|r| r.decode().ok())
+        {
+            let protocol = picker.new_resize_protocol(crop_to_square(dyn_img));
+            let _ = msg_tx.send(Message::ImageDecoded(protocol, id));
+        }
+    });
 }
