@@ -8,7 +8,7 @@ use ogg::reading::PacketReader;
 use opus::{Channels as OpusChannels, Decoder as OpusDecoder};
 use rodio::source::{SeekError, Source};
 
-// This file was 99% vibe-coded.
+// This file was 99% vibe-coded. I can't possibly do it myself if an issue opened for it hasn't been closed after 10 years - https://github.com/RustAudio/rodio/issues/38.
 
 pub struct OpusOggSource {
     path: PathBuf,
