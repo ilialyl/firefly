@@ -1,6 +1,5 @@
 use std::{
     fs::{self, File},
-    io::Cursor,
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
@@ -12,14 +11,14 @@ use std::{
 };
 
 use color_eyre::eyre::Result;
-use image::ImageReader;
 use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
+    picture::Picture,
     probe::Probe,
     tag::Accessor,
 };
 use log::{debug, info};
-use ratatui_image::{picker::Picker, protocol::StatefulProtocol};
+use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
 use tokio::runtime::Runtime;
@@ -28,7 +27,6 @@ use crate::global::{
     logic::{
         data::{TEMP_FILE_PREFIX, get_cache_dir},
         files::{is_opus, is_rodio_supported},
-        image::crop_to_square,
         opus::get_opus_source,
     },
     message::Message,
@@ -50,18 +48,15 @@ pub struct Track {
     pub duration: Option<Duration>,
     pub tagged_file: Option<TaggedFile>,
     pub conversion_status: FormatConversion,
+    pub picture: Option<Picture>,
+    pub dyn_img: Option<StatefulProtocol>,
     pub has_title: bool,
-    pub img: Option<StatefulProtocol>,
+    pub decoding_in_progress: bool,
     pub id: u32,
 }
 
 impl Track {
-    pub fn new(
-        path: &Path,
-        picker: Arc<Picker>,
-        msg_tx: &Sender<Message>,
-        info_tx: &Sender<String>,
-    ) -> Result<Track> {
+    pub fn new(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
         let temp_path = Self::get_temp_file(path);
@@ -80,29 +75,18 @@ impl Track {
         }
         let mut has_title = false;
         let mut duration = None;
+        let mut picture = None;
 
         if let Some(ref mut tagged) = tagged_file {
             duration = Some(Self::read_duration(tagged));
             if let Some(ref tag) = tagged.primary_tag() {
                 has_title = tag.title().is_some();
 
-                if let Some(picture) = tag.pictures().first() {
-                    let picture_data = picture.data().to_vec();
-                    let msg_tx_clone = msg_tx.clone();
-
-                    thread::spawn(move || {
-                        if let Some(dyn_img) = ImageReader::new(Cursor::new(&picture_data))
-                            .with_guessed_format()
-                            .ok()
-                            .and_then(|r| r.decode().ok())
-                        {
-                            let protocol = picker.new_resize_protocol(crop_to_square(dyn_img));
-                            let _ = msg_tx_clone.send(Message::ImageDecoded(protocol, id));
-                        }
-                    });
+                if let Some(pic) = tag.pictures().first() {
+                    picture = Some(pic.clone());
                 }
             }
-        }
+        };
 
         let track = Track {
             real_path: path.to_path_buf(),
@@ -112,8 +96,10 @@ impl Track {
             has_title,
             conversion_status,
             tagged_file,
-            img: None,
+            dyn_img: None,
             id,
+            picture,
+            decoding_in_progress: false,
         };
 
         if track.conversion_status == FormatConversion::Running {

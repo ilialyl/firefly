@@ -176,7 +176,7 @@ pub fn display_info(info: String, info_tx: &Sender<String>) -> Option<Message> {
 pub fn set_track_img(img: StatefulProtocol, id: u32, model: &mut Model) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_mut() {
         if id == current_track.id {
-            current_track.img = Some(img);
+            current_track.dyn_img = Some(img);
         }
     }
 

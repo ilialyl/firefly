@@ -1,16 +1,10 @@
-use std::{path::Path, time::Duration};
+use std::path::Path;
 
 use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
     tag::Accessor,
 };
-use ratatui::{
-    Frame,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::Style,
-    text::Line,
-    widgets::{Block, Paragraph, Widget},
-};
+use ratatui::{Frame, layout::Rect, widgets::Paragraph};
 
 use crate::{
     global::view::center_vertical, model::Model, player::logic::playback_status::PlaybackStatus,

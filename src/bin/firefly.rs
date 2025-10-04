@@ -131,8 +131,7 @@ mod alsa {
 
 #[cfg(not(target_os = "windows"))]
 mod alsa {
-    use fs::{self, OpenOptions};
-    use os::fd::AsRawFd;
+    use std::{fs::OpenOptions, os::fd::AsRawFd};
 
     pub fn suppress_error_msg() {
         unsafe {
