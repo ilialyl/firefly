@@ -46,12 +46,12 @@ pub fn tick(
         model.player.status = PlaybackStatus::Idle;
     }
 
-    if let Some(ref mut current_track) = model.player.current {
+    if let Some(current_track) = model.player.current.as_mut() {
         // Update playback status
         let status = current_track.conversion_status;
 
         // Update playback position
-        current_track.sync_pos(&model.player.sink);
+        current_track.sync_pos_from_sink(&model.player.sink);
 
         // Create Protocol if the track has cover art, if not already.
         if !current_track.started_decoding
@@ -205,11 +205,10 @@ pub fn set_track_protocol(
     id: u32,
     model: &mut Model,
 ) -> Option<Message> {
-    if let Some(current_track) = model.player.current.as_mut() {
-        if id == current_track.id {
+    if let Some(current_track) = model.player.current.as_mut()
+        && id == current_track.id {
             current_track.protocol = Some(protocol);
         }
-    }
 
     None
 }

@@ -63,24 +63,24 @@ impl Track {
         let temp_path = Self::get_temp_file(path);
         let mut tagged_file = Probe::open(path).unwrap().read().ok();
 
-        let conversion_status;
-        if !is_rodio_supported(path)? {
+        let conversion_status = if !is_rodio_supported(path)? {
             if temp_path.exists() {
                 debug!("Path {:?} exists, skipping conversion", temp_path);
-                conversion_status = FormatConversion::Done;
+                FormatConversion::Done
             } else {
-                conversion_status = FormatConversion::Idle;
+                FormatConversion::Idle
             }
         } else {
-            conversion_status = FormatConversion::Unnecessary;
-        }
+            FormatConversion::Unnecessary
+        };
+
         let mut has_title = false;
         let mut duration = None;
         let mut picture = None;
 
-        if let Some(ref mut tagged) = tagged_file {
-            duration = Some(Self::read_duration(tagged));
-            if let Some(ref tag) = tagged.primary_tag() {
+        if let Some(tagged) = tagged_file.as_mut() {
+            duration = Some(Self::read_duration_from_tag(tagged));
+            if let Some(tag) = tagged.primary_tag() {
                 has_title = tag.title().is_some();
 
                 if let Some(pic) = tag.pictures().first() {
@@ -90,17 +90,17 @@ impl Track {
         };
 
         let track = Track {
+            id,
             real_path: path.to_path_buf(),
             temp_path,
+            tagged_file,
             pos: Duration::default(),
             duration,
-            has_title,
-            conversion_status,
-            tagged_file,
-            protocol: None,
-            id,
             picture,
+            protocol: None,
+            has_title,
             started_decoding: false,
+            conversion_status,
         };
 
         Ok(track)
@@ -108,7 +108,7 @@ impl Track {
 
     pub fn reload_after_conversion(&mut self) {
         let tagged_file = Probe::open(&self.temp_path).unwrap().read().unwrap();
-        let duration = Self::read_duration(&tagged_file);
+        let duration = Self::read_duration_from_tag(&tagged_file);
         let has_title = tagged_file.primary_tag().unwrap().title().is_some();
 
         self.tagged_file = Some(tagged_file);
@@ -131,7 +131,7 @@ impl Track {
         ))
     }
 
-    pub fn read_duration(tagged_file: &TaggedFile) -> Duration {
+    pub fn read_duration_from_tag(tagged_file: &TaggedFile) -> Duration {
         tagged_file.properties().duration()
     }
 
@@ -156,7 +156,7 @@ impl Track {
         Ok(path.clone())
     }
 
-    pub fn sync_pos(&mut self, sink: &Sink) {
+    pub fn sync_pos_from_sink(&mut self, sink: &Sink) {
         self.pos = sink.get_pos();
     }
 

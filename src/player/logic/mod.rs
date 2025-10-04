@@ -93,7 +93,7 @@ impl Player {
     }
 
     pub fn rewind(&mut self, rewind_dur: Duration) -> Result<()> {
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             let current_pos = self.sink.get_pos();
             let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
                 Some(dur) => dur,
@@ -120,7 +120,7 @@ impl Player {
     }
 
     pub fn reload(&mut self) -> Result<()> {
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             self.sink.clear();
             let source = current.get_source()?;
             self.sink.append(source);
@@ -136,7 +136,7 @@ impl Player {
             None => return Err(eyre!("Queue is empty.")),
         };
 
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             self.previous.push(current.real_path.clone());
         }
 
@@ -151,7 +151,7 @@ impl Player {
             None => return Err(eyre!("There are no previous tracks.")),
         };
 
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             self.queue.prepend_track(&current.real_path);
         }
 

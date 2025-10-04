@@ -16,7 +16,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         PlaybackStatus::Paused => "Paused",
     };
 
-    let quality_str = if let Some(ref mut current_track) = model.player.current
+    let quality_str = if let Some(current_track) = model.player.current.as_mut()
         && let Some(tagged_file) = current_track.tagged_file.as_mut()
     {
         get_quality_str(tagged_file)
@@ -24,7 +24,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         String::from("              ")
     };
 
-    let duration_str = if let Some(ref mut current_track) = model.player.current {
+    let duration_str = if let Some(current_track) = model.player.current.as_mut() {
         format!(
             "{} / {}",
             duration_as_str(&current_track.pos),

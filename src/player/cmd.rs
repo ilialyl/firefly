@@ -81,7 +81,7 @@ pub fn rewind(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
         return None;
     }
 
-    let track_dur = if let Some(ref mut current_track) = model.player.current {
+    let track_dur = if let Some(current_track) = model.player.current.as_mut() {
         current_track.duration.unwrap_or(Duration::from_secs(0))
     } else {
         return None;
@@ -112,7 +112,7 @@ pub fn seek(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
         return None;
     }
 
-    let track_dur = if let Some(ref mut current_track) = model.player.current {
+    let track_dur = if let Some(current_track) = model.player.current.as_mut() {
         current_track.duration.unwrap_or(Duration::from_secs(0))
     } else {
         return None;
@@ -159,7 +159,7 @@ pub fn skip(model: &mut Model) -> Option<Message> {
         .load_next_track()
         .expect("Error loading next track.");
 
-    if let Some(ref mut current_track) = model.player.current
+    if let Some(current_track) = model.player.current.as_mut()
         && (current_track.conversion_status == FormatConversion::Unnecessary
             || current_track.conversion_status == FormatConversion::Done)
     {
@@ -220,7 +220,7 @@ pub fn previous_track(model: &mut Model) -> Option<Message> {
         .load_prev_track()
         .expect("Error loading previous track.");
 
-    if let Some(ref mut current_track) = model.player.current
+    if let Some(current_track) = model.player.current.as_mut()
         && current_track.conversion_status != FormatConversion::Running
     {
         model.player.reload().expect("Error reloading track.");
