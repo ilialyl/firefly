@@ -20,7 +20,7 @@ use lofty::{
 use log::{debug, info};
 use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
-use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
+use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
 use tokio::runtime::Runtime;
 
 use crate::global::{
@@ -34,6 +34,7 @@ use crate::global::{
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum FormatConversion {
+    Idle,
     Running,
     Done,
     Unnecessary,
@@ -42,21 +43,21 @@ pub enum FormatConversion {
 static TRACK_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 pub struct Track {
+    pub id: u32,
     pub real_path: PathBuf,
-    temp_path: PathBuf,
+    pub temp_path: PathBuf,
     pub pos: Duration,
     pub duration: Option<Duration>,
     pub tagged_file: Option<TaggedFile>,
-    pub conversion_status: FormatConversion,
     pub picture: Option<Picture>,
     pub protocol: Option<StatefulProtocol>,
     pub has_title: bool,
     pub started_decoding: bool,
-    pub id: u32,
+    pub conversion_status: FormatConversion,
 }
 
 impl Track {
-    pub fn new(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
+    pub fn new(path: &Path) -> Result<Track> {
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
         let temp_path = Self::get_temp_file(path);
@@ -68,7 +69,7 @@ impl Track {
                 debug!("Path {:?} exists, skipping conversion", temp_path);
                 conversion_status = FormatConversion::Done;
             } else {
-                conversion_status = FormatConversion::Running;
+                conversion_status = FormatConversion::Idle;
             }
         } else {
             conversion_status = FormatConversion::Unnecessary;
@@ -91,7 +92,7 @@ impl Track {
         let track = Track {
             real_path: path.to_path_buf(),
             temp_path,
-            pos: Duration::from_secs(0),
+            pos: Duration::default(),
             duration,
             has_title,
             conversion_status,
@@ -101,10 +102,6 @@ impl Track {
             picture,
             started_decoding: false,
         };
-
-        if track.conversion_status == FormatConversion::Running {
-            track.convert_format(msg_tx, info_tx);
-        }
 
         Ok(track)
     }
@@ -163,22 +160,31 @@ impl Track {
         self.pos = sink.get_pos();
     }
 
-    fn convert_format(&self, msg_tx: &Sender<Message>, info_tx: &Sender<String>) {
-        let process =
-            Self::build_conversion_process(self.real_path.clone(), self.temp_path.clone());
-
-        let cloned_temp_path = self.temp_path.to_path_buf();
-        let cloned_msg_tx = msg_tx.clone();
-        let cloned_info_tx = info_tx.clone();
+    pub fn convert_format(
+        real_path: &Path,
+        temp_path: &Path,
+        msg_tx: &Sender<Message>,
+        info_tx: &Sender<String>,
+    ) {
+        let real_path = real_path.to_path_buf();
+        let temp_path = temp_path.to_path_buf();
+        let msg_tx = msg_tx.clone();
+        let info_tx = info_tx.clone();
 
         info!("Converting file...");
-        cloned_info_tx
+        info_tx
             .send("Converting format and normalizing volume...".to_string())
             .unwrap();
         thread::spawn(move || {
             let runtime = Runtime::new().unwrap();
-            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(process)));
-            cloned_msg_tx
+            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(async {
+                FFmpegBuilder::convert(real_path.to_path_buf(), temp_path.to_path_buf())
+                    .audio_filter(AudioFilter::loudnorm())
+                    .spawn()
+                    .await
+                    .unwrap()
+            })));
+            msg_tx
                 .send(Message::ConversionStarted(ffmpeg_handle.clone()))
                 .unwrap();
             loop {
@@ -191,29 +197,20 @@ impl Track {
                         .unwrap()
                         .success()
                     {
-                        cloned_info_tx.send("".to_string()).unwrap();
+                        info_tx.send("".to_string()).unwrap();
                         info!("Conversion Complete.");
-                        cloned_msg_tx.send(Message::ConversionEnded).unwrap();
+                        msg_tx.send(Message::ConversionEnded).unwrap();
                         break;
                     }
-                    cloned_info_tx.send("".to_string()).unwrap();
-                    if cloned_temp_path.is_file() {
-                        fs::remove_file(&cloned_temp_path)
-                            .expect("Error deleting half-converted file.");
-                        info!("Deleted {:?}", cloned_temp_path);
+                    info_tx.send("".to_string()).unwrap();
+                    if temp_path.is_file() {
+                        fs::remove_file(&temp_path).expect("Error deleting half-converted file.");
+                        info!("Deleted {:?}", temp_path);
                     }
                     info!("Conversion killed.");
                     break;
                 }
             }
         });
-    }
-
-    async fn build_conversion_process(real_path: PathBuf, temp_path: PathBuf) -> FFmpegProcess {
-        FFmpegBuilder::convert(real_path, temp_path)
-            .audio_filter(AudioFilter::loudnorm())
-            .spawn()
-            .await
-            .unwrap()
     }
 }

@@ -14,8 +14,10 @@ use rust_ffmpeg::FFmpegProcess;
 use crate::{
     global::{
         logic::{
-            confirmation::Response, image::crop_to_square, session_state::RunningState,
-            track::FormatConversion,
+            confirmation::Response,
+            image::crop_to_square,
+            session_state::RunningState,
+            track::{FormatConversion, Track},
         },
         message::Message,
     },
@@ -51,12 +53,23 @@ pub fn tick(
         // Update playback position
         current_track.sync_pos(&model.player.sink);
 
-        // Create Protocol if the track has cover art, if not already
+        // Create Protocol if the track has cover art, if not already.
         if !current_track.started_decoding
             && let Some(picture) = current_track.picture.as_mut()
         {
             current_track.started_decoding = true;
             create_protocol(picture, current_track.id, model.picker.clone(), msg_tx);
+        }
+
+        // Convert file format to FLAC if current format is not supported, if not already.
+        if current_track.conversion_status == FormatConversion::Idle {
+            current_track.conversion_status = FormatConversion::Running;
+            Track::convert_format(
+                &current_track.real_path,
+                &current_track.temp_path,
+                msg_tx,
+                info_tx,
+            );
         }
 
         // Reload track when track ends if looped
@@ -78,16 +91,16 @@ pub fn tick(
         if model.player.status == PlaybackStatus::Idle
             && !model.player.queue.is_empty()
             && !model.player.looping
-            && status != FormatConversion::Running
+            && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
             debug!("Load the next track after current track ends.");
-            player::cmd::skip(model, msg_tx, info_tx);
+            player::cmd::skip(model);
         }
 
-        // Load first track (player.current is None)
+        // Load first track if no current track and there is something in the queue.
     } else if model.player.current.is_none() && !model.player.queue.is_empty() {
         debug!("Load first track (player.current is None)");
-        player::cmd::skip(model, msg_tx, info_tx);
+        player::cmd::skip(model);
     }
 
     None
@@ -118,7 +131,7 @@ pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) 
 
 pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
-    if let Some(ref mut current_track) = model.player.current {
+    if let Some(current_track) = model.player.current.as_mut() {
         current_track.conversion_status = FormatConversion::Done;
         current_track.reload_after_conversion();
         model

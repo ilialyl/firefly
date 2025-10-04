@@ -140,11 +140,7 @@ pub fn seek(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
     None
 }
 
-pub fn skip(
-    model: &mut Model,
-    msg_tx: &Sender<Message>,
-    info_tx: &Sender<String>,
-) -> Option<Message> {
+pub fn skip(model: &mut Model) -> Option<Message> {
     if model.player.queue.is_empty() {
         return None;
     }
@@ -160,11 +156,12 @@ pub fn skip(
     model.player.sink.clear();
     model
         .player
-        .load_next_track(msg_tx, info_tx)
+        .load_next_track()
         .expect("Error loading next track.");
 
     if let Some(ref mut current_track) = model.player.current
-        && current_track.conversion_status != FormatConversion::Running
+        && (current_track.conversion_status == FormatConversion::Unnecessary
+            || current_track.conversion_status == FormatConversion::Done)
     {
         model.player.reload().expect("Error reloading track.");
     }
@@ -204,11 +201,7 @@ pub fn increase_volume(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn previous_track(
-    model: &mut Model,
-    msg_tx: &Sender<Message>,
-    info_tx: &Sender<String>,
-) -> Option<Message> {
+pub fn previous_track(model: &mut Model) -> Option<Message> {
     if model.player.previous.is_empty() {
         return None;
     }
@@ -224,7 +217,7 @@ pub fn previous_track(
     model.player.sink.clear();
     model
         .player
-        .load_prev_track(msg_tx, info_tx)
+        .load_prev_track()
         .expect("Error loading previous track.");
 
     if let Some(ref mut current_track) = model.player.current
