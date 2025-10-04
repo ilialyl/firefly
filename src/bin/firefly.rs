@@ -26,7 +26,6 @@ fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
     setup_logger()?;
-    alsa::suppress_error_msg();
 
     let cache_dir = get_cache_dir();
     if !cache_dir.exists() {
@@ -122,21 +121,4 @@ mod dpi {
 #[cfg(not(target_os = "windows"))]
 mod dpi {
     pub fn enable_dpi_awareness() {}
-}
-
-#[cfg(target_os = "windows")]
-mod alsa {
-    pub fn suppress_error_msg() {}
-}
-
-#[cfg(not(target_os = "windows"))]
-mod alsa {
-    use std::{fs::OpenOptions, os::fd::AsRawFd};
-
-    pub fn suppress_error_msg() {
-        unsafe {
-            let devnull = OpenOptions::new().write(true).open("/dev/null").unwrap();
-            libc::dup2(devnull.as_raw_fd(), 2); // Redirect stderr (fd 2) to /dev/null
-        }
-    }
 }
