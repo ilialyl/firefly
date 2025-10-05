@@ -224,3 +224,9 @@ pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: 
         }
     });
 }
+
+pub fn toggle_show_help(model: &mut Model) -> Option<Message> {
+    model.show_help = !model.show_help;
+
+    None
+}

@@ -30,13 +30,13 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char('a') => Some(Message::Player(PlayerMessage::ToggleArrange)),
                 KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
                 KeyCode::Char('m') => Some(Message::Player(PlayerMessage::ShuffleQueue)),
+                KeyCode::Char('h') => Some(Message::ShowHelp),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },
 
             FocusedArea::Playlist => match key_event.code {
                 KeyCode::Esc => Some(Message::Quit),
-                KeyCode::Char('c') => Some(Message::Playlist(PlaylistMessage::ToggleControlPanel)),
                 KeyCode::Char('a') => Some(Message::Playlist(PlaylistMessage::ToggleArrangeTracks)),
                 KeyCode::Char('n') => Some(Message::Playlist(PlaylistMessage::Create)),
                 KeyCode::Char('Q') => Some(Message::Playlist(PlaylistMessage::AddDir)),
@@ -58,6 +58,7 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
                 KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
                 KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
+                KeyCode::Char('h') => Some(Message::ShowHelp),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },

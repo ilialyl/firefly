@@ -22,7 +22,7 @@ pub struct Model {
     pub user_input: UserInput,
     pub confirmation: Confirmation,
     pub info_msg: String,
-    pub show_controls: bool,
+    pub show_help: bool,
     pub picker: Arc<Picker>,
 }
 
@@ -40,7 +40,7 @@ impl Default for Model {
             user_input: UserInput::default(),
             confirmation: Confirmation::default(),
             info_msg: String::new(),
-            show_controls: false,
+            show_help: false,
             picker: Arc::new(picker),
         }
     }

@@ -24,6 +24,5 @@ pub fn update_playlist(model: &mut Model, msg: PlaylistMessage) -> Option<Messag
             *then_call,
             &mut model.playlist_ctl,
         ),
-        PlaylistMessage::ToggleControlPanel => toggle_control_panel(model),
     }
 }

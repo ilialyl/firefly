@@ -28,6 +28,7 @@ pub fn update_global(
         Message::AcknowledgeInfo => acknowledge_info(model),
         Message::DisplayInfo(info) => display_info(info, info_tx),
         Message::ImageDecoded(img, id) => set_track_protocol(img, id, model),
+        Message::ShowHelp => toggle_show_help(model),
         Message::Quit => quit(model),
     }
 }

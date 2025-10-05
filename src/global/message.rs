@@ -23,6 +23,7 @@ pub enum Message {
     AcknowledgeInfo,
     DisplayInfo(String),
     ImageDecoded(StatefulProtocol, u32),
+    ShowHelp,
 }
 
 pub enum PlayerMessage {
@@ -56,7 +57,6 @@ pub enum PlaylistMessage {
     ToggleArrangeTracks,
     ToPlayer,
     AskToSave(Box<Option<Message>>),
-    ToggleControlPanel,
 }
 
 pub enum UserInputMessage {

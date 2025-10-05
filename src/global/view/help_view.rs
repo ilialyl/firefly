@@ -1,66 +1,114 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Stylize},
-    widgets::Paragraph,
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Style, Stylize},
+    widgets::{Block, Clear, List, ListItem, Padding, Paragraph, Widget},
 };
 
-use crate::{global::logic::session_state::RunningState, model::Model};
+use crate::global::view::center_xy;
 
-pub fn draw(area: Rect, frame: &mut Frame, model: &Model) {
-    let mut controls: Vec<Paragraph<'_>> = Vec::new();
-
-    let mut toggle_play = Paragraph::new(" Play/Pause <Space>");
-    if model.session.state == RunningState::RunningFFmpeg {
-        toggle_play = toggle_play.crossed_out();
-    }
-    controls.push(toggle_play);
-
-    controls.push(Paragraph::new(" Load Now <N>"));
-    controls.push(Paragraph::new(" Queue <Q>"));
-    controls.push(Paragraph::new(" Queue Dir <ShiftQ>"));
-    let mut toggle_arrange = Paragraph::new(" Arrange Queue <A>");
-    if model.player.queue.is_arrange() {
-        toggle_arrange = toggle_arrange.fg(Color::Rgb(255, 192, 15));
-    }
-    controls.push(toggle_arrange);
-
-    controls.push(Paragraph::new(" Shuffle Queue <M>"));
-    controls.push(Paragraph::new(" Move Queue Up <↑>"));
-    controls.push(Paragraph::new(" Move Queue Down <↓>"));
-    controls.push(Paragraph::new(" Prev/Skip <P/S>"));
-
-    let mut rewind_seek = Paragraph::new(" Rewind/Seek <←/→>");
-    if model.session.state == RunningState::RunningFFmpeg {
-        rewind_seek = rewind_seek.crossed_out();
-    }
-    controls.push(rewind_seek);
-
-    controls.push(Paragraph::new(" Volume <=/->"));
-    controls.push(Paragraph::new(" Loop <L>"));
-    controls.push(Paragraph::new(" Switch Tab <TAB>"));
-    controls.push(Paragraph::new(" Quit <Esc>"));
-
-    let rows = Layout::default()
+pub fn draw(frame: &mut Frame, area: Rect) {
+    let area = center_xy(area, 80, (area.height * 8) / 10);
+    let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1); 4])
-        .spacing(1)
+        .constraints(vec![Constraint::Fill(1), Constraint::Length(1)])
         .split(area);
 
-    let grid: Vec<Rect> = rows
+    let horizontal_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Percentage(50); 2])
+        .split(vertical_chunks[0]);
+
+    let player_c = get_player_controls();
+    let player_c_max_len = player_c
         .iter()
-        .flat_map(|col| {
-            Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Percentage(25); 4])
-                .spacing(1)
-                .split(*col)
-                .to_vec()
+        .map(|(desc, _)| desc.len())
+        .max()
+        .unwrap_or(0);
+
+    let player_control_items: Vec<ListItem> = player_c
+        .into_iter()
+        .map(|(desc, key)| {
+            let padded_desc = format!("{:<width$}", desc, width = player_c_max_len);
+            ListItem::from(format!("{}  {}", padded_desc, key))
         })
         .collect();
 
-    controls
+    let player_controls = List::new(player_control_items).block(
+        Block::bordered()
+            .padding(Padding::new(2, 2, 1, 1))
+            .title("Player")
+            .title_alignment(Alignment::Left)
+            .border_style(Style::default()),
+    );
+
+    let playlist_c = get_playlist_controls();
+    let playlist_c_max_len = playlist_c
         .iter()
-        .enumerate()
-        .for_each(|(idx, ctl)| frame.render_widget(ctl, grid[idx]));
+        .map(|(desc, _)| desc.len())
+        .max()
+        .unwrap_or(0);
+    let playlist_control_items: Vec<ListItem> = playlist_c
+        .into_iter()
+        .map(|(desc, key)| {
+            let padded_desc = format!("{:<width$}", desc, width = playlist_c_max_len);
+            ListItem::from(format!("{}  {}", padded_desc, key))
+        })
+        .collect();
+
+    let playlist_controls = List::new(playlist_control_items).block(
+        Block::bordered()
+            .padding(Padding::new(2, 2, 1, 1))
+            .title("Playlist")
+            .title_alignment(Alignment::Right)
+            .border_style(Style::default()),
+    );
+
+    let instruction = Paragraph::new("Press H to hide").bold().centered();
+
+    Clear.render(area, frame.buffer_mut());
+    player_controls.render(horizontal_chunks[0], frame.buffer_mut());
+    playlist_controls.render(horizontal_chunks[1], frame.buffer_mut());
+    instruction.render(vertical_chunks[1], frame.buffer_mut());
+}
+
+fn get_player_controls() -> Vec<(String, String)> {
+    vec![
+        ("Load Now", "<N>"),
+        ("Queue", "<Q>"),
+        ("Queue Dir", "<ShiftQ>"),
+        ("Play/Pause", "<Space>"),
+        ("Shuffle Queue", "<M>"),
+        ("Arrange Queue", "<A>"),
+        ("Move Queue Up", "<↑>"),
+        ("Move Queue Down", "<↓>"),
+        ("Prev/Skip", "<P/S>"),
+        ("Rewind/Seek", "<←/→>"),
+        ("Volume", "<=/->"),
+        ("Loop", "<L>"),
+        ("Focus Playlist", "<TAB>"),
+        ("Quit", "<Esc>"),
+    ]
+    .iter()
+    .map(|(a, b)| (a.to_string(), b.to_string()))
+    .collect()
+}
+
+fn get_playlist_controls() -> Vec<(String, String)> {
+    vec![
+        ("Navigate", "<↑↓→←>"),
+        ("New Playlist", "<N>"),
+        ("Rename Playlist", "<F2>"),
+        ("Save Playlist", "<F5>"),
+        ("Delete Playlist", "<F9>"),
+        ("Add Tracks", "<Q>"),
+        ("Add Directory", "<ShiftQ>"),
+        ("Remove Track", "<Del>"),
+        ("Arrange Track", "<A>"),
+        ("Send Selected to Player", "<F1>"),
+        ("Focus Player", "<TAB>"),
+    ]
+    .iter()
+    .map(|(a, b)| (a.to_string(), b.to_string()))
+    .collect()
 }

@@ -59,6 +59,10 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
 
     control_bar::draw(main_view_chunk[0], frame, model);
 
+    if model.show_help {
+        help_view::draw(frame, frame.area());
+    }
+
     match model.input_mode.clone() {
         InputMode::Insert(prompt, _) => {
             model
