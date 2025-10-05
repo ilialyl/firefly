@@ -11,7 +11,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &Model) {
     let mut controls: Vec<Paragraph<'_>> = Vec::new();
 
     let mut toggle_play = Paragraph::new(" Play/Pause <Space>");
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         toggle_play = toggle_play.crossed_out();
     }
     controls.push(toggle_play);
@@ -31,7 +31,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &Model) {
     controls.push(Paragraph::new(" Prev/Skip <P/S>"));
 
     let mut rewind_seek = Paragraph::new(" Rewind/Seek <←/→>");
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         rewind_seek = rewind_seek.crossed_out();
     }
     controls.push(rewind_seek);

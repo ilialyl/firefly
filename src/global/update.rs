@@ -21,7 +21,6 @@ pub fn update_global(
         Message::Player(player_msg) => update_player(model, player_msg, msg_tx, info_tx),
         Message::Playlist(playlist_msg) => update_playlist(model, playlist_msg),
         Message::UserInput(userinput_update) => update_userinput(model, userinput_update),
-        Message::SetBusy => set_busy(model),
         Message::ConversionStarted(handle) => conversion_started(handle, model),
         Message::ConversionEnded => conversion_ended(model),
         Message::UpdateStatusMsg(info) => update_status_msg(info, model),

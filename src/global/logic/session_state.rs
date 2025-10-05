@@ -2,7 +2,7 @@
 pub enum RunningState {
     #[default]
     Running,
-    Busy,
+    RunningFFmpeg,
     Done,
 }
 
@@ -10,4 +10,3 @@ pub enum RunningState {
 pub struct Session {
     pub state: RunningState,
 }
-

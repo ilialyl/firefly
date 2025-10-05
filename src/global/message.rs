@@ -18,7 +18,6 @@ pub enum Message {
     ConversionEnded,
     AskConfirmation(String, Box<Message>),
     Confirm(Response),
-    SetBusy,
     UpdateStatusMsg(String),
     CycleTabs,
     AcknowledgeInfo,

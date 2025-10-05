@@ -29,7 +29,7 @@ pub fn load_now(
 }
 
 pub fn toggle_play(model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
@@ -77,7 +77,7 @@ pub fn move_queue_down(model: &mut Model) -> Option<Message> {
 }
 
 pub fn rewind(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
@@ -108,7 +108,7 @@ pub fn rewind(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
 }
 
 pub fn seek(model: &mut Model, _info_tx: &Sender<String>) -> Option<Message> {
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
@@ -182,7 +182,7 @@ pub fn toggle_loop(model: &mut Model) -> Option<Message> {
 }
 
 pub fn decrease_volume(model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
@@ -192,7 +192,7 @@ pub fn decrease_volume(model: &mut Model) -> Option<Message> {
 }
 
 pub fn increase_volume(model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 

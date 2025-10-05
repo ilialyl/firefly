@@ -32,7 +32,7 @@ pub fn tick(
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Option<Message> {
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
@@ -125,8 +125,9 @@ pub fn confirmed(answer: Response, model: &mut Model) -> Option<Message> {
 
 pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
     model.player.ffmpeg_handle = Some(handle);
+    model.session.state = RunningState::RunningFFmpeg;
 
-    Some(Message::SetBusy)
+    None
 }
 
 pub fn conversion_ended(model: &mut Model) -> Option<Message> {
@@ -159,12 +160,6 @@ pub fn quit(model: &mut Model) -> Option<Message> {
     }
 
     model.session.state = RunningState::Done;
-
-    None
-}
-
-pub fn set_busy(model: &mut Model) -> Option<Message> {
-    model.session.state = RunningState::Busy;
 
     None
 }
@@ -206,9 +201,10 @@ pub fn set_track_protocol(
     model: &mut Model,
 ) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_mut()
-        && id == current_track.id {
-            current_track.protocol = Some(protocol);
-        }
+        && id == current_track.id
+    {
+        current_track.protocol = Some(protocol);
+    }
 
     None
 }
