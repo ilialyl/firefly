@@ -41,6 +41,8 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char('n') => Some(Message::Playlist(PlaylistMessage::Create)),
                 KeyCode::Char('W') => Some(Message::Playlist(PlaylistMessage::AddDir)),
                 KeyCode::Char('w') => Some(Message::Playlist(PlaylistMessage::AddTracks)),
+                KeyCode::Char('q') => Some(Message::Player(PlayerMessage::QueueFiles)),
+                KeyCode::Char('Q') => Some(Message::Player(PlayerMessage::QueueDir)),
                 KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::ToPlayer)),
                 KeyCode::Delete => Some(Message::Playlist(PlaylistMessage::RemoveTrack)),
                 KeyCode::Right => Some(Message::Playlist(PlaylistMessage::MoveCursor(
