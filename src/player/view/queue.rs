@@ -39,6 +39,8 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         } else {
             Block::bordered().title(title)
         }
+    } else if model.player.queue.is_empty() {
+        Block::default()
     } else {
         Block::default().title(title)
     }
