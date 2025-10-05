@@ -62,6 +62,9 @@ impl Track {
 
         let temp_path = Self::get_temp_file(path);
         let mut tagged_file = Probe::open(path).unwrap().read().ok();
+        if tagged_file.is_none() && temp_path.exists() {
+            tagged_file = Probe::open(&temp_path).unwrap().read().ok();
+        }
 
         let conversion_status = if !is_rodio_supported(path)? {
             if temp_path.exists() {
@@ -108,12 +111,15 @@ impl Track {
 
     pub fn reload_after_conversion(&mut self) {
         let tagged_file = Probe::open(&self.temp_path).unwrap().read().unwrap();
-        let duration = Self::read_duration_from_tag(&tagged_file);
-        let has_title = tagged_file.primary_tag().unwrap().title().is_some();
+        self.duration = Some(Self::read_duration_from_tag(&tagged_file));
+        if let Some(tag) = tagged_file.primary_tag() {
+            self.has_title = tag.title().is_some();
+            if let Some(pic) = tag.pictures().first() {
+                self.picture = Some(pic.clone());
+            }
+        }
 
         self.tagged_file = Some(tagged_file);
-        self.duration = Some(duration);
-        self.has_title = has_title;
     }
 
     pub fn get_temp_file(path: &Path) -> PathBuf {
