@@ -27,12 +27,21 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let mut list_state = ListState::default();
     list_state.select(Some(model.player.queue.get_selected()));
 
-    let block = if matches!(model.selected_tab, FocusedArea::ControlBarAndQueue) {
-        Block::bordered()
+    let title = if model.player.queue.is_arrange() {
+        " Queue [Arrange on] "
     } else {
-        Block::default()
+        " Queue "
+    };
+
+    let block = if matches!(model.selected_tab, FocusedArea::ControlBarAndQueue) {
+        if model.player.queue.is_empty() {
+            Block::default()
+        } else {
+            Block::bordered().title(title)
+        }
+    } else {
+        Block::default().title(title)
     }
-    .title("Queue")
     .padding(Padding::uniform(1));
 
     StatefulWidget::render(list.block(block), area, frame.buffer_mut(), &mut list_state);
