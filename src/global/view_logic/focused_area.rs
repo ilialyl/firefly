@@ -6,9 +6,7 @@ use strum_macros::{Display, EnumCount, EnumIter, FromRepr};
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter, EnumCount)]
 pub enum FocusedArea {
     #[default]
-    #[strum(to_string = "Player")]
-    Main,
-    #[strum(to_string = "Playlist")]
+    ControlBarAndQueue,
     Playlist,
 }
 

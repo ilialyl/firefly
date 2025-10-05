@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState, Padding, StatefulWidget},
 };
 
-use crate::{model::Model, player::logic::Player};
+use crate::{global::view_logic::focused_area::FocusedArea, model::Model, player::logic::Player};
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let queue_entries: Vec<ListItem> = model
@@ -27,12 +27,15 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let mut list_state = ListState::default();
     list_state.select(Some(model.player.queue.get_selected()));
 
-    StatefulWidget::render(
-        list.block(Block::default().title("Queue").padding(Padding::uniform(1))),
-        area,
-        frame.buffer_mut(),
-        &mut list_state,
-    );
+    let block = if matches!(model.selected_tab, FocusedArea::ControlBarAndQueue) {
+        Block::bordered()
+    } else {
+        Block::default()
+    }
+    .title("Queue")
+    .padding(Padding::uniform(1));
+
+    StatefulWidget::render(list.block(block), area, frame.buffer_mut(), &mut list_state);
 }
 
 fn _get_previous_tracks(player: &Player) -> Vec<String> {

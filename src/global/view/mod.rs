@@ -42,7 +42,7 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
 
     main_view::draw(model, frame, outer_layout[1]);
 
-    if matches!(model.selected_tab, FocusedArea::Main) {
+    if matches!(model.selected_tab, FocusedArea::ControlBarAndQueue) {
         Block::bordered().render(outer_layout[2], frame.buffer_mut());
     }
 
