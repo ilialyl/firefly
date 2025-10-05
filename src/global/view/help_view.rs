@@ -96,13 +96,13 @@ fn get_player_controls() -> Vec<(String, String)> {
 
 fn get_playlist_controls() -> Vec<(String, String)> {
     vec![
-        ("Navigate", "<↑↓→←>"),
+        ("Navigate", "<↑↓←→>"),
         ("New Playlist", "<N>"),
         ("Rename Playlist", "<F2>"),
         ("Save Playlist", "<F5>"),
         ("Delete Playlist", "<F9>"),
-        ("Add Tracks", "<Q>"),
-        ("Add Directory", "<ShiftQ>"),
+        ("Add Tracks", "<w>"),
+        ("Add Directory", "<ShiftW>"),
         ("Remove Track", "<Del>"),
         ("Arrange Track", "<A>"),
         ("Send Selected to Player", "<F1>"),
