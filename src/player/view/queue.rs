@@ -33,7 +33,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         " Queue "
     };
 
-    let block = if matches!(model.selected_tab, FocusedArea::ControlBarAndQueue) {
+    let block = if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
         if model.player.queue.is_empty() {
             Block::default()
         } else {

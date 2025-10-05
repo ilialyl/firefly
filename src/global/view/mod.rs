@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Constraint, Direction, Flex, Layout, Rect},
     style::Style,
     text::Line,
-    widgets::{Block, Widget},
+    widgets::{Block, Padding, Widget},
 };
 
 use crate::{
@@ -26,10 +26,6 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         ])
         .split(frame.area());
 
-    Block::new()
-        .title(Line::style(Line::from("Firefly"), Style::new()).centered())
-        .render(outer_layout[0], frame.buffer_mut());
-
     let top_right_text = if model.status_msg.is_empty() {
         format!("v{}", env!("CARGO_PKG_VERSION"))
     } else {
@@ -37,12 +33,22 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
     };
 
     Block::new()
+        .title(Line::style(Line::from("Firefly"), Style::new()).centered())
+        .render(outer_layout[0], frame.buffer_mut());
+
+    Block::new()
         .title(Line::style(Line::from(top_right_text), Style::new()).right_aligned())
+        .padding(Padding::horizontal(1))
+        .render(outer_layout[0], frame.buffer_mut());
+
+    Block::new()
+        .title(Line::style(Line::from("Help <H>"), Style::new()).left_aligned())
+        .padding(Padding::horizontal(1))
         .render(outer_layout[0], frame.buffer_mut());
 
     main_view::draw(model, frame, outer_layout[1]);
 
-    if matches!(model.selected_tab, FocusedArea::ControlBarAndQueue) {
+    if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
         Block::bordered().render(outer_layout[2], frame.buffer_mut());
     }
 

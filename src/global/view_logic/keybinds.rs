@@ -12,7 +12,7 @@ use crate::{
 
 pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> {
     match model.input_mode {
-        InputMode::Commands => match model.selected_tab {
+        InputMode::Commands => match model.focused_view_area {
             FocusedArea::ControlBarAndQueue => match key_event.code {
                 KeyCode::Esc => Some(Message::Quit),
                 KeyCode::Char('n') => Some(Message::Player(PlayerMessage::LoadNow)),

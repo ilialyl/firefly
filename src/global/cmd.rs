@@ -171,7 +171,7 @@ pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
         return Some(to_resume);
     }
 
-    model.selected_tab.cycle_right();
+    model.focused_view_area.cycle_right();
 
     None
 }

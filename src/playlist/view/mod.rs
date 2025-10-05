@@ -26,11 +26,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         ])
         .split(area);
 
-    let (playlists_block, tracks_block) = if matches!(model.selected_tab, FocusedArea::Playlist) {
-        (Block::bordered(), Block::bordered())
-    } else {
-        (Block::new(), Block::new())
-    };
+    let (playlists_block, tracks_block) =
+        if matches!(model.focused_view_area, FocusedArea::Playlist) {
+            (Block::bordered(), Block::bordered())
+        } else {
+            (Block::new(), Block::new())
+        };
 
     playlists_block
         .title(Line::style(Line::from("Playlists"), Style::new()))
