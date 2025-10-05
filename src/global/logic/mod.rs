@@ -7,6 +7,5 @@ pub mod logger;
 pub mod mini_track;
 pub mod opus;
 pub mod session_state;
-pub mod terminal;
 pub mod track;
 pub mod track_queue;

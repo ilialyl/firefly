@@ -5,9 +5,9 @@ use crate::{
         logic::{
             confirmation::Response,
             files::{choose_dirs, choose_multiple_audio_files, filter_dir_for_audio_files},
-            terminal::CursorMovementDirection,
         },
         message::{Message, PlaylistMessage, UserInputMessage},
+        view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
     player::logic::Player,

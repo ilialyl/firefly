@@ -4,7 +4,7 @@ use strum::EnumCount;
 use strum_macros::{Display, EnumCount, EnumIter, FromRepr};
 
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter, EnumCount)]
-pub enum SelectedTab {
+pub enum FocusedArea {
     #[default]
     #[strum(to_string = "Player")]
     Main,
@@ -12,11 +12,11 @@ pub enum SelectedTab {
     Playlist,
 }
 
-impl SelectedTab {
+impl FocusedArea {
     pub fn cycle_right(&mut self) {
         let current_index = *self as usize;
         let mut next_index = current_index + 1;
-        if next_index >= SelectedTab::COUNT {
+        if next_index >= FocusedArea::COUNT {
             next_index = 0;
         }
 

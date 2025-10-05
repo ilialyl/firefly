@@ -1,6 +1,7 @@
 pub mod confirmation_box;
-pub mod info_box;
-pub mod tabs;
+pub mod help_view;
+pub mod info_popup;
+pub mod main_view;
 
 use ratatui::{
     Frame,
@@ -11,9 +12,7 @@ use ratatui::{
 };
 
 use crate::{
-    global::view::tabs::SelectedTab,
-    model::Model,
-    player::{self, view::now_playing},
+    global::view_logic::focused_area::FocusedArea, model::Model, player::view::control_bar,
     user_input::logic::InputMode,
 };
 
@@ -21,7 +20,7 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
-            Constraint::Length(2),
+            Constraint::Length(1),
             Constraint::Fill(1),
             Constraint::Length(3),
         ])
@@ -41,18 +40,18 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         .title(Line::style(Line::from(top_right_text), Style::new()).right_aligned())
         .render(outer_layout[0], frame.buffer_mut());
 
-    player::view::draw(model, frame, outer_layout[1]);
+    main_view::draw(model, frame, outer_layout[1]);
 
-    if matches!(model.selected_tab, SelectedTab::Main) {
+    if matches!(model.selected_tab, FocusedArea::Main) {
         Block::bordered().render(outer_layout[2], frame.buffer_mut());
     }
 
-    let now_playing_chunk = Layout::default()
+    let main_view_chunk = Layout::default()
         .constraints(vec![Constraint::Percentage(100)])
         .margin(1)
         .split(outer_layout[2]);
 
-    now_playing::draw(now_playing_chunk[0], frame, model);
+    control_bar::draw(main_view_chunk[0], frame, model);
 
     match model.input_mode.clone() {
         InputMode::Insert(prompt, _) => {
@@ -63,7 +62,7 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         InputMode::Commands => {}
         InputMode::Confirmation => confirmation_box::render(model, frame, frame.area()),
         InputMode::Info => {
-            info_box::render(model, frame, frame.area());
+            info_popup::draw(model, frame, frame.area());
         }
     }
 }

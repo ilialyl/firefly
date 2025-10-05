@@ -13,7 +13,7 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-use crate::global::view::tabs::SelectedTab;
+use crate::global::view_logic::focused_area::FocusedArea;
 use crate::model::Model;
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
@@ -26,7 +26,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         ])
         .split(area);
 
-    let (playlists_block, tracks_block) = if matches!(model.selected_tab, SelectedTab::Playlist) {
+    let (playlists_block, tracks_block) = if matches!(model.selected_tab, FocusedArea::Playlist) {
         (Block::bordered(), Block::bordered())
     } else {
         (Block::new(), Block::new())

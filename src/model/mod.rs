@@ -5,7 +5,7 @@ use ratatui_image::picker::Picker;
 use crate::{
     global::{
         logic::{confirmation::Confirmation, session_state::Session},
-        view::tabs::SelectedTab,
+        view_logic::focused_area::FocusedArea,
     },
     player::logic::Player,
     playlist::logic::playlist_controller::PlaylistController,
@@ -17,7 +17,7 @@ pub struct Model {
     pub player: Player,
     pub playlist_ctl: PlaylistController,
     pub status_msg: String,
-    pub selected_tab: SelectedTab,
+    pub selected_tab: FocusedArea,
     pub input_mode: InputMode,
     pub user_input: UserInput,
     pub confirmation: Confirmation,
@@ -35,7 +35,7 @@ impl Default for Model {
             playlist_ctl: PlaylistController::default(),
             session: Session::default(),
             status_msg: String::new(),
-            selected_tab: SelectedTab::default(),
+            selected_tab: FocusedArea::default(),
             input_mode: InputMode::default(),
             user_input: UserInput::default(),
             confirmation: Confirmation::default(),

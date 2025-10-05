@@ -77,12 +77,10 @@ fn get_metadata_lines(tagged_file: &TaggedFile) -> Vec<String> {
             .map(|n| format!("{} Channels", n))
             .unwrap_or("".to_string());
 
-        let vec = vec![
-            format!("{}{}", track_num, title),
+        let vec = [format!("{}{}", track_num, title),
             artist.to_string(),
             format!("{}{}{}", album, disc_num, year),
-            format!("{}{}{}{}", bit_depth, sample_rate, bitrate, channels),
-        ];
+            format!("{}{}{}{}", bit_depth, sample_rate, bitrate, channels)];
 
         let mut padded_vec = Vec::<String>::new();
         if let Some((last, rest)) = vec.split_last() {
