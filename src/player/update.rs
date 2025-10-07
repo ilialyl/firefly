@@ -28,5 +28,6 @@ pub fn update_player(
         PlayerMessage::DecreaseVolume => decrease_volume(model),
         PlayerMessage::IncreaseVolume => increase_volume(model),
         PlayerMessage::ShuffleQueue => shuffle_queue(model),
+        PlayerMessage::ClearQueue => clear_queue(model),
     }
 }

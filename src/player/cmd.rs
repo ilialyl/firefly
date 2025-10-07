@@ -234,3 +234,9 @@ pub fn shuffle_queue(model: &mut Model) -> Option<Message> {
 
     None
 }
+
+pub fn clear_queue(model: &mut Model) -> Option<Message> {
+    model.player.queue.clear();
+
+    None
+}

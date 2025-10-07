@@ -42,6 +42,7 @@ pub enum PlayerMessage {
     QueueFiles,
     QueueDir,
     ShuffleQueue,
+    ClearQueue,
 }
 
 pub enum PlaylistMessage {
