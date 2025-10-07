@@ -5,9 +5,7 @@ pub mod main_view;
 
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Flex, Layout, Rect},
-    style::Style,
-    text::Line,
+    layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
     widgets::{Block, Padding, Widget},
 };
 
@@ -33,16 +31,25 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
     };
 
     Block::new()
-        .title(Line::style(Line::from("Firefly"), Style::new()).centered())
+        .title("Firefly")
+        .title_alignment(Alignment::Center)
         .render(outer_layout[0], frame.buffer_mut());
 
     Block::new()
-        .title(Line::style(Line::from(top_right_text), Style::new()).right_aligned())
+        .title(top_right_text)
+        .title_alignment(Alignment::Right)
         .padding(Padding::horizontal(1))
         .render(outer_layout[0], frame.buffer_mut());
 
+    let top_left_text = if model.show_help {
+        "Hide Help <H>"
+    } else {
+        "Help <H>"
+    };
+
     Block::new()
-        .title(Line::style(Line::from("Help <H>"), Style::new()).left_aligned())
+        .title(top_left_text)
+        .title_alignment(Alignment::Left)
         .padding(Padding::horizontal(1))
         .render(outer_layout[0], frame.buffer_mut());
 
