@@ -51,7 +51,17 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     .spacing(2)
     .split(area);
     // ⚬──────
-    let progress_str = "─".repeat(area[1].width as usize);
+    let mut progress_str = "─".repeat(area[1].width as usize);
+    if let Some(current_track) = model.player.current.as_mut()
+        && let Some(dur) = current_track.duration
+    {
+        let bar_pos = get_progress_position(progress_str.chars().count(), &current_track.pos, &dur)
+            .saturating_sub(1);
+        if let Some((byte_pos, ch)) = progress_str.char_indices().nth(bar_pos) {
+            let byte_end = byte_pos + ch.len_utf8();
+            progress_str.replace_range(byte_pos..byte_end, "⚬");
+        }
+    }
 
     let play = Paragraph::new(play_str).centered();
     let progress = Paragraph::new(progress_str);
@@ -96,4 +106,8 @@ fn get_quality_str(tag: &TaggedFile) -> String {
         .unwrap_or("".to_string());
 
     format!("{}/{}", bit_depth, sample_rate)
+}
+
+fn get_progress_position(bar_size: usize, track_pos: &Duration, track_dur: &Duration) -> usize {
+    (track_pos.div_duration_f32(*track_dur) * (bar_size as f32)).ceil() as usize
 }
