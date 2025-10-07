@@ -1,6 +1,6 @@
 # Firefly, Terminal Audio Player
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and UI built with [Ratatui](https://ratatui.rs/).
-![example_img](example_img/firefly_v0-6-2.gif)
+![example_img](example_img/firefly_v0-7-0.gif)
 (Showcase as of v0.7.0)
 ## Features (v0.7.0)
 - Play, Pause, Rewind, and Seek.
