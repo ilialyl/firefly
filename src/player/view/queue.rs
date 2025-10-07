@@ -42,9 +42,11 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     } else if model.player.queue.is_empty() {
         Block::default()
     } else {
-        Block::default().title(title)
-    }
-    .padding(Padding::uniform(1));
+        Block::default()
+            .title(title)
+            .padding(Padding::horizontal(1))
+            .padding(Padding::bottom(1))
+    };
 
     StatefulWidget::render(list.block(block), area, frame.buffer_mut(), &mut list_state);
 }
