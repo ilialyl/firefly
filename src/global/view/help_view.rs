@@ -64,7 +64,11 @@ pub fn draw(frame: &mut Frame, area: Rect) {
             .border_style(Style::default()),
     );
 
-    let instruction = Paragraph::new("Press H to hide").bold().centered();
+    let instruction = Paragraph::new(
+        "Press TAB to cycle through panels. Each panel has its own keyboard actions.",
+    )
+    .bold()
+    .centered();
 
     Clear.render(area, frame.buffer_mut());
     player_controls.render(horizontal_chunks[0], frame.buffer_mut());
