@@ -42,7 +42,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .margin(1)
         .split(left_panel_chunks[0]);
 
-    cover_art::draw(cover_art_area[0], frame, model);
+    if !model.show_help {
+        cover_art::draw(cover_art_area[0], frame, model);
+    }
     queue::draw(left_panel_chunks[1], frame, model);
     track_details::draw(track_details_area[0], frame, model);
     playlist::view::draw(right_panel_chunks[1], frame, model);
