@@ -52,7 +52,7 @@ pub fn install_panic_hook() {
 }
 
 pub fn handle_events(model: &Model) -> Result<Option<Message>> {
-    if event::poll(Duration::from_millis(16))? {
+    if event::poll(Duration::from_millis(50))? {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 return Ok(handle_key_inputs(key_event, model));
