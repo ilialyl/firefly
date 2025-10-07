@@ -55,7 +55,7 @@ pub enum PlaylistMessage {
     AddDir,
     RemoveTrack,
     ToggleArrangeTracks,
-    ToPlayer,
+    SendToPlayer,
     AskToSave(Box<Option<Message>>),
 }
 
