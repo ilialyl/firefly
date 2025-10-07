@@ -43,6 +43,7 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char('w') => Some(Message::Playlist(PlaylistMessage::AddTracks)),
                 KeyCode::Char('q') => Some(Message::Player(PlayerMessage::QueueFiles)),
                 KeyCode::Char('Q') => Some(Message::Player(PlayerMessage::QueueDir)),
+                KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
                 KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::ToPlayer)),
                 KeyCode::Delete => Some(Message::Playlist(PlaylistMessage::RemoveTrack)),
                 KeyCode::Right => Some(Message::Playlist(PlaylistMessage::MoveCursor(
@@ -57,6 +58,7 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Down => Some(Message::Playlist(PlaylistMessage::MoveCursor(
                     CursorMovementDirection::Down,
                 ))),
+                KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
                 KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
                 KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),

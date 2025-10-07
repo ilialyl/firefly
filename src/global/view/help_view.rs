@@ -86,7 +86,7 @@ fn get_player_controls() -> Vec<(String, String)> {
         ("Rewind/Seek", "<←/→>"),
         ("Volume", "<=/->"),
         ("Loop", "<L>"),
-        ("Focus Playlist", "<TAB>"),
+        ("Focus Playlist", "<Tab>"),
         ("Quit", "<Esc>"),
     ]
     .iter()
@@ -101,12 +101,12 @@ fn get_playlist_controls() -> Vec<(String, String)> {
         ("Rename Playlist", "<F2>"),
         ("Save Playlist", "<F5>"),
         ("Delete Playlist", "<F9>"),
-        ("Add Tracks", "<w>"),
+        ("Add Tracks", "<W>"),
         ("Add Directory", "<ShiftW>"),
         ("Remove Track", "<Del>"),
         ("Arrange Track", "<A>"),
-        ("Send Selected to Player", "<F1>"),
-        ("Focus Player", "<TAB>"),
+        ("Send Selected to Player", "<F1/Enter>"),
+        ("Focus Player", "<Tab>"),
     ]
     .iter()
     .map(|(a, b)| (a.to_string(), b.to_string()))
