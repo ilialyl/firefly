@@ -7,7 +7,10 @@ use ratatui::{
     },
 };
 
-use crate::{model::Model, playlist::logic::playlist_tab_focus::PlaylistTabFocus};
+use crate::{
+    global::view_logic::focused_area::FocusedArea, model::Model,
+    playlist::logic::playlist_tab_focus::PlaylistTabFocus,
+};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_area: Rect) {
     let tab_focus = model.playlist_ctl.tab_focus;
@@ -41,12 +44,14 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
         let mut scrollbar_state = ScrollbarState::new(selected_playlist.len())
             .position(selected_playlist.selected_track.unwrap_or(0));
 
-        frame.render_stateful_widget(
-            Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(Some("↑"))
-                .end_symbol(Some("↓")),
-            scrollbar_area,
-            &mut scrollbar_state,
-        );
+        if matches!(model.focused_view_area, FocusedArea::Playlist) {
+            frame.render_stateful_widget(
+                Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
+                scrollbar_area,
+                &mut scrollbar_state,
+            );
+        }
     }
 }

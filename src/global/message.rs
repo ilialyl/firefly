@@ -1,9 +1,10 @@
 use std::sync::{Arc, Mutex};
 
+use ratatui_image::protocol::StatefulProtocol;
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
-    global::logic::{confirmation::Response, terminal::CursorMovementDirection},
+    global::{logic::confirmation::Response, view_logic::terminal::CursorMovementDirection},
     user_input::logic::{InputTarget, PromptMsg},
 };
 
@@ -17,11 +18,12 @@ pub enum Message {
     ConversionEnded,
     AskConfirmation(String, Box<Message>),
     Confirm(Response),
-    SetBusy,
     UpdateStatusMsg(String),
     CycleTabs,
     AcknowledgeInfo,
     DisplayInfo(String),
+    ImageDecoded(StatefulProtocol, u32),
+    ShowHelp,
 }
 
 pub enum PlayerMessage {
@@ -40,6 +42,7 @@ pub enum PlayerMessage {
     QueueFiles,
     QueueDir,
     ShuffleQueue,
+    ClearQueue,
 }
 
 pub enum PlaylistMessage {
@@ -53,9 +56,8 @@ pub enum PlaylistMessage {
     AddDir,
     RemoveTrack,
     ToggleArrangeTracks,
-    ToPlayer,
+    SendToPlayer,
     AskToSave(Box<Option<Message>>),
-    ToggleControlPanel,
 }
 
 pub enum UserInputMessage {

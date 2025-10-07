@@ -126,4 +126,9 @@ impl TrackQueue {
         vec.shuffle(&mut rng);
         self.tracks = vec.into_iter().collect();
     }
+
+    pub fn clear(&mut self) {
+        self.tracks.clear();
+        self.selected_index = 0;
+    }
 }

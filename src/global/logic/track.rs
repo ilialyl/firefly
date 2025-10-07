@@ -1,7 +1,11 @@
 use std::{
     fs::{self, File},
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, mpsc::Sender},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU32, Ordering},
+        mpsc::Sender,
+    },
     thread,
     time::Duration,
 };
@@ -9,12 +13,14 @@ use std::{
 use color_eyre::eyre::Result;
 use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
+    picture::Picture,
     probe::Probe,
     tag::Accessor,
 };
 use log::{debug, info};
+use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
-use rust_ffmpeg::{AudioFilter, FFmpegBuilder, FFmpegProcess};
+use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
 use tokio::runtime::Runtime;
 
 use crate::global::{
@@ -28,70 +34,92 @@ use crate::global::{
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum FormatConversion {
+    Idle,
     Running,
     Done,
     Unnecessary,
 }
 
+static TRACK_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
+
 pub struct Track {
+    pub id: u32,
     pub real_path: PathBuf,
-    temp_path: PathBuf,
+    pub temp_path: PathBuf,
     pub pos: Duration,
     pub duration: Option<Duration>,
     pub tagged_file: Option<TaggedFile>,
-    pub conversion_status: FormatConversion,
+    pub picture: Option<Picture>,
+    pub protocol: Option<StatefulProtocol>,
     pub has_title: bool,
+    pub started_decoding: bool,
+    pub conversion_status: FormatConversion,
 }
 
 impl Track {
-    pub fn new(path: &Path, msg_tx: &Sender<Message>, info_tx: &Sender<String>) -> Result<Track> {
+    pub fn new(path: &Path) -> Result<Track> {
+        let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+
         let temp_path = Self::get_temp_file(path);
         let mut tagged_file = Probe::open(path).unwrap().read().ok();
+        if tagged_file.is_none() && temp_path.exists() {
+            tagged_file = Probe::open(&temp_path).unwrap().read().ok();
+        }
 
-        let conversion_status;
-        if !is_rodio_supported(path)? {
+        let conversion_status = if !is_rodio_supported(path)? {
             if temp_path.exists() {
                 debug!("Path {:?} exists, skipping conversion", temp_path);
-                conversion_status = FormatConversion::Done;
+                FormatConversion::Done
             } else {
-                conversion_status = FormatConversion::Running;
+                FormatConversion::Idle
             }
         } else {
-            conversion_status = FormatConversion::Unnecessary;
-        }
-        let mut has_title = false;
-        let mut duration = None;
-
-        if let Some(ref mut tagged) = tagged_file {
-            duration = Some(Self::read_duration(tagged));
-            has_title = tagged.primary_tag().unwrap().title().is_some();
-        }
-
-        let track = Track {
-            real_path: path.to_path_buf(),
-            temp_path,
-            pos: Duration::from_secs(0),
-            duration,
-            has_title,
-            conversion_status,
-            tagged_file,
+            FormatConversion::Unnecessary
         };
 
-        if track.conversion_status == FormatConversion::Running {
-            track.convert_format(msg_tx, info_tx);
-        }
+        let mut has_title = false;
+        let mut duration = None;
+        let mut picture = None;
+
+        if let Some(tagged) = tagged_file.as_mut() {
+            duration = Some(Self::read_duration_from_tag(tagged));
+            if let Some(tag) = tagged.primary_tag() {
+                has_title = tag.title().is_some();
+
+                if let Some(pic) = tag.pictures().first() {
+                    picture = Some(pic.clone());
+                }
+            }
+        };
+
+        let track = Track {
+            id,
+            real_path: path.to_path_buf(),
+            temp_path,
+            tagged_file,
+            pos: Duration::default(),
+            duration,
+            picture,
+            protocol: None,
+            has_title,
+            started_decoding: false,
+            conversion_status,
+        };
 
         Ok(track)
     }
 
     pub fn reload_after_conversion(&mut self) {
         let tagged_file = Probe::open(&self.temp_path).unwrap().read().unwrap();
-        let duration = Self::read_duration(&tagged_file);
-        let has_title = tagged_file.primary_tag().unwrap().title().is_some();
+        self.duration = Some(Self::read_duration_from_tag(&tagged_file));
+        if let Some(tag) = tagged_file.primary_tag() {
+            self.has_title = tag.title().is_some();
+            if let Some(pic) = tag.pictures().first() {
+                self.picture = Some(pic.clone());
+            }
+        }
 
         self.tagged_file = Some(tagged_file);
-        self.duration = Some(duration);
-        self.has_title = has_title;
     }
 
     pub fn get_temp_file(path: &Path) -> PathBuf {
@@ -109,7 +137,7 @@ impl Track {
         ))
     }
 
-    pub fn read_duration(tagged_file: &TaggedFile) -> Duration {
+    pub fn read_duration_from_tag(tagged_file: &TaggedFile) -> Duration {
         tagged_file.properties().duration()
     }
 
@@ -134,26 +162,35 @@ impl Track {
         Ok(path.clone())
     }
 
-    pub fn sync_pos(&mut self, sink: &Sink) {
+    pub fn sync_pos_from_sink(&mut self, sink: &Sink) {
         self.pos = sink.get_pos();
     }
 
-    fn convert_format(&self, msg_tx: &Sender<Message>, info_tx: &Sender<String>) {
-        let process =
-            Self::build_conversion_process(self.real_path.clone(), self.temp_path.clone());
-
-        let cloned_temp_path = self.temp_path.to_path_buf();
-        let cloned_msg_tx = msg_tx.clone();
-        let cloned_info_tx = info_tx.clone();
+    pub fn convert_format(
+        real_path: &Path,
+        temp_path: &Path,
+        msg_tx: &Sender<Message>,
+        info_tx: &Sender<String>,
+    ) {
+        let real_path = real_path.to_path_buf();
+        let temp_path = temp_path.to_path_buf();
+        let msg_tx = msg_tx.clone();
+        let info_tx = info_tx.clone();
 
         info!("Converting file...");
-        cloned_info_tx
+        info_tx
             .send("Converting format and normalizing volume...".to_string())
             .unwrap();
         thread::spawn(move || {
             let runtime = Runtime::new().unwrap();
-            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(process)));
-            cloned_msg_tx
+            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(async {
+                FFmpegBuilder::convert(real_path.to_path_buf(), temp_path.to_path_buf())
+                    .audio_filter(AudioFilter::loudnorm())
+                    .spawn()
+                    .await
+                    .unwrap()
+            })));
+            msg_tx
                 .send(Message::ConversionStarted(ffmpeg_handle.clone()))
                 .unwrap();
             loop {
@@ -166,29 +203,20 @@ impl Track {
                         .unwrap()
                         .success()
                     {
-                        cloned_info_tx.send("".to_string()).unwrap();
+                        info_tx.send("".to_string()).unwrap();
                         info!("Conversion Complete.");
-                        cloned_msg_tx.send(Message::ConversionEnded).unwrap();
+                        msg_tx.send(Message::ConversionEnded).unwrap();
                         break;
                     }
-                    cloned_info_tx.send("".to_string()).unwrap();
-                    if cloned_temp_path.is_file() {
-                        fs::remove_file(&cloned_temp_path)
-                            .expect("Error deleting half-converted file.");
-                        info!("Deleted {:?}", cloned_temp_path);
+                    info_tx.send("".to_string()).unwrap();
+                    if temp_path.is_file() {
+                        fs::remove_file(&temp_path).expect("Error deleting half-converted file.");
+                        info!("Deleted {:?}", temp_path);
                     }
                     info!("Conversion killed.");
                     break;
                 }
             }
         });
-    }
-
-    async fn build_conversion_process(real_path: PathBuf, temp_path: PathBuf) -> FFmpegProcess {
-        FFmpegBuilder::convert(real_path, temp_path)
-            .audio_filter(AudioFilter::loudnorm())
-            .spawn()
-            .await
-            .unwrap()
     }
 }

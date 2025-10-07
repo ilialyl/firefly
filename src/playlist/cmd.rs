@@ -5,9 +5,9 @@ use crate::{
         logic::{
             confirmation::Response,
             files::{choose_dirs, choose_multiple_audio_files, filter_dir_for_audio_files},
-            terminal::CursorMovementDirection,
         },
         message::{Message, PlaylistMessage, UserInputMessage},
+        view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
     player::logic::Player,
@@ -79,7 +79,9 @@ pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
 }
 
 pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(playlist) = playlist_ctl.get_selected_playlist() {
+    if matches!(playlist_ctl.tab_focus, PlaylistTabFocus::Tracks)
+        && let Some(playlist) = playlist_ctl.get_selected_playlist()
+    {
         playlist.remove_selected();
         if playlist.is_empty() {
             playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
@@ -303,12 +305,6 @@ pub fn ask_to_save(
             ));
         }
     }
-
-    None
-}
-
-pub fn toggle_control_panel(model: &mut Model) -> Option<Message> {
-    model.show_controls = !model.show_controls;
 
     None
 }

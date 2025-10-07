@@ -1,18 +1,17 @@
 # Firefly, Terminal Audio Player
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and UI built with [Ratatui](https://ratatui.rs/).
 ![example_img](example_img/firefly_v0-6-2.gif)
-(Showcase as of v0.6.2)
-## Features (v0.6.2)
+(Showcase as of v0.7.0)
+## Features (v0.7.0)
 - Play, Pause, Rewind, and Seek.
 - Persistent Playlists
 - Volume Control from 0-200%
 - Track Looping
 - File Dialog
 - Track and Directory queuing
-- Queue Arrangement
-- Queue Shuffle
+- Queue Arrangement, Shuffling, Clearing
 - Skip Forward or Backward
-- Metadata Display (Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
+- Metadata Display (Cover Art, Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
 
 ### Formats Supported
 - FLAC ([Symphonia](https://github.com/pdeljanov/Symphonia))
@@ -26,8 +25,8 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 
 ### Roadmap
 - [x] Playlists (v0.6.0)
-- [ ] Album art display for supported terminals
-- [ ] UI overhaul
+- [x] Album art display for supported terminals (v0.7.0)
+- [x] UI overhaul (v0.7.0)
 
 ## Usage
 ### Windows
@@ -52,6 +51,7 @@ Building from source is possible but instruction is omitted due to unknown list 
 
 ## Known Issue
 - Rewinding can be slow on systems that use [ALSA](https://www.alsa-project.org/wiki/Main_Page).
+- Wezterm (Windows) does not display cover art.
 
 ## Bug Report
 If you find any bugs, you can open an [issue](https://github.com/ilialyl/firefly/issues). I will get to it as soon as possible.

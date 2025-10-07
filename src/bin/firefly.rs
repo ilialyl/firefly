@@ -12,11 +12,13 @@ use firefly::{
             data::get_cache_dir,
             logger::setup_logger,
             session_state::RunningState,
-            terminal::{handle_events, init_terminal, install_panic_hook, restore_terminal},
         },
         message::Message,
         update::update_global,
         view::render_tui,
+        view_logic::terminal::{
+            handle_events, init_terminal, install_panic_hook, restore_terminal,
+        },
     },
     model::Model,
 };

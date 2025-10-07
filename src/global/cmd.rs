@@ -1,15 +1,24 @@
 use std::{
+    io::Cursor,
     sync::{Arc, Mutex, mpsc::Sender},
     thread,
     time::Duration,
 };
 
+use image::ImageReader;
+use lofty::picture::Picture;
 use log::debug;
+use ratatui_image::{picker::Picker, protocol::StatefulProtocol};
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     global::{
-        logic::{confirmation::Response, session_state::RunningState, track::FormatConversion},
+        logic::{
+            confirmation::Response,
+            image::crop_to_square,
+            session_state::RunningState,
+            track::{FormatConversion, Track},
+        },
         message::Message,
     },
     model::Model,
@@ -23,7 +32,7 @@ pub fn tick(
     msg_tx: &Sender<Message>,
     info_tx: &Sender<String>,
 ) -> Option<Message> {
-    if model.session.state == RunningState::Busy {
+    if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
@@ -37,12 +46,31 @@ pub fn tick(
         model.player.status = PlaybackStatus::Idle;
     }
 
-    if let Some(ref mut current_track) = model.player.current {
-        let status = current_track.conversion_status;
+    if let Some(current_track) = model.player.current.as_mut() {
         // Update playback status
+        let status = current_track.conversion_status;
 
         // Update playback position
-        current_track.sync_pos(&model.player.sink);
+        current_track.sync_pos_from_sink(&model.player.sink);
+
+        // Create Protocol if the track has cover art, if not already.
+        if !current_track.started_decoding
+            && let Some(picture) = current_track.picture.as_mut()
+        {
+            current_track.started_decoding = true;
+            create_protocol(picture, current_track.id, model.picker.clone(), msg_tx);
+        }
+
+        // Convert file format to FLAC if current format is not supported, if not already.
+        if current_track.conversion_status == FormatConversion::Idle {
+            current_track.conversion_status = FormatConversion::Running;
+            Track::convert_format(
+                &current_track.real_path,
+                &current_track.temp_path,
+                msg_tx,
+                info_tx,
+            );
+        }
 
         // Reload track when track ends if looped
         // Set position, duration, and status to default if not looped
@@ -63,16 +91,16 @@ pub fn tick(
         if model.player.status == PlaybackStatus::Idle
             && !model.player.queue.is_empty()
             && !model.player.looping
-            && status != FormatConversion::Running
+            && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
             debug!("Load the next track after current track ends.");
-            player::cmd::skip(model, msg_tx, info_tx);
+            player::cmd::skip(model);
         }
 
-        // Load first track (player.current is None)
+        // Load first track if no current track and there is something in the queue.
     } else if model.player.current.is_none() && !model.player.queue.is_empty() {
         debug!("Load first track (player.current is None)");
-        player::cmd::skip(model, msg_tx, info_tx);
+        player::cmd::skip(model);
     }
 
     None
@@ -97,13 +125,14 @@ pub fn confirmed(answer: Response, model: &mut Model) -> Option<Message> {
 
 pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
     model.player.ffmpeg_handle = Some(handle);
+    model.session.state = RunningState::RunningFFmpeg;
 
-    Some(Message::SetBusy)
+    None
 }
 
 pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
-    if let Some(ref mut current_track) = model.player.current {
+    if let Some(current_track) = model.player.current.as_mut() {
         current_track.conversion_status = FormatConversion::Done;
         current_track.reload_after_conversion();
         model
@@ -135,12 +164,6 @@ pub fn quit(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn set_busy(model: &mut Model) -> Option<Message> {
-    model.session.state = RunningState::Busy;
-
-    None
-}
-
 pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
     if let Some(to_resume) =
         playlist_save_confirm_then_resume(Message::CycleTabs, &mut model.playlist_ctl)
@@ -148,7 +171,7 @@ pub fn cycle_tabs(model: &mut Model) -> Option<Message> {
         return Some(to_resume);
     }
 
-    model.selected_tab.cycle_right();
+    model.focused_view_area.cycle_right();
 
     None
 }
@@ -168,6 +191,42 @@ pub fn display_info(info: String, info_tx: &Sender<String>) -> Option<Message> {
         debug!("Clearing info message.");
         cloned_tx.send(String::new()).unwrap();
     });
+
+    None
+}
+
+pub fn set_track_protocol(
+    protocol: StatefulProtocol,
+    id: u32,
+    model: &mut Model,
+) -> Option<Message> {
+    if let Some(current_track) = model.player.current.as_mut()
+        && id == current_track.id
+    {
+        current_track.protocol = Some(protocol);
+    }
+
+    None
+}
+
+pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: &Sender<Message>) {
+    let picture_data = picture.data().to_vec();
+    let msg_tx = msg_tx.clone();
+
+    thread::spawn(move || {
+        if let Some(dyn_img) = ImageReader::new(Cursor::new(&picture_data))
+            .with_guessed_format()
+            .ok()
+            .and_then(|r| r.decode().ok())
+        {
+            let protocol = picker.new_resize_protocol(crop_to_square(dyn_img));
+            let _ = msg_tx.send(Message::ImageDecoded(protocol, id));
+        }
+    });
+}
+
+pub fn toggle_show_help(model: &mut Model) -> Option<Message> {
+    model.show_help = !model.show_help;
 
     None
 }

@@ -4,15 +4,12 @@ use rust_ffmpeg::FFmpegProcess;
 use std::{
     ops::{Add, Sub},
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, mpsc::Sender},
+    sync::{Arc, Mutex},
     time::Duration,
 };
 
 use crate::{
-    global::{
-        logic::{track::Track, track_queue::TrackQueue},
-        message::Message,
-    },
+    global::logic::{track::Track, track_queue::TrackQueue},
     player::logic::playback_status::PlaybackStatus,
 };
 
@@ -50,13 +47,8 @@ impl Player {
         }
     }
 
-    pub fn new_track(
-        &mut self,
-        track: &Path,
-        msg_tx: &Sender<Message>,
-        info_tx: &Sender<String>,
-    ) -> Result<()> {
-        self.current = Some(Track::new(track, msg_tx, info_tx)?);
+    pub fn new_track(&mut self, path: &Path) -> Result<()> {
+        self.current = Some(Track::new(path)?);
 
         Ok(())
     }
@@ -101,7 +93,7 @@ impl Player {
     }
 
     pub fn rewind(&mut self, rewind_dur: Duration) -> Result<()> {
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             let current_pos = self.sink.get_pos();
             let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
                 Some(dur) => dur,
@@ -128,7 +120,7 @@ impl Player {
     }
 
     pub fn reload(&mut self) -> Result<()> {
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             self.sink.clear();
             let source = current.get_source()?;
             self.sink.append(source);
@@ -138,40 +130,32 @@ impl Player {
         Ok(())
     }
 
-    pub fn load_next_track(
-        &mut self,
-        msg_tx: &Sender<Message>,
-        info_tx: &Sender<String>,
-    ) -> Result<()> {
+    pub fn load_next_track(&mut self) -> Result<()> {
         let path = match self.queue.dequeue() {
             Some(path) => path,
             None => return Err(eyre!("Queue is empty.")),
         };
 
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             self.previous.push(current.real_path.clone());
         }
 
-        self.new_track(&path, msg_tx, info_tx)?;
+        self.new_track(&path)?;
 
         Ok(())
     }
 
-    pub fn load_prev_track(
-        &mut self,
-        msg_tx: &Sender<Message>,
-        info_tx: &Sender<String>,
-    ) -> Result<()> {
+    pub fn load_prev_track(&mut self) -> Result<()> {
         let prev = match self.previous.pop() {
             Some(path) => path,
             None => return Err(eyre!("There are no previous tracks.")),
         };
 
-        if let Some(ref mut current) = self.current {
+        if let Some(current) = self.current.as_mut() {
             self.queue.prepend_track(&current.real_path);
         }
 
-        self.new_track(&prev, msg_tx, info_tx)?;
+        self.new_track(&prev)?;
 
         Ok(())
     }
