@@ -4,11 +4,7 @@ use lofty::{
     file::{AudioFile, TaggedFile, TaggedFileExt},
     tag::Accessor,
 };
-use ratatui::{
-    Frame,
-    layout::{Alignment, Rect},
-    widgets::Paragraph,
-};
+use ratatui::{Frame, layout::Rect, widgets::Paragraph};
 
 use crate::{global::view::center_vertical, model::Model};
 
@@ -16,20 +12,15 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     if let Some(current_track) = model.player.current.as_mut()
         && let Some(tagged_file) = current_track.tagged_file.as_mut()
     {
-        let metadata = get_metadata_lines(tagged_file);
-        let details = get_file_detail_lines(&current_track.real_path);
+        let metadata = get_metadata_lines(tagged_file, &current_track.real_path);
         frame.render_widget(
             Paragraph::new(metadata.join("\n")),
             center_vertical(area, (metadata.len() + 1) as u16),
         );
-        frame.render_widget(
-            Paragraph::new(details.join("\n")).alignment(Alignment::Right),
-            center_vertical(area, (details.len() + 1) as u16),
-        );
     }
 }
 
-fn get_metadata_lines(tagged_file: &TaggedFile) -> Vec<String> {
+fn get_metadata_lines(tagged_file: &TaggedFile, path: &Path) -> Vec<String> {
     if let Some(tag) = tagged_file.primary_tag() {
         let properties = tagged_file.properties();
 
@@ -77,10 +68,22 @@ fn get_metadata_lines(tagged_file: &TaggedFile) -> Vec<String> {
             .map(|n| format!("{} Channels", n))
             .unwrap_or("".to_string());
 
-        let vec = [format!("{}{}", track_num, title),
+        let file_ext = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("")
+            .to_string()
+            .to_uppercase();
+
+        let vec = [
+            format!("{}{}", track_num, title),
             artist.to_string(),
             format!("{}{}{}", album, disc_num, year),
-            format!("{}{}{}{}", bit_depth, sample_rate, bitrate, channels)];
+            format!(
+                "{} {}{}{}{}",
+                file_ext, bit_depth, sample_rate, bitrate, channels
+            ),
+        ];
 
         let mut padded_vec = Vec::<String>::new();
         if let Some((last, rest)) = vec.split_last() {
@@ -98,34 +101,28 @@ fn get_metadata_lines(tagged_file: &TaggedFile) -> Vec<String> {
     }
 }
 
-fn get_file_detail_lines(path: &Path) -> Vec<String> {
-    let mut vec = Vec::<String>::new();
-    let file_stem = path
-        .file_stem()
-        .and_then(|f| f.to_str())
-        .unwrap_or("No file name")
-        .to_string();
-    let file_ext = path
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("")
-        .to_string()
-        .to_uppercase();
+// fn get_file_detail_lines(path: &Path) -> Vec<String> {
+//     let mut vec = Vec::<String>::new();
+//     let file_ext = path
+//         .extension()
+//         .and_then(|ext| ext.to_str())
+//         .unwrap_or("")
+//         .to_string()
+//         .to_uppercase();
 
-    vec.push(file_stem);
-    if !file_ext.is_empty() {
-        vec.push(file_ext);
-    }
+//     if !file_ext.is_empty() {
+//         vec.push(file_ext);
+//     }
 
-    let mut padded_vec = Vec::<String>::new();
-    if let Some((last, rest)) = vec.split_last() {
-        for line in rest {
-            if !line.is_empty() {
-                padded_vec.push(line.clone());
-                padded_vec.push(String::new());
-            }
-        }
-        padded_vec.push(last.clone());
-    }
-    padded_vec
-}
+//     let mut padded_vec = Vec::<String>::new();
+//     if let Some((last, rest)) = vec.split_last() {
+//         for line in rest {
+//             if !line.is_empty() {
+//                 padded_vec.push(line.clone());
+//                 padded_vec.push(String::new());
+//             }
+//         }
+//         padded_vec.push(last.clone());
+//     }
+//     padded_vec
+// }
