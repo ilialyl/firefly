@@ -84,6 +84,7 @@ fn get_player_controls() -> Vec<(String, String)> {
         ("Play/Pause", "<Space>"),
         ("Shuffle Queue", "<M>"),
         ("Arrange Queue", "<A>"),
+        ("Clear Queue", "<Del>"),
         ("Move Queue Up", "<↑>"),
         ("Move Queue Down", "<↓>"),
         ("Prev/Skip", "<P/S>"),
@@ -108,7 +109,7 @@ fn get_playlist_controls() -> Vec<(String, String)> {
         ("Add Tracks", "<W>"),
         ("Add Directory", "<ShiftW>"),
         ("Remove Track", "<Del>"),
-        ("Arrange Track", "<A>"),
+        ("Arrange Tracks", "<A>"),
         ("Send Selected to Player", "<F1/Enter>"),
         ("Focus Player", "<Tab>"),
     ]
