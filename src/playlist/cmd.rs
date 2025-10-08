@@ -119,7 +119,9 @@ pub fn send_to_player(
                 player
                     .queue
                     .enqueue_tracks(selected.tracks.iter().map(|e| e.to_path_buf()).collect());
-                Some(Message::DisplayInfo("Sent Playlist to Player".to_string()))
+                Some(Message::DisplayInfoMsg(
+                    "Sent Playlist to Player".to_string(),
+                ))
             } else {
                 None
             }
@@ -130,7 +132,7 @@ pub fn send_to_player(
                 && let Some(track) = playlist.tracks.get(index)
             {
                 player.queue.enqueue_tracks(vec![track.clone()]);
-                Some(Message::DisplayInfo("Sent Track to Player".to_string()))
+                Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None
             }
@@ -257,7 +259,7 @@ pub fn save_selected_playlist(playlist_ctl: &mut PlaylistController) -> Option<M
         .save_selected_to_file()
         .expect("Error saving selected playlist to file");
 
-    Some(Message::DisplayInfo("Saved successfully".to_string()))
+    Some(Message::DisplayInfoMsg("Saved successfully".to_string()))
 }
 
 pub fn load_playlists(playlist_ctl: &mut PlaylistController) -> Option<Message> {

@@ -82,6 +82,5 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
             KeyCode::Esc => Some(Message::Confirm(Response::No)),
             _ => None,
         },
-        InputMode::Info => Some(Message::AcknowledgeInfo),
     }
 }

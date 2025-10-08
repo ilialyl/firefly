@@ -144,10 +144,10 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn update_status_msg(info: String, model: &mut Model) -> Option<Message> {
-    model.status_msg = info;
-    debug!("Updated info message to {}", model.status_msg);
-    debug!("Info message length: {}", model.status_msg.len());
+pub fn update_info_msg(info: String, model: &mut Model) -> Option<Message> {
+    model.info_msg = info;
+    debug!("Updated info message to {}", model.info_msg);
+    debug!("Info message length: {}", model.info_msg.len());
 
     None
 }
@@ -182,7 +182,7 @@ pub fn acknowledge_info(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn display_info(info: String, info_tx: &Sender<String>) -> Option<Message> {
+pub fn display_info_msg(info: String, info_tx: &Sender<String>) -> Option<Message> {
     info_tx.send(info.clone()).unwrap();
 
     let cloned_tx = info_tx.clone();

@@ -1,6 +1,5 @@
 pub mod confirmation_box;
 pub mod help_view;
-pub mod info_popup;
 pub mod main_view;
 
 use ratatui::{
@@ -24,10 +23,10 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         ])
         .split(frame.area());
 
-    let top_right_text = if model.status_msg.is_empty() {
+    let top_right_text = if model.info_msg.is_empty() {
         format!("v{}", env!("CARGO_PKG_VERSION"))
     } else {
-        model.status_msg.clone()
+        model.info_msg.clone()
     };
 
     Block::new()
@@ -78,9 +77,6 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         }
         InputMode::Commands => {}
         InputMode::Confirmation => confirmation_box::render(model, frame, frame.area()),
-        InputMode::Info => {
-            info_popup::draw(model, frame, frame.area());
-        }
     }
 }
 

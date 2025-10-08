@@ -18,10 +18,10 @@ pub enum Message {
     ConversionEnded,
     AskConfirmation(String, Box<Message>),
     Confirm(Response),
-    UpdateStatusMsg(String),
+    UpdateInfoMsg(String),
     CycleTabs,
     AcknowledgeInfo,
-    DisplayInfo(String),
+    DisplayInfoMsg(String),
     ImageDecoded(StatefulProtocol, u32),
     ShowHelp,
 }
