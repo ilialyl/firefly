@@ -32,15 +32,14 @@ pub fn playlist_save_confirm_then_resume(
     None
 }
 
-pub fn create_playlist(model: &mut Model) -> Option<Message> {
-    if let Some(to_resume) = playlist_save_confirm_then_resume(
-        Message::Playlist(PlaylistMessage::Create),
-        &mut model.playlist_ctl,
-    ) {
+pub fn create_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    if let Some(to_resume) =
+        playlist_save_confirm_then_resume(Message::Playlist(PlaylistMessage::Create), playlist_ctl)
+    {
         return Some(to_resume);
     }
 
-    let index = model.playlist_ctl.create_playlist();
+    let index = playlist_ctl.create_playlist();
 
     Some(Message::UserInput(UserInputMessage::EnterEditMode(
         "Playlist".to_string(),
@@ -141,9 +140,9 @@ pub fn send_to_player(
 
 pub fn navigate_playlists(
     direction: CursorMovementDirection,
-    model: &mut Model,
+    playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
-    if !matches!(model.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
+    if !matches!(playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
         return None;
     }
 
@@ -151,21 +150,21 @@ pub fn navigate_playlists(
         CursorMovementDirection::Up => {
             if let Some(to_resume) = playlist_save_confirm_then_resume(
                 Message::Playlist(PlaylistMessage::MoveCursor(direction)),
-                &mut model.playlist_ctl,
+                playlist_ctl,
             ) {
                 return Some(to_resume);
             }
 
-            model.playlist_ctl.prev_playlist();
+            playlist_ctl.prev_playlist();
         }
         CursorMovementDirection::Down => {
             if let Some(to_resume) = playlist_save_confirm_then_resume(
                 Message::Playlist(PlaylistMessage::MoveCursor(direction)),
-                &mut model.playlist_ctl,
+                playlist_ctl,
             ) {
                 return Some(to_resume);
             }
-            model.playlist_ctl.next_playlist();
+            playlist_ctl.next_playlist();
         }
         _ => {}
     }
@@ -193,25 +192,28 @@ pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut Pl
     }
 }
 
-pub fn move_cursor(direction: CursorMovementDirection, model: &mut Model) -> Option<Message> {
-    if model.playlist_ctl.playlist_coll.is_empty() {
+pub fn move_cursor(
+    direction: CursorMovementDirection,
+    playlist_ctl: &mut PlaylistController,
+) -> Option<Message> {
+    if playlist_ctl.playlist_coll.is_empty() {
         return None;
     }
 
     match direction {
         CursorMovementDirection::Left => {
-            model.playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
+            playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
         }
         CursorMovementDirection::Right => {
-            if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
                 && !selected_playlist.is_empty()
             {
-                model.playlist_ctl.tab_focus = PlaylistTabFocus::Tracks;
+                playlist_ctl.tab_focus = PlaylistTabFocus::Tracks;
             }
         }
-        _ => match model.playlist_ctl.tab_focus {
-            PlaylistTabFocus::Playlists => return navigate_playlists(direction, model),
-            PlaylistTabFocus::Tracks => navigate_tracks(direction, &mut model.playlist_ctl),
+        _ => match playlist_ctl.tab_focus {
+            PlaylistTabFocus::Playlists => return navigate_playlists(direction, playlist_ctl),
+            PlaylistTabFocus::Tracks => navigate_tracks(direction, playlist_ctl),
         },
     }
 

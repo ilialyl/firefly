@@ -6,10 +6,10 @@ use crate::{
 
 pub fn update_playlist(model: &mut Model, msg: PlaylistMessage) -> Option<Message> {
     match msg {
-        PlaylistMessage::Create => create_playlist(model),
+        PlaylistMessage::Create => create_playlist(&mut model.playlist_ctl),
         PlaylistMessage::AddTracks => add_tracks(&mut model.playlist_ctl),
         PlaylistMessage::SendToPlayer => send_to_player(&mut model.playlist_ctl, &mut model.player),
-        PlaylistMessage::MoveCursor(direction) => move_cursor(direction, model),
+        PlaylistMessage::MoveCursor(direction) => move_cursor(direction, &mut model.playlist_ctl),
         PlaylistMessage::AddDir => add_dir(&mut model.playlist_ctl),
         PlaylistMessage::Delete => {
             delete_playlist(&mut model.confirmation.response, &mut model.playlist_ctl)

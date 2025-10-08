@@ -18,7 +18,7 @@ pub fn update_global(
         Message::Tick => tick(model, msg_tx, info_tx),
         Message::AskConfirmation(prompt, msg) => ask_for_confirmation(prompt, *msg, model),
         Message::Confirm(answer) => confirmed(answer, model),
-        Message::Player(player_msg) => update_player(model, player_msg, msg_tx, info_tx),
+        Message::Player(player_msg) => update_player(model, player_msg),
         Message::Playlist(playlist_msg) => update_playlist(model, playlist_msg),
         Message::UserInput(userinput_update) => update_userinput(model, userinput_update),
         Message::ConversionStarted(handle) => conversion_started(handle, model),

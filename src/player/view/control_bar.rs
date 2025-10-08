@@ -3,7 +3,7 @@ use std::time::Duration;
 use lofty::file::{AudioFile, TaggedFile};
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Flex, Layout, Rect},
     widgets::Paragraph,
 };
 
@@ -47,10 +47,10 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         Constraint::Fill(1),
         Constraint::Length((misc_str.len() + 2) as u16),
     ])
-    .flex(ratatui::layout::Flex::SpaceAround)
+    .flex(Flex::SpaceAround)
     .spacing(2)
     .split(area);
-    // ⚬──────
+
     let mut progress_str = "─".repeat(area[1].width as usize);
     if let Some(current_track) = model.player.current.as_mut()
         && let Some(dur) = current_track.duration
