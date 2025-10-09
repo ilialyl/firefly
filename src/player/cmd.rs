@@ -10,12 +10,11 @@ use crate::{
             files::{choose_audio_file, choose_dirs, choose_multiple_audio_files},
             mini_track::MiniTrack,
             session_state::RunningState,
-            track::FormatConversion,
         },
         message::{Message, PlayerMessage},
     },
     model::Model,
-    player::logic::{Player, playback_status::PlaybackStatus},
+    player::logic::{Player, playback_status::PlaybackStatus, track::FormatConversion},
 };
 
 pub fn load_now(player: &mut Player) -> Option<Message> {

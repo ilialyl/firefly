@@ -13,16 +13,17 @@ use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     global::{
-        logic::{
-            confirmation::Response,
-            image::crop_to_square,
-            session_state::RunningState,
-            track::{FormatConversion, Track},
-        },
+        logic::{confirmation::Response, image::crop_to_square, session_state::RunningState},
         message::Message,
     },
     model::Model,
-    player::{self, logic::playback_status::PlaybackStatus},
+    player::{
+        self,
+        logic::{
+            playback_status::PlaybackStatus,
+            track::{FormatConversion, Track},
+        },
+    },
     playlist::cmd::playlist_save_confirm_then_resume,
     user_input::logic::InputMode,
 };

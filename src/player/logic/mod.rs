@@ -1,3 +1,7 @@
+pub mod playback_status;
+pub mod track;
+pub mod track_queue;
+
 use color_eyre::eyre::{Result, eyre};
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
@@ -8,12 +12,9 @@ use std::{
     time::Duration,
 };
 
-use crate::{
-    global::logic::{track::Track, track_queue::TrackQueue},
-    player::logic::playback_status::PlaybackStatus,
+use crate::player::logic::{
+    playback_status::PlaybackStatus, track::Track, track_queue::TrackQueue,
 };
-
-pub mod playback_status;
 
 pub struct Player {
     pub current: Option<Track>,
