@@ -13,6 +13,7 @@ use ratatui::{
 
 use crate::global::view_logic::focused_area::FocusedArea;
 use crate::model::Model;
+use crate::playlist::logic::playlist_tab_focus::PlaylistTabFocus;
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let inner_chunks = Layout::default()
@@ -32,14 +33,37 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         };
 
     playlists_block
-        .title(Line::style(Line::from("Playlists"), Style::new()))
+        .title(Line::style(Line::from(" Playlists "), Style::new()))
         .border_style(Style::default())
         .title_alignment(Alignment::Left)
         .render(inner_chunks[0], frame.buffer_mut());
 
+    let playlist_tab_focus = model.playlist_ctl.tab_focus;
+    let tracks_bottom_title = if matches!(model.focused_view_area, FocusedArea::Playlist)
+        && let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
+    {
+        if matches!(playlist_tab_focus, PlaylistTabFocus::Tracks) {
+            format!(
+                " {} of {} ",
+                selected_playlist.selected_track.unwrap_or(0) + 1,
+                selected_playlist.len()
+            )
+        } else {
+            let len = selected_playlist.len();
+            if len > 1 || len == 0 {
+                format!(" {} tracks ", len)
+            } else {
+                format!(" {} track ", len)
+            }
+        }
+    } else {
+        String::new()
+    };
+
     tracks_block
-        .title(Line::style(Line::from("Tracks"), Style::new()))
+        .title(Line::style(Line::from(" Tracks "), Style::new()))
         .title_alignment(Alignment::Right)
+        .title_bottom(tracks_bottom_title)
         .border_style(Style::default())
         .render(inner_chunks[1], frame.buffer_mut());
 
