@@ -135,4 +135,8 @@ impl TrackQueue {
         self.tracks.clear();
         self.selected_index = 0;
     }
+
+    pub fn len(&self) -> usize {
+        self.tracks.len()
+    }
 }

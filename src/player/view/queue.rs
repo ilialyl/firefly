@@ -27,25 +27,37 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let mut list_state = ListState::default();
     list_state.select(Some(model.player.queue.get_selected()));
 
-    let title = if model.player.queue.is_arrange() {
+    let top_title = if model.player.queue.is_arrange() {
         " Queue [Arrange on] "
     } else {
         " Queue "
+    };
+
+    let bottom_title = if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
+        format!(
+            " {} of {} ",
+            model.player.queue.get_selected() + 1,
+            model.player.queue.len()
+        )
+    } else {
+        String::new()
     };
 
     let block = if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
         if model.player.queue.is_empty() {
             Block::default()
         } else {
-            Block::bordered().title(title)
+            Block::bordered()
+                .title(top_title)
+                .title_bottom(bottom_title)
         }
     } else if model.player.queue.is_empty() {
         Block::default()
     } else {
         Block::default()
-            .title(title)
+            .title(top_title)
+            .title_bottom(bottom_title)
             .padding(Padding::horizontal(1))
-            .padding(Padding::bottom(1))
     };
 
     StatefulWidget::render(list.block(block), area, frame.buffer_mut(), &mut list_state);
