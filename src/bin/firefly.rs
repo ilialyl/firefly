@@ -47,9 +47,9 @@ fn main() -> Result<()> {
 
     install_panic_hook();
     let mut terminal = init_terminal()?;
-    let mut model = Model::default();
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
+    let mut model = Model::new(msg_tx.clone());
 
     while model.session.state != RunningState::Done {
         let mut current_msg;

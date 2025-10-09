@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::mpsc::Sender};
+use std::path::PathBuf;
 
 use crate::{
     global::{
@@ -10,7 +10,6 @@ use crate::{
         view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
-    player::cmd::queue_files_multithreaded,
     playlist::logic::{
         playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus,
     },
@@ -109,15 +108,19 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     None
 }
 
-pub fn send_to_player(model: &mut Model, msg_tx: &Sender<Message>) -> Option<Message> {
+pub fn send_to_player(model: &mut Model) -> Option<Message> {
     match model.playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
-                queue_files_multithreaded(
-                    selected.tracks.iter().map(|e| e.to_path_buf()).collect(),
-                    msg_tx,
-                    model,
-                );
+                if let Err(e) = model
+                    .player
+                    .queue
+                    .tx
+                    .send(selected.tracks.iter().map(|e| e.to_path_buf()).collect())
+                {
+                    log::error!("Error sending Path Vec to queue processing worker: {e}");
+                };
+
                 Some(Message::DisplayInfoMsg(
                     "Sent Playlist to Player".to_string(),
                 ))
@@ -130,7 +133,9 @@ pub fn send_to_player(model: &mut Model, msg_tx: &Sender<Message>) -> Option<Mes
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                queue_files_multithreaded(vec![track.clone()], msg_tx, model);
+                if let Err(e) = model.player.queue.tx.send(vec![track.clone()]) {
+                    log::error!("Error sending Path Vec to queue processing worker: {e}");
+                };
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None

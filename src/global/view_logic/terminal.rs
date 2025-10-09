@@ -9,7 +9,6 @@ use ratatui::{
 use std::{
     io::{Stdout, stdout},
     panic,
-    sync::atomic::Ordering,
 };
 
 use std::time::Duration;
@@ -53,13 +52,7 @@ pub fn install_panic_hook() {
 }
 
 pub fn handle_events(model: &Model) -> Result<Option<Message>> {
-    let poll_rate = if model.queuing.load(Ordering::Relaxed) {
-        Duration::ZERO
-    } else {
-        Duration::from_millis(50)
-    };
-
-    if event::poll(poll_rate)? {
+    if event::poll(Duration::from_millis(16))? {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 return Ok(handle_key_inputs(key_event, model));

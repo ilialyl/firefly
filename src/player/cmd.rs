@@ -1,8 +1,4 @@
-use std::path::PathBuf;
-use std::sync::atomic::Ordering;
 use std::time::Duration;
-use std::{sync::mpsc::Sender, thread};
-
 use tokio::runtime::Runtime;
 
 use crate::global::logic::files::dir_to_audio_paths;
@@ -42,47 +38,24 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn queue_dir(msg_tx: &Sender<Message>, model: &mut Model) -> Option<Message> {
+pub fn queue_dir(model: &mut Model) -> Option<Message> {
     if let Some(dirs) = choose_dirs() {
-        let mut path_vec = Vec::<PathBuf>::new();
         for dir in dirs {
-            path_vec.extend(dir_to_audio_paths(&dir));
+            if let Err(e) = model.player.queue.tx.send(dir_to_audio_paths(&dir)) {
+                log::error!("Error sending Path Vec to queue processing worker: {e}");
+            };
         }
-
-        queue_files_multithreaded(path_vec, msg_tx, model);
     }
 
     None
 }
 
-pub fn queue_files(msg_tx: &Sender<Message>, model: &mut Model) -> Option<Message> {
+pub fn queue_files(model: &mut Model) -> Option<Message> {
     if let Some(path_vec) = choose_multiple_audio_files() {
-        queue_files_multithreaded(path_vec, msg_tx, model)
-    } else {
-        None
+        if let Err(e) = model.player.queue.tx.send(path_vec) {
+            log::error!("Error sending Path Vec to queue processing worker: {e}");
+        };
     }
-}
-
-pub fn queue_files_multithreaded(
-    path_vec: Vec<PathBuf>,
-    msg_tx: &Sender<Message>,
-    model: &mut Model,
-) -> Option<Message> {
-    let msg_tx = msg_tx.clone();
-    let queuing = model.queuing.clone();
-    thread::spawn(move || {
-        queuing.store(true, Ordering::Relaxed);
-        path_vec.iter().for_each(|p| {
-            let mini_track = MiniTrack::new(&p);
-            if let Err(e) =
-                msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(mini_track)))
-            {
-                log::error!("Error sending MiniTrack back to main thread: {e}")
-            };
-        });
-        queuing.store(false, Ordering::Relaxed);
-    });
-
     None
 }
 

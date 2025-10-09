@@ -2,6 +2,8 @@ use std::{
     collections::VecDeque,
     fs,
     path::{Path, PathBuf},
+    sync::mpsc::{self, Receiver, Sender},
+    thread,
 };
 
 use rand::rng;
@@ -9,25 +11,30 @@ use rand::seq::SliceRandom;
 
 use color_eyre::eyre::{Result, eyre};
 
-use crate::global::logic::{files::AUDIO_FORMATS, mini_track::MiniTrack};
+use crate::global::{
+    logic::{files::AUDIO_FORMATS, mini_track::MiniTrack},
+    message::{Message, PlayerMessage},
+};
 
 pub struct TrackQueue {
     tracks: VecDeque<MiniTrack>,
     selected_index: usize,
     arrange_mode: bool,
+    pub tx: Sender<Vec<PathBuf>>,
 }
 
-impl Default for TrackQueue {
-    fn default() -> Self {
+impl TrackQueue {
+    pub fn new(msg_tx: Sender<Message>) -> Self {
+        let (tx, rx) = mpsc::channel::<Vec<PathBuf>>();
+        Self::start_queue_processing_worker(msg_tx, rx);
         Self {
             tracks: VecDeque::new() as VecDeque<MiniTrack>,
             selected_index: 0,
             arrange_mode: false,
+            tx,
         }
     }
-}
 
-impl TrackQueue {
     pub fn get(&self) -> &VecDeque<MiniTrack> {
         &self.tracks
     }
@@ -138,5 +145,20 @@ impl TrackQueue {
 
     pub fn len(&self) -> usize {
         self.tracks.len()
+    }
+
+    pub fn start_queue_processing_worker(msg_tx: Sender<Message>, rx: Receiver<Vec<PathBuf>>) {
+        thread::spawn(move || {
+            while let Ok(path_vec) = rx.recv() {
+                path_vec.iter().for_each(|p| {
+                    let mini_track = MiniTrack::new(&p);
+                    if let Err(e) =
+                        msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(mini_track)))
+                    {
+                        log::error!("Error sending MiniTrack back to main thread: {e}")
+                    };
+                });
+            }
+        });
     }
 }
