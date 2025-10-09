@@ -21,8 +21,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
             .iter()
             .map(|e| {
                 e.file_stem()
-                    .unwrap()
-                    .to_str()
+                    .and_then(|os| os.to_str())
                     .unwrap_or("[Invalid UTF-8 name]")
             })
             .map(ListItem::from)

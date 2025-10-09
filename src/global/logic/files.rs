@@ -105,10 +105,7 @@ pub fn ffmpeg_available() -> bool {
 pub fn get_playlists_path() -> PathBuf {
     let playlists_path = get_data_dir().join("playlists");
     if !playlists_path.exists() {
-        log::info!(
-            "Attempting to create directory {}",
-            playlists_path.to_str().unwrap()
-        );
+        log::info!("Attempting to create directory {:?}", playlists_path);
         create_dir_all(&playlists_path).expect("Failed to create playlist data directory.");
     }
 

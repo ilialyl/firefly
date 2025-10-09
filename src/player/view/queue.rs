@@ -54,7 +54,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
 fn _get_previous_tracks(player: &Player) -> Vec<String> {
     let mut tracks: Vec<String> = Vec::new();
     player.previous.iter().for_each(|track| {
-        if let Some(track_name) = track.file_name().unwrap().to_str() {
+        if let Some(track_name) = track.file_name().and_then(|os| os.to_str()) {
             tracks.push(track_name.to_string());
         } else {
             tracks.push("[Invalid UTF-8 name]".into());

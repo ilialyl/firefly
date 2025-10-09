@@ -64,9 +64,11 @@ pub fn queue_files_threaded(path_vec: Vec<PathBuf>, msg_tx: &Sender<Message>) ->
 
     thread::spawn(move || {
         path_vec.iter().for_each(|p| {
-            let _ = msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(
+            if let Err(e) = msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(
                 MiniTrack::new(&p),
-            )));
+            ))) {
+                log::error!("Error sending MiniTrack back to main thread: {e}")
+            };
         });
     });
 
@@ -81,7 +83,7 @@ pub fn queue_mini_track(mini_track: MiniTrack, player: &mut Player) -> Option<Me
 
 pub fn move_queue_up(player: &mut Player) -> Option<Message> {
     if let Err(e) = player.queue.move_selected_up() {
-        log::info!("{}", e);
+        log::error!("{}", e);
     };
 
     None
@@ -89,7 +91,7 @@ pub fn move_queue_up(player: &mut Player) -> Option<Message> {
 
 pub fn move_queue_down(player: &mut Player) -> Option<Message> {
     if let Err(e) = player.queue.move_selected_down() {
-        log::info!("{}", e);
+        log::error!("{}", e);
     };
 
     None

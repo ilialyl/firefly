@@ -25,7 +25,7 @@ pub enum Message {
     CycleTabs,
     AcknowledgeInfo,
     DisplayInfoMsg(String),
-    ImageDecoded(StatefulProtocol, u32),
+    ProtocolCreated(StatefulProtocol, u32),
     ShowHelp,
 }
 

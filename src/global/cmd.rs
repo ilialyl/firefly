@@ -183,13 +183,17 @@ pub fn acknowledge_info(model: &mut Model) -> Option<Message> {
 }
 
 pub fn display_info_msg(info: String, info_tx: &Sender<String>) -> Option<Message> {
-    info_tx.send(info.clone()).unwrap();
+    if let Err(e) = info_tx.send(info.clone()) {
+        log::error!("Error sending info to display: {e}");
+    }
 
     let cloned_tx = info_tx.clone();
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(2));
         debug!("Clearing info message.");
-        cloned_tx.send(String::new()).unwrap();
+        if let Err(e) = cloned_tx.send(String::new()) {
+            log::error!("Error clearing info message: {e}");
+        }
     });
 
     None
@@ -220,7 +224,9 @@ pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: 
             .and_then(|r| r.decode().ok())
         {
             let protocol = picker.new_resize_protocol(crop_to_square(dyn_img));
-            let _ = msg_tx.send(Message::ImageDecoded(protocol, id));
+            if let Err(e) = msg_tx.send(Message::ProtocolCreated(protocol, id)) {
+                log::error!("Error sending Protocol back to main thread: {e}");
+            }
         }
     });
 }

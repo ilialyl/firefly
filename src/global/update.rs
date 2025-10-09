@@ -27,7 +27,7 @@ pub fn update_global(
         Message::CycleTabs => cycle_tabs(model),
         Message::AcknowledgeInfo => acknowledge_info(model),
         Message::DisplayInfoMsg(info) => display_info_msg(info, info_tx),
-        Message::ImageDecoded(img, id) => set_track_protocol(img, id, model),
+        Message::ProtocolCreated(img, id) => set_track_protocol(img, id, model),
         Message::ShowHelp => toggle_show_help(model),
         Message::Quit => quit(model),
     }
