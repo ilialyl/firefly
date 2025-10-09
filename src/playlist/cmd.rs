@@ -109,16 +109,14 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     None
 }
 
-pub fn send_to_player(
-    playlist_ctl: &mut PlaylistController,
-    msg_tx: &Sender<Message>,
-) -> Option<Message> {
-    match playlist_ctl.tab_focus {
+pub fn send_to_player(model: &mut Model, msg_tx: &Sender<Message>) -> Option<Message> {
+    match model.playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
-            if let Some(selected) = playlist_ctl.get_selected_playlist() {
+            if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
                 queue_files_multithreaded(
                     selected.tracks.iter().map(|e| e.to_path_buf()).collect(),
                     msg_tx,
+                    model,
                 );
                 Some(Message::DisplayInfoMsg(
                     "Sent Playlist to Player".to_string(),
@@ -128,11 +126,11 @@ pub fn send_to_player(
             }
         }
         PlaylistTabFocus::Tracks => {
-            if let Some(playlist) = playlist_ctl.get_selected_playlist()
+            if let Some(playlist) = model.playlist_ctl.get_selected_playlist()
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                queue_files_multithreaded(vec![track.clone()], msg_tx);
+                queue_files_multithreaded(vec![track.clone()], msg_tx, model);
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None

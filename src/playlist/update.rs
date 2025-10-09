@@ -14,7 +14,7 @@ pub fn update_playlist(
     match msg {
         PlaylistMessage::Create => create_playlist(&mut model.playlist_ctl),
         PlaylistMessage::AddTracks => add_tracks(&mut model.playlist_ctl),
-        PlaylistMessage::SendToPlayer => send_to_player(&mut model.playlist_ctl, msg_tx),
+        PlaylistMessage::SendToPlayer => send_to_player(model, msg_tx),
         PlaylistMessage::MoveCursor(direction) => move_cursor(direction, &mut model.playlist_ctl),
         PlaylistMessage::AddDir => add_dir(&mut model.playlist_ctl),
         PlaylistMessage::Delete => {

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, atomic::AtomicBool};
 
 use ratatui_image::picker::Picker;
 
@@ -23,6 +23,7 @@ pub struct Model {
     pub confirmation: Confirmation,
     pub show_help: bool,
     pub picker: Arc<Picker>,
+    pub queuing: Arc<AtomicBool>,
 }
 
 impl Default for Model {
@@ -40,6 +41,7 @@ impl Default for Model {
             confirmation: Confirmation::default(),
             show_help: false,
             picker: Arc::new(picker),
+            queuing: Arc::new(AtomicBool::new(false)),
         }
     }
 }
