@@ -14,7 +14,7 @@ pub fn update_player(
     match msg {
         PlayerMessage::LoadNow => load_now(&mut model.player),
         PlayerMessage::TogglePlay => toggle_play(model),
-        PlayerMessage::QueueDir => queue_dir(&mut model.player),
+        PlayerMessage::QueueDir => queue_dir(msg_tx),
         PlayerMessage::QueueFiles => queue_files(msg_tx),
         PlayerMessage::MoveQueueUp => move_queue_up(&mut model.player),
         PlayerMessage::MoveQueueDown => move_queue_down(&mut model.player),

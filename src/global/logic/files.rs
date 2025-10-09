@@ -1,5 +1,5 @@
 use std::{
-    fs::{create_dir_all, read_dir},
+    fs::{self, create_dir_all, read_dir},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -110,4 +110,23 @@ pub fn get_playlists_path() -> PathBuf {
     }
 
     playlists_path
+}
+
+pub fn dir_to_audio_paths(dir: &Path) -> Vec<PathBuf> {
+    if let Ok(entries) = fs::read_dir(dir) {
+        entries
+            .filter_map(|r| r.ok())
+            .map(|p| p.path())
+            .filter(|p| p.is_file())
+            .filter_map(|p| {
+                p.clone()
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .filter(|e| AUDIO_FORMATS.contains(e))
+                    .map(|_| p)
+            })
+            .collect::<Vec<PathBuf>>()
+    } else {
+        Vec::<PathBuf>::new()
+    }
 }

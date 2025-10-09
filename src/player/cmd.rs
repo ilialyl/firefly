@@ -4,6 +4,7 @@ use std::{sync::mpsc::Sender, thread};
 
 use tokio::runtime::Runtime;
 
+use crate::global::logic::files::dir_to_audio_paths;
 use crate::{
     global::{
         logic::{
@@ -40,11 +41,14 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn queue_dir(player: &mut Player) -> Option<Message> {
+pub fn queue_dir(msg_tx: &Sender<Message>) -> Option<Message> {
     if let Some(dirs) = choose_dirs() {
+        let mut path_vec = Vec::<PathBuf>::new();
         for dir in dirs {
-            player.queue.enqueue_dir(&dir);
+            path_vec.extend(dir_to_audio_paths(&dir));
         }
+
+        queue_files_multithreaded(path_vec, msg_tx);
     }
 
     None
