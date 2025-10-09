@@ -52,13 +52,16 @@ pub fn queue_dir(player: &mut Player) -> Option<Message> {
 
 pub fn queue_files(msg_tx: &Sender<Message>) -> Option<Message> {
     if let Some(path_vec) = choose_multiple_audio_files() {
-        queue_files_threaded(path_vec, msg_tx)
+        queue_files_multithreaded(path_vec, msg_tx)
     } else {
         None
     }
 }
 
-pub fn queue_files_threaded(path_vec: Vec<PathBuf>, msg_tx: &Sender<Message>) -> Option<Message> {
+pub fn queue_files_multithreaded(
+    path_vec: Vec<PathBuf>,
+    msg_tx: &Sender<Message>,
+) -> Option<Message> {
     let msg_tx = msg_tx.clone();
 
     thread::spawn(move || {

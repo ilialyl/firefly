@@ -10,7 +10,7 @@ use crate::{
         view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
-    player::cmd::queue_files_threaded,
+    player::cmd::queue_files_multithreaded,
     playlist::logic::{
         playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus,
     },
@@ -116,7 +116,7 @@ pub fn send_to_player(
     match playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = playlist_ctl.get_selected_playlist() {
-                queue_files_threaded(
+                queue_files_multithreaded(
                     selected.tracks.iter().map(|e| e.to_path_buf()).collect(),
                     msg_tx,
                 );
@@ -132,7 +132,7 @@ pub fn send_to_player(
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                queue_files_threaded(vec![track.clone()], msg_tx);
+                queue_files_multithreaded(vec![track.clone()], msg_tx);
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None
