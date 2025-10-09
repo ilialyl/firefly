@@ -70,13 +70,13 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let left_panel_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(100)])
-        .margin(2)
+        .margin(1)
         .split(inner_chunks[0]);
 
     let right_panel_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(100)])
-        .margin(2)
+        .margin(1)
         .split(inner_chunks[1]);
 
     // draw_mini_controls(frame, outer_chunks[1]);
