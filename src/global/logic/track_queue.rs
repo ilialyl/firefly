@@ -48,7 +48,7 @@ impl TrackQueue {
         self.tracks.push_front(MiniTrack::new(path));
     }
 
-    pub fn enqueue_tracks(&mut self, path_vec: Vec<PathBuf>) {
+    pub fn enqueue_paths(&mut self, path_vec: Vec<PathBuf>) {
         let new_tracks: Vec<MiniTrack> = path_vec
             .iter()
             .filter(|p| p.is_file())
@@ -56,6 +56,10 @@ impl TrackQueue {
             .collect();
 
         self.tracks.extend(new_tracks);
+    }
+
+    pub fn enqueue_mini_track(&mut self, mini_track: MiniTrack) {
+        self.tracks.push_back(mini_track);
     }
 
     pub fn dequeue(&mut self) -> Option<PathBuf> {

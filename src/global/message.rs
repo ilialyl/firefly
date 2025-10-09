@@ -4,7 +4,10 @@ use ratatui_image::protocol::StatefulProtocol;
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
-    global::{logic::confirmation::Response, view_logic::terminal::CursorMovementDirection},
+    global::{
+        logic::{confirmation::Response, mini_track::MiniTrack},
+        view_logic::terminal::CursorMovementDirection,
+    },
     user_input::logic::{InputTarget, PromptMsg},
 };
 
@@ -43,6 +46,7 @@ pub enum PlayerMessage {
     QueueDir,
     ShuffleQueue,
     ClearQueue,
+    CreatedMiniTrack(MiniTrack),
 }
 
 pub enum PlaylistMessage {

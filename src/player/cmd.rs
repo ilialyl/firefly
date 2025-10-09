@@ -1,4 +1,6 @@
+use std::path::PathBuf;
 use std::time::Duration;
+use std::{sync::mpsc::Sender, thread};
 
 use tokio::runtime::Runtime;
 
@@ -6,6 +8,7 @@ use crate::{
     global::{
         logic::{
             files::{choose_audio_file, choose_dirs, choose_multiple_audio_files},
+            mini_track::MiniTrack,
             session_state::RunningState,
             track::FormatConversion,
         },
@@ -48,10 +51,30 @@ pub fn queue_dir(player: &mut Player) -> Option<Message> {
     None
 }
 
-pub fn queue_files(player: &mut Player) -> Option<Message> {
+pub fn queue_files(msg_tx: &Sender<Message>) -> Option<Message> {
     if let Some(path_vec) = choose_multiple_audio_files() {
-        player.queue.enqueue_tracks(path_vec);
+        queue_files_threaded(path_vec, msg_tx)
+    } else {
+        None
     }
+}
+
+pub fn queue_files_threaded(path_vec: Vec<PathBuf>, msg_tx: &Sender<Message>) -> Option<Message> {
+    let msg_tx = msg_tx.clone();
+
+    thread::spawn(move || {
+        path_vec.iter().for_each(|p| {
+            let _ = msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(
+                MiniTrack::new(&p),
+            )));
+        });
+    });
+
+    None
+}
+
+pub fn queue_mini_track(mini_track: MiniTrack, player: &mut Player) -> Option<Message> {
+    player.queue.enqueue_mini_track(mini_track);
 
     None
 }

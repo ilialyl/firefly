@@ -1,15 +1,21 @@
+use std::sync::mpsc::Sender;
+
 use crate::{
     global::message::{Message, PlayerMessage},
     model::Model,
     player::cmd::*,
 };
 
-pub fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Message> {
+pub fn update_player(
+    model: &mut Model,
+    msg: PlayerMessage,
+    msg_tx: &Sender<Message>,
+) -> Option<Message> {
     match msg {
         PlayerMessage::LoadNow => load_now(&mut model.player),
         PlayerMessage::TogglePlay => toggle_play(model),
         PlayerMessage::QueueDir => queue_dir(&mut model.player),
-        PlayerMessage::QueueFiles => queue_files(&mut model.player),
+        PlayerMessage::QueueFiles => queue_files(msg_tx),
         PlayerMessage::MoveQueueUp => move_queue_up(&mut model.player),
         PlayerMessage::MoveQueueDown => move_queue_down(&mut model.player),
         PlayerMessage::Rewind => rewind(model),
@@ -22,5 +28,8 @@ pub fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Message> {
         PlayerMessage::IncreaseVolume => increase_volume(model),
         PlayerMessage::ShuffleQueue => shuffle_queue(&mut model.player),
         PlayerMessage::ClearQueue => clear_queue(&mut model.player),
+        PlayerMessage::CreatedMiniTrack(mini_track) => {
+            queue_mini_track(mini_track, &mut model.player)
+        }
     }
 }

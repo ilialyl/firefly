@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::mpsc::Sender};
 
 use crate::{
     global::{
@@ -10,7 +10,7 @@ use crate::{
         view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
-    player::logic::Player,
+    player::cmd::queue_files_threaded,
     playlist::logic::{
         playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus,
     },
@@ -111,14 +111,15 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
 
 pub fn send_to_player(
     playlist_ctl: &mut PlaylistController,
-    player: &mut Player,
+    msg_tx: &Sender<Message>,
 ) -> Option<Message> {
     match playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = playlist_ctl.get_selected_playlist() {
-                player
-                    .queue
-                    .enqueue_tracks(selected.tracks.iter().map(|e| e.to_path_buf()).collect());
+                queue_files_threaded(
+                    selected.tracks.iter().map(|e| e.to_path_buf()).collect(),
+                    msg_tx,
+                );
                 Some(Message::DisplayInfoMsg(
                     "Sent Playlist to Player".to_string(),
                 ))
@@ -131,7 +132,7 @@ pub fn send_to_player(
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                player.queue.enqueue_tracks(vec![track.clone()]);
+                queue_files_threaded(vec![track.clone()], msg_tx);
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None
