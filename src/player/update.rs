@@ -31,5 +31,6 @@ pub fn update_player(
         PlayerMessage::CreatedMiniTrack(mini_track) => {
             queue_mini_track(mini_track, &mut model.player)
         }
+        PlayerMessage::RemoveSelectedQueuedTrack => remove_selected_queued_track(&mut model.player),
     }
 }

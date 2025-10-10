@@ -245,3 +245,9 @@ pub fn clear_queue(player: &mut Player) -> Option<Message> {
 
     None
 }
+
+pub fn remove_selected_queued_track(player: &mut Player) -> Option<Message> {
+    player.queue.remove_selected();
+
+    None
+}

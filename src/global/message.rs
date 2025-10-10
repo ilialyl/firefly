@@ -46,6 +46,7 @@ pub enum PlayerMessage {
     QueueDir,
     ShuffleQueue,
     ClearQueue,
+    RemoveSelectedQueuedTrack,
     CreatedMiniTrack(MiniTrack),
 }
 

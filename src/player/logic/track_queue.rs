@@ -147,6 +147,13 @@ impl TrackQueue {
         self.tracks.len()
     }
 
+    pub fn remove_selected(&mut self) {
+        self.tracks.remove(self.selected_index);
+        if self.tracks.len() <= self.selected_index {
+            self.selected_index = self.selected_index.saturating_sub(1);
+        }
+    }
+
     pub fn start_queue_processing_worker(msg_tx: Sender<Message>, rx: Receiver<Vec<PathBuf>>) {
         thread::spawn(move || {
             while let Ok(path_vec) = rx.recv() {

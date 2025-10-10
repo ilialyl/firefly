@@ -32,6 +32,9 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char('m') => Some(Message::Player(PlayerMessage::ShuffleQueue)),
                 KeyCode::Char('h') => Some(Message::ShowHelp),
                 KeyCode::Delete => Some(Message::Player(PlayerMessage::ClearQueue)),
+                KeyCode::Backspace => {
+                    Some(Message::Player(PlayerMessage::RemoveSelectedQueuedTrack))
+                }
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },
