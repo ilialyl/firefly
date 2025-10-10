@@ -2,7 +2,7 @@
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and UI built with [Ratatui](https://ratatui.rs/).
 ![example_img](example_img/firefly_v0-7-0.gif)
 (Showcase as of v0.7.0)
-## Features (v0.7.0)
+## Features (v0.8.0)
 - Play, Pause, Rewind, and Seek.
 - Persistent Playlists
 - Volume Control from 0-200%
