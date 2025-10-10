@@ -1,6 +1,6 @@
 use std::{
     fs,
-    sync::mpsc::{self, Receiver, Sender},
+    sync::mpsc::{self},
 };
 
 use color_eyre::eyre::Result;
@@ -47,17 +47,17 @@ fn main() -> Result<()> {
 
     install_panic_hook();
     let mut terminal = init_terminal()?;
-    let mut model = Model::default();
-    let (msg_tx, msg_rx): (Sender<Message>, Receiver<Message>) = mpsc::channel();
-    let (info_tx, info_rx): (Sender<String>, Receiver<String>) = mpsc::channel();
+    let (msg_tx, msg_rx) = mpsc::channel::<Message>();
+    let (info_tx, info_rx) = mpsc::channel::<String>();
+    let mut model = Model::new(msg_tx.clone());
 
     while model.session.state != RunningState::Done {
         let mut current_msg;
 
         // Tick
         current_msg = update_global(&mut model, Message::Tick, &msg_tx, &info_tx);
-        while current_msg.is_some() {
-            current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+        while let Some(msg) = current_msg {
+            current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
         }
 
         // Draw TUI view
@@ -67,15 +67,15 @@ fn main() -> Result<()> {
         current_msg = handle_events(&model)?;
 
         // Consume message
-        while current_msg.is_some() {
-            current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+        while let Some(msg) = current_msg {
+            current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
         }
 
         // Receive message from other threads and consume it.
         if let Ok(msg) = msg_rx.try_recv() {
             current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
-            while current_msg.is_some() {
-                current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+            while let Some(msg) = current_msg {
+                current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
             }
         }
 
@@ -83,8 +83,10 @@ fn main() -> Result<()> {
         if let Ok(info) = info_rx.try_recv() {
             current_msg =
                 update_global(&mut model, Message::UpdateInfoMsg(info), &msg_tx, &info_tx);
-            while current_msg.is_some() {
-                current_msg = update_global(&mut model, current_msg.unwrap(), &msg_tx, &info_tx);
+            while let Some(msg) = current_msg {
+                {
+                    current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
+                }
             }
         }
     }
@@ -92,7 +94,7 @@ fn main() -> Result<()> {
     restore_terminal()?;
 
     // If cache dir is not empty
-    if fs::read_dir(&cache_dir).unwrap().count() != 0 {
+    if fs::read_dir(&cache_dir)?.count() != 0 {
         println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");
     }
 

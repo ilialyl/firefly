@@ -69,8 +69,9 @@ impl PlaylistController {
     }
 
     pub fn rename_selected_playlist(&mut self, name: &str) {
-        if !self.playlist_coll.is_empty() {
-            let selected = self.get_selected_playlist().unwrap();
+        if !self.playlist_coll.is_empty()
+            && let Some(selected) = self.get_selected_playlist()
+        {
             selected.rename(name);
         }
     }

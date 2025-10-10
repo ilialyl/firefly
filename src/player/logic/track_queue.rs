@@ -2,6 +2,8 @@ use std::{
     collections::VecDeque,
     fs,
     path::{Path, PathBuf},
+    sync::mpsc::{self, Receiver, Sender},
+    thread,
 };
 
 use rand::rng;
@@ -9,25 +11,30 @@ use rand::seq::SliceRandom;
 
 use color_eyre::eyre::{Result, eyre};
 
-use crate::global::logic::{files::AUDIO_FORMATS, mini_track::MiniTrack};
+use crate::global::{
+    logic::{files::AUDIO_FORMATS, mini_track::MiniTrack},
+    message::{Message, PlayerMessage},
+};
 
 pub struct TrackQueue {
     tracks: VecDeque<MiniTrack>,
     selected_index: usize,
     arrange_mode: bool,
+    pub tx: Sender<Vec<PathBuf>>,
 }
 
-impl Default for TrackQueue {
-    fn default() -> Self {
+impl TrackQueue {
+    pub fn new(msg_tx: Sender<Message>) -> Self {
+        let (tx, rx) = mpsc::channel::<Vec<PathBuf>>();
+        Self::start_queue_processing_worker(msg_tx, rx);
         Self {
             tracks: VecDeque::new() as VecDeque<MiniTrack>,
             selected_index: 0,
             arrange_mode: false,
+            tx,
         }
     }
-}
 
-impl TrackQueue {
     pub fn get(&self) -> &VecDeque<MiniTrack> {
         &self.tracks
     }
@@ -48,7 +55,7 @@ impl TrackQueue {
         self.tracks.push_front(MiniTrack::new(path));
     }
 
-    pub fn enqueue_tracks(&mut self, path_vec: Vec<PathBuf>) {
+    pub fn enqueue_paths(&mut self, path_vec: Vec<PathBuf>) {
         let new_tracks: Vec<MiniTrack> = path_vec
             .iter()
             .filter(|p| p.is_file())
@@ -56,6 +63,10 @@ impl TrackQueue {
             .collect();
 
         self.tracks.extend(new_tracks);
+    }
+
+    pub fn enqueue_mini_track(&mut self, mini_track: MiniTrack) {
+        self.tracks.push_back(mini_track);
     }
 
     pub fn dequeue(&mut self) -> Option<PathBuf> {
@@ -130,5 +141,31 @@ impl TrackQueue {
     pub fn clear(&mut self) {
         self.tracks.clear();
         self.selected_index = 0;
+    }
+
+    pub fn len(&self) -> usize {
+        self.tracks.len()
+    }
+
+    pub fn remove_selected(&mut self) {
+        self.tracks.remove(self.selected_index);
+        if self.tracks.len() <= self.selected_index {
+            self.selected_index = self.selected_index.saturating_sub(1);
+        }
+    }
+
+    pub fn start_queue_processing_worker(msg_tx: Sender<Message>, rx: Receiver<Vec<PathBuf>>) {
+        thread::spawn(move || {
+            while let Ok(path_vec) = rx.recv() {
+                path_vec.iter().for_each(|p| {
+                    let mini_track = MiniTrack::new(&p);
+                    if let Err(e) =
+                        msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(mini_track)))
+                    {
+                        log::error!("Error sending MiniTrack back to main thread: {e}")
+                    };
+                });
+            }
+        });
     }
 }

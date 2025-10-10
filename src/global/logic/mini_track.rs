@@ -17,7 +17,9 @@ impl MiniTrack {
     }
 
     pub fn get_title(path: &Path) -> String {
-        if let Ok(tagged_file) = Probe::open(path).unwrap().read() {
+        if let Ok(probe) = Probe::open(path)
+            && let Ok(tagged_file) = probe.read()
+        {
             tagged_file
                 .primary_tag()
                 .and_then(|tag| tag.title())
@@ -29,8 +31,7 @@ impl MiniTrack {
                         .to_string()
                 })
         } else {
-            path
-                .file_stem()
+            path.file_stem()
                 .and_then(|stem| stem.to_str())
                 .unwrap_or("[Invalid UTF-8 name]")
                 .to_string()

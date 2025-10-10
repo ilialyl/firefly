@@ -1,19 +1,21 @@
+pub mod playback_status;
+pub mod track;
+pub mod track_queue;
+
 use color_eyre::eyre::{Result, eyre};
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
     ops::{Add, Sub},
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, mpsc::Sender},
     time::Duration,
 };
 
 use crate::{
-    global::logic::{track::Track, track_queue::TrackQueue},
-    player::logic::playback_status::PlaybackStatus,
+    global::message::Message,
+    player::logic::{playback_status::PlaybackStatus, track::Track, track_queue::TrackQueue},
 };
-
-pub mod playback_status;
 
 pub struct Player {
     pub current: Option<Track>,
@@ -26,18 +28,12 @@ pub struct Player {
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
 
-impl Default for Player {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Player {
-    pub fn new() -> Player {
+    pub fn new(msg_tx: Sender<Message>) -> Player {
         let (stream, sink) = Self::get_sink();
         Player {
             current: None,
-            queue: TrackQueue::default(),
+            queue: TrackQueue::new(msg_tx),
             previous: Vec::<PathBuf>::new(),
             looping: false,
             status: PlaybackStatus::default(),

@@ -1,5 +1,5 @@
 use std::{
-    fs::{create_dir_all, read_dir},
+    fs::{self, create_dir_all, read_dir},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -105,12 +105,28 @@ pub fn ffmpeg_available() -> bool {
 pub fn get_playlists_path() -> PathBuf {
     let playlists_path = get_data_dir().join("playlists");
     if !playlists_path.exists() {
-        log::info!(
-            "Attempting to create directory {}",
-            playlists_path.to_str().unwrap()
-        );
+        log::info!("Attempting to create directory {:?}", playlists_path);
         create_dir_all(&playlists_path).expect("Failed to create playlist data directory.");
     }
 
     playlists_path
+}
+
+pub fn dir_to_audio_paths(dir: &Path) -> Vec<PathBuf> {
+    if let Ok(entries) = fs::read_dir(dir) {
+        entries
+            .filter_map(|r| r.ok())
+            .map(|p| p.path())
+            .filter(|p| p.is_file())
+            .filter_map(|p| {
+                p.clone()
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .filter(|e| AUDIO_FORMATS.contains(e))
+                    .map(|_| p)
+            })
+            .collect::<Vec<PathBuf>>()
+    } else {
+        Vec::<PathBuf>::new()
+    }
 }

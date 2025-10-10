@@ -19,26 +19,21 @@ pub fn cli() -> Command {
 }
 
 pub fn clear_cache(dir: &Path) -> Result<()> {
-    let temp_pattern = glob(
-        format!(
-            "{}/{}*",
-            dir.as_os_str().to_str().unwrap(),
-            TEMP_FILE_PREFIX
-        )
-        .as_str(),
-    );
-    for path in temp_pattern? {
-        match path {
-            Ok(path) => {
-                if path.is_file() {
-                    fs::remove_file(&path)?;
-                    println!("Deleted {:?}", path);
-                    info!("Deleted {:?}", path);
+    if let Some(dir_str) = dir.as_os_str().to_str() {
+        let temp_pattern = glob(format!("{}/{}*", dir_str, TEMP_FILE_PREFIX).as_str());
+        for path in temp_pattern? {
+            match path {
+                Ok(path) => {
+                    if path.is_file() {
+                        fs::remove_file(&path)?;
+                        println!("Deleted {:?}", path);
+                        info!("Deleted {:?}", path);
+                    }
                 }
-            }
-            Err(e) => {
-                println!("Error: {:?}", e);
-                info!("Error: {:?}", e);
+                Err(e) => {
+                    println!("Error: {:?}", e);
+                    info!("Error: {:?}", e);
+                }
             }
         }
     }

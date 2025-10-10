@@ -17,7 +17,6 @@ use lofty::{
     probe::Probe,
     tag::Accessor,
 };
-use log::{debug, info};
 use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
@@ -61,14 +60,14 @@ impl Track {
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
         let temp_path = Self::get_temp_file(path);
-        let mut tagged_file = Probe::open(path).unwrap().read().ok();
+        let mut tagged_file = Probe::open(path)?.read().ok();
         if tagged_file.is_none() && temp_path.exists() {
-            tagged_file = Probe::open(&temp_path).unwrap().read().ok();
+            tagged_file = Probe::open(&temp_path)?.read().ok();
         }
 
         let conversion_status = if !is_rodio_supported(path)? {
             if temp_path.exists() {
-                debug!("Path {:?} exists, skipping conversion", temp_path);
+                log::debug!("Path {:?} exists, skipping conversion", temp_path);
                 FormatConversion::Done
             } else {
                 FormatConversion::Idle
@@ -110,16 +109,19 @@ impl Track {
     }
 
     pub fn reload_after_conversion(&mut self) {
-        let tagged_file = Probe::open(&self.temp_path).unwrap().read().unwrap();
-        self.duration = Some(Self::read_duration_from_tag(&tagged_file));
-        if let Some(tag) = tagged_file.primary_tag() {
-            self.has_title = tag.title().is_some();
-            if let Some(pic) = tag.pictures().first() {
-                self.picture = Some(pic.clone());
+        if let Ok(probe) = Probe::open(&self.temp_path)
+            && let Ok(tagged_file) = probe.read()
+        {
+            self.duration = Some(Self::read_duration_from_tag(&tagged_file));
+            if let Some(tag) = tagged_file.primary_tag() {
+                self.has_title = tag.title().is_some();
+                if let Some(pic) = tag.pictures().first() {
+                    self.picture = Some(pic.clone());
+                }
             }
-        }
 
-        self.tagged_file = Some(tagged_file);
+            self.tagged_file = Some(tagged_file);
+        }
     }
 
     pub fn get_temp_file(path: &Path) -> PathBuf {
@@ -177,10 +179,10 @@ impl Track {
         let msg_tx = msg_tx.clone();
         let info_tx = info_tx.clone();
 
-        info!("Converting file...");
-        info_tx
-            .send("Converting format and normalizing volume...".to_string())
-            .unwrap();
+        log::info!("Converting file...");
+        if let Err(e) = info_tx.send("Converting format and normalizing volume...".to_string()) {
+            log::error!("Error sending info message: {e}");
+        }
         thread::spawn(move || {
             let runtime = Runtime::new().unwrap();
             let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(async {
@@ -190,9 +192,10 @@ impl Track {
                     .await
                     .unwrap()
             })));
-            msg_tx
-                .send(Message::ConversionStarted(ffmpeg_handle.clone()))
-                .unwrap();
+            if let Err(e) = msg_tx.send(Message::ConversionStarted(ffmpeg_handle.clone())) {
+                log::error!("Error sending FFmpegProcess back to main thread: {e}");
+            }
+
             loop {
                 if ffmpeg_handle.lock().unwrap().try_wait().unwrap().is_some() {
                     if ffmpeg_handle
@@ -203,17 +206,23 @@ impl Track {
                         .unwrap()
                         .success()
                     {
-                        info_tx.send("".to_string()).unwrap();
-                        info!("Conversion Complete.");
-                        msg_tx.send(Message::ConversionEnded).unwrap();
+                        if let Err(e) = info_tx.send("".to_string()) {
+                            log::error!("Error sending info message: {e}");
+                        }
+                        log::info!("Conversion Complete.");
+                        if let Err(e) = msg_tx.send(Message::ConversionEnded) {
+                            log::error!("Error sending ConversionEnded Message: {e}");
+                        }
                         break;
                     }
-                    info_tx.send("".to_string()).unwrap();
+                    if let Err(e) = info_tx.send("".to_string()) {
+                        log::error!("Error sending info message: {e}");
+                    }
                     if temp_path.is_file() {
                         fs::remove_file(&temp_path).expect("Error deleting half-converted file.");
-                        info!("Deleted {:?}", temp_path);
+                        log::info!("Deleted {:?}", temp_path);
                     }
-                    info!("Conversion killed.");
+                    log::info!("Conversion killed.");
                     break;
                 }
             }

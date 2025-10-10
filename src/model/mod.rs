@@ -1,10 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, mpsc::Sender};
 
 use ratatui_image::picker::Picker;
 
 use crate::{
     global::{
         logic::{confirmation::Confirmation, session_state::Session},
+        message::Message,
         view_logic::focused_area::FocusedArea,
     },
     player::logic::Player,
@@ -25,12 +26,12 @@ pub struct Model {
     pub picker: Arc<Picker>,
 }
 
-impl Default for Model {
-    fn default() -> Self {
+impl Model {
+    pub fn new(msg_tx: Sender<Message>) -> Self {
         log::debug!("Initialized Model");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         Self {
-            player: Player::new(),
+            player: Player::new(msg_tx),
             playlist_ctl: PlaylistController::default(),
             session: Session::default(),
             info_msg: String::new(),

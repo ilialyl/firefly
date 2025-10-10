@@ -10,7 +10,6 @@ use crate::{
         view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
-    player::logic::Player,
     playlist::logic::{
         playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus,
     },
@@ -109,16 +108,19 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     None
 }
 
-pub fn send_to_player(
-    playlist_ctl: &mut PlaylistController,
-    player: &mut Player,
-) -> Option<Message> {
-    match playlist_ctl.tab_focus {
+pub fn send_to_player(model: &mut Model) -> Option<Message> {
+    match model.playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
-            if let Some(selected) = playlist_ctl.get_selected_playlist() {
-                player
+            if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
+                if let Err(e) = model
+                    .player
                     .queue
-                    .enqueue_tracks(selected.tracks.iter().map(|e| e.to_path_buf()).collect());
+                    .tx
+                    .send(selected.tracks.iter().map(|e| e.to_path_buf()).collect())
+                {
+                    log::error!("Error sending Path Vec to queue processing worker: {e}");
+                };
+
                 Some(Message::DisplayInfoMsg(
                     "Sent Playlist to Player".to_string(),
                 ))
@@ -127,11 +129,13 @@ pub fn send_to_player(
             }
         }
         PlaylistTabFocus::Tracks => {
-            if let Some(playlist) = playlist_ctl.get_selected_playlist()
+            if let Some(playlist) = model.playlist_ctl.get_selected_playlist()
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                player.queue.enqueue_tracks(vec![track.clone()]);
+                if let Err(e) = model.player.queue.tx.send(vec![track.clone()]) {
+                    log::error!("Error sending Path Vec to queue processing worker: {e}");
+                };
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None

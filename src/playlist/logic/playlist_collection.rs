@@ -38,7 +38,7 @@ impl PlaylistCollection {
 
     pub fn get_playlist_files() -> Result<Vec<PathBuf>> {
         let playlists_path = get_playlists_path();
-        log::info!("Playlist Directory: {}", playlists_path.to_str().unwrap());
+        log::info!("Playlist Directory: {:?}", playlists_path.to_str());
         let entries = fs::read_dir(playlists_path)?;
 
         let json_files: Vec<PathBuf> = entries

@@ -1,18 +1,18 @@
 use std::time::Duration;
-
 use tokio::runtime::Runtime;
 
+use crate::global::logic::files::dir_to_audio_paths;
 use crate::{
     global::{
         logic::{
             files::{choose_audio_file, choose_dirs, choose_multiple_audio_files},
+            mini_track::MiniTrack,
             session_state::RunningState,
-            track::FormatConversion,
         },
         message::{Message, PlayerMessage},
     },
     model::Model,
-    player::logic::{Player, playback_status::PlaybackStatus},
+    player::logic::{Player, playback_status::PlaybackStatus, track::FormatConversion},
 };
 
 pub fn load_now(player: &mut Player) -> Option<Message> {
@@ -38,27 +38,36 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn queue_dir(player: &mut Player) -> Option<Message> {
+pub fn queue_dir(model: &mut Model) -> Option<Message> {
     if let Some(dirs) = choose_dirs() {
         for dir in dirs {
-            player.queue.enqueue_dir(&dir);
+            if let Err(e) = model.player.queue.tx.send(dir_to_audio_paths(&dir)) {
+                log::error!("Error sending Path Vec to queue processing worker: {e}");
+            };
         }
     }
 
     None
 }
 
-pub fn queue_files(player: &mut Player) -> Option<Message> {
+pub fn queue_files(model: &mut Model) -> Option<Message> {
     if let Some(path_vec) = choose_multiple_audio_files() {
-        player.queue.enqueue_tracks(path_vec);
+        if let Err(e) = model.player.queue.tx.send(path_vec) {
+            log::error!("Error sending Path Vec to queue processing worker: {e}");
+        };
     }
+    None
+}
+
+pub fn queue_mini_track(mini_track: MiniTrack, player: &mut Player) -> Option<Message> {
+    player.queue.enqueue_mini_track(mini_track);
 
     None
 }
 
 pub fn move_queue_up(player: &mut Player) -> Option<Message> {
     if let Err(e) = player.queue.move_selected_up() {
-        log::info!("{}", e);
+        log::error!("{}", e);
     };
 
     None
@@ -66,7 +75,7 @@ pub fn move_queue_up(player: &mut Player) -> Option<Message> {
 
 pub fn move_queue_down(player: &mut Player) -> Option<Message> {
     if let Err(e) = player.queue.move_selected_down() {
-        log::info!("{}", e);
+        log::error!("{}", e);
     };
 
     None
@@ -233,6 +242,12 @@ pub fn shuffle_queue(player: &mut Player) -> Option<Message> {
 
 pub fn clear_queue(player: &mut Player) -> Option<Message> {
     player.queue.clear();
+
+    None
+}
+
+pub fn remove_selected_queued_track(player: &mut Player) -> Option<Message> {
+    player.queue.remove_selected();
 
     None
 }

@@ -158,8 +158,7 @@ impl Playlist {
             tracks: serde_json::from_str(&json_data)?,
             name: Some(
                 file.file_stem()
-                    .unwrap()
-                    .to_str()
+                    .and_then(|os| os.to_str())
                     .unwrap_or("[Invalid UTF-8 name]")
                     .to_owned(),
             ),
