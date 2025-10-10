@@ -1136,7 +1136,7 @@ checksum = "0399f9d26e5191ce32c498bebd31e7a3ceabc2745f0ac54af3f335126c3f24b3"
 
 [[package]]
 name = "firefly"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "clap",
  "color-eyre",
@@ -1164,7 +1164,7 @@ dependencies = [
  "strum 0.27.2",
  "strum_macros 0.27.2",
  "tokio",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
