@@ -4,10 +4,8 @@ use ratatui_image::protocol::StatefulProtocol;
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
-    global::{
-        logic::{confirmation::Response, mini_track::MiniTrack},
-        view_logic::terminal::CursorMovementDirection,
-    },
+    global::{logic::confirmation::Response, view_logic::terminal::CursorMovementDirection},
+    player::logic::mini_track::MiniTrack,
     user_input::logic::{InputTarget, PromptMsg},
 };
 

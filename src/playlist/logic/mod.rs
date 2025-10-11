@@ -1,3 +1,4 @@
+pub mod metadata_cache;
 pub mod playlist_collection;
 pub mod playlist_controller;
 pub mod playlist_tab_focus;
@@ -9,8 +10,11 @@ use std::{
 };
 
 use color_eyre::eyre::{Result, eyre};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::global::logic::files::get_playlists_path;
+use crate::{
+    global::logic::files::get_playlists_path, playlist::logic::metadata_cache::MiniMetadata,
+};
 
 #[derive(Debug)]
 pub struct Playlist {
@@ -19,6 +23,7 @@ pub struct Playlist {
     pub selected_track: Option<usize>,
     dirty_flag: bool,
     path: Option<PathBuf>,
+    pub metadata_caches: Vec<MiniMetadata>,
 }
 
 impl Default for Playlist {
@@ -29,6 +34,7 @@ impl Default for Playlist {
             selected_track: None,
             dirty_flag: true,
             path: None,
+            metadata_caches: Vec::new(),
         }
     }
 }
@@ -153,9 +159,13 @@ impl Playlist {
 
     pub fn from(file: &Path) -> Result<Playlist> {
         let json_data = fs::read_to_string(file)?;
+        let tracks: Vec<PathBuf> = serde_json::from_str(&json_data)?;
+        let metadata_caches: Vec<MiniMetadata> =
+            tracks.par_iter().map(|p| MiniMetadata::from(&p)).collect();
 
         let mut playlist = Playlist {
-            tracks: serde_json::from_str(&json_data)?,
+            tracks,
+            metadata_caches,
             name: Some(
                 file.file_stem()
                     .and_then(|os| os.to_str())
@@ -199,6 +209,7 @@ impl Playlist {
             }
 
             self.tracks.push(track.to_path_buf());
+            self.metadata_caches.push(MiniMetadata::from(track));
 
             self.dirty_flag = true;
         }
@@ -216,6 +227,7 @@ impl Playlist {
 
     pub fn remove(&mut self, idx: usize) {
         self.tracks.remove(idx);
+        self.metadata_caches.remove(idx);
 
         if self.is_empty() {
             self.selected_track = None;
@@ -246,7 +258,7 @@ impl Playlist {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.tracks.is_empty()
+        self.tracks.is_empty() && self.metadata_caches.is_empty()
     }
 
     pub fn is_dirty(&self) -> bool {

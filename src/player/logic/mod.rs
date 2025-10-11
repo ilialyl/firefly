@@ -1,3 +1,4 @@
+pub mod mini_track;
 pub mod playback_status;
 pub mod track;
 pub mod track_queue;

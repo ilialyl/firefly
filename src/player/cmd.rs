@@ -2,11 +2,11 @@ use std::time::Duration;
 use tokio::runtime::Runtime;
 
 use crate::global::logic::files::dir_to_audio_paths;
+use crate::player::logic::mini_track::MiniTrack;
 use crate::{
     global::{
         logic::{
             files::{choose_audio_file, choose_dirs, choose_multiple_audio_files},
-            mini_track::MiniTrack,
             session_state::RunningState,
         },
         message::{Message, PlayerMessage},

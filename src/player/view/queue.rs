@@ -13,7 +13,15 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         .queue
         .get()
         .iter()
-        .map(|t| t.title.clone())
+        .map(|t| {
+            t.metadata.title.clone().unwrap_or(
+                t.path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("[Invalid UTF-8 name]")
+                    .to_string(),
+            )
+        })
         .map(ListItem::from)
         .collect();
 

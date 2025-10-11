@@ -17,13 +17,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
 
     if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
         let track_entries: Vec<ListItem> = selected_playlist
-            .tracks
+            .metadata_caches
             .iter()
-            .map(|e| {
-                e.file_stem()
-                    .and_then(|os| os.to_str())
-                    .unwrap_or("[Invalid UTF-8 name]")
-            })
+            .map(|m| m.format())
             .map(ListItem::from)
             .collect();
 
