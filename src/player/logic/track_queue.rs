@@ -2,7 +2,11 @@ use std::{
     collections::VecDeque,
     fs,
     path::{Path, PathBuf},
-    sync::mpsc::{self, Receiver, Sender},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc::{self, Receiver, Sender},
+    },
     thread,
 };
 
@@ -24,9 +28,9 @@ pub struct TrackQueue {
 }
 
 impl TrackQueue {
-    pub fn new(msg_tx: Sender<Message>) -> Self {
+    pub fn new(msg_tx: Sender<Message>, unlocked_tick_rate: Arc<AtomicBool>) -> Self {
         let (tx, rx) = mpsc::channel::<Vec<PathBuf>>();
-        Self::start_queue_processing_worker(msg_tx, rx);
+        Self::start_queue_processing_worker(msg_tx, rx, unlocked_tick_rate);
         Self {
             tracks: VecDeque::new() as VecDeque<MiniTrack>,
             selected_index: 0,
@@ -154,9 +158,14 @@ impl TrackQueue {
         }
     }
 
-    pub fn start_queue_processing_worker(msg_tx: Sender<Message>, rx: Receiver<Vec<PathBuf>>) {
+    pub fn start_queue_processing_worker(
+        msg_tx: Sender<Message>,
+        rx: Receiver<Vec<PathBuf>>,
+        unlocked_tick_rate: Arc<AtomicBool>,
+    ) {
         thread::spawn(move || {
             while let Ok(path_vec) = rx.recv() {
+                unlocked_tick_rate.store(true, Ordering::Relaxed);
                 path_vec.iter().for_each(|p| {
                     let mini_track = MiniTrack::new(&p);
                     if let Err(e) =
@@ -165,6 +174,7 @@ impl TrackQueue {
                         log::error!("Error sending MiniTrack back to main thread: {e}")
                     };
                 });
+                unlocked_tick_rate.store(false, Ordering::Relaxed);
             }
         });
     }

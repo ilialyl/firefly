@@ -13,7 +13,7 @@ use std::{
 };
 
 use crate::{
-    global::message::Message,
+    global::{logic::session_state::Session, message::Message},
     player::logic::{playback_status::PlaybackStatus, track::Track, track_queue::TrackQueue},
 };
 
@@ -29,11 +29,11 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(msg_tx: Sender<Message>) -> Player {
+    pub fn new(msg_tx: Sender<Message>, session: &Session) -> Player {
         let (stream, sink) = Self::get_sink();
         Player {
             current: None,
-            queue: TrackQueue::new(msg_tx),
+            queue: TrackQueue::new(msg_tx, session.unlocked_tick_rate.clone()),
             previous: Vec::<PathBuf>::new(),
             looping: false,
             status: PlaybackStatus::default(),

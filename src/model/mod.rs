@@ -30,10 +30,11 @@ impl Model {
     pub fn new(msg_tx: Sender<Message>) -> Self {
         log::debug!("Initialized Model");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
+        let session = Session::default();
         Self {
-            player: Player::new(msg_tx),
+            player: Player::new(msg_tx, &session),
+            session: session,
             playlist_ctl: PlaylistController::default(),
-            session: Session::default(),
             info_msg: String::new(),
             focused_view_area: FocusedArea::default(),
             input_mode: InputMode::default(),
