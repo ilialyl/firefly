@@ -33,7 +33,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
 
     let list = List::new(queue_entries).highlight_style(highlight);
     let mut list_state = ListState::default();
-    list_state.select(Some(model.player.queue.get_selected()));
+    list_state.select(model.player.queue.get_selected());
 
     let top_title = if model.player.queue.is_arrange() {
         " Queue [Arrange on] "
@@ -44,7 +44,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let bottom_title = if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
         format!(
             " {} of {} ",
-            model.player.queue.get_selected() + 1,
+            model.player.queue.get_selected().unwrap_or(0) + 1,
             model.player.queue.len()
         )
     } else {

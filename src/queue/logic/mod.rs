@@ -26,7 +26,7 @@ use crate::{
 pub struct TrackQueue {
     // A Track is too heavy, hence MiniTrack.
     tracks: VecDeque<MiniTrack>,
-    selected_index: usize,
+    selected_index: Option<usize>,
     arrange_mode: bool,
     pub tx: Sender<Vec<PathBuf>>,
 }
@@ -37,7 +37,7 @@ impl TrackQueue {
         Self::start_queue_processing_worker(msg_tx, rx, unlocked_tick_rate);
         Self {
             tracks: VecDeque::new() as VecDeque<MiniTrack>,
-            selected_index: 0,
+            selected_index: None,
             arrange_mode: false,
             tx,
         }
@@ -51,7 +51,7 @@ impl TrackQueue {
         self.tracks.front().map(|t| &t.path)
     }
 
-    pub fn get_selected(&self) -> usize {
+    pub fn get_selected(&self) -> Option<usize> {
         self.selected_index
     }
 
@@ -71,14 +71,25 @@ impl TrackQueue {
             .collect();
 
         self.tracks.extend(new_tracks);
+        if !self.is_empty() && self.selected_index.is_none() {
+            self.selected_index = Some(0)
+        }
     }
 
     pub fn enqueue_mini_track(&mut self, mini_track: MiniTrack) {
         self.tracks.push_back(mini_track);
+        if !self.is_empty() && self.selected_index.is_none() {
+            self.selected_index = Some(0)
+        }
     }
 
     pub fn dequeue(&mut self) -> Option<PathBuf> {
-        self.tracks.pop_front().map(|t| t.path)
+        let path = self.tracks.pop_front().map(|t| t.path);
+        if self.is_empty() {
+            self.selected_index = None;
+        }
+
+        path
     }
 
     pub fn enqueue_dir(&mut self, dir: &Path) {
@@ -102,30 +113,36 @@ impl TrackQueue {
     }
 
     pub fn move_selected_up(&mut self) -> Result<()> {
-        if self.selected_index == 0 || self.tracks.is_empty() {
-            return Err(eyre!("Cannot move track up, minimum index reached."));
-        }
+        if let Some(mut selected) = self.selected_index {
+            if selected == 0 {
+                return Err(eyre!("Cannot move track up, minimum index reached."));
+            }
 
-        self.selected_index = self.selected_index.saturating_sub(1);
+            selected = selected.saturating_sub(1);
 
-        if self.arrange_mode && self.tracks.len() > self.selected_index {
-            self.tracks
-                .swap(self.selected_index, self.selected_index + 1);
+            self.selected_index = Some(selected);
+
+            if self.arrange_mode {
+                self.tracks.swap(selected, selected.saturating_add(1));
+            }
         }
 
         Ok(())
     }
 
     pub fn move_selected_down(&mut self) -> Result<()> {
-        if self.tracks.is_empty() || self.selected_index == self.tracks.len() - 1 {
-            return Err(eyre!("Cannot move track down, maximum index reached."));
-        }
+        if let Some(mut selected) = self.selected_index {
+            if selected >= self.tracks.len() {
+                return Err(eyre!("Cannot move track down, maximum index reached."));
+            }
 
-        self.selected_index = (self.selected_index + 1).min(self.tracks.len() - 1);
+            if self.arrange_mode && selected.saturating_add(1) < self.len() {
+                self.tracks.swap(selected, selected.saturating_add(1));
+            }
 
-        if self.arrange_mode {
-            self.tracks
-                .swap(self.selected_index, self.selected_index - 1);
+            selected = (selected.saturating_add(1)).min(self.tracks.len().saturating_sub(1));
+
+            self.selected_index = Some(selected);
         }
 
         Ok(())
@@ -148,7 +165,7 @@ impl TrackQueue {
 
     pub fn clear(&mut self) {
         self.tracks.clear();
-        self.selected_index = 0;
+        self.selected_index = None;
     }
 
     pub fn len(&self) -> usize {
@@ -156,9 +173,14 @@ impl TrackQueue {
     }
 
     pub fn remove_selected(&mut self) {
-        self.tracks.remove(self.selected_index);
-        if self.tracks.len() <= self.selected_index {
-            self.selected_index = self.selected_index.saturating_sub(1);
+        if let Some(selected) = self.selected_index {
+            self.tracks.remove(selected);
+            if self.tracks.len() <= selected {
+                self.selected_index = Some(selected.saturating_sub(1));
+            }
+            if self.is_empty() {
+                self.selected_index = None
+            }
         }
     }
 
