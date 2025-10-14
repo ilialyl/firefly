@@ -54,7 +54,7 @@ fn main() -> Result<()> {
     while model.session.state != RunningState::Done {
         let mut current_msg;
 
-        // Tick
+        // Tick every loop
         current_msg = update_global(&mut model, Message::Tick, &msg_tx, &info_tx);
         while let Some(msg) = current_msg {
             current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
@@ -91,14 +91,13 @@ fn main() -> Result<()> {
         }
     }
 
+    // Give terminal back to user
     restore_terminal()?;
 
-    // If cache dir is not empty
+    // Tell user they can clean up if they need to
     if fs::read_dir(&cache_dir)?.count() != 0 {
         println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");
     }
-
-    println!("Thank you for using Firefly.");
 
     Ok(())
 }
@@ -108,6 +107,7 @@ mod dpi {
     use windows_sys::Win32::Foundation::E_FAIL;
     use windows_sys::Win32::UI::HiDpi::{PROCESS_PER_MONITOR_DPI_AWARE, SetProcessDpiAwareness};
 
+    // Otherwise file dialog on Windows will be blurry
     pub fn enable_dpi_awareness() {
         unsafe {
             let result = SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
