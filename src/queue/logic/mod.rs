@@ -24,6 +24,7 @@ use crate::{
 };
 
 pub struct TrackQueue {
+    // A Track is too heavy, hence MiniTrack.
     tracks: VecDeque<MiniTrack>,
     selected_index: usize,
     arrange_mode: bool,

@@ -22,23 +22,19 @@ use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
 use tokio::runtime::Runtime;
 
-use crate::global::{
-    logic::{
-        data::{TEMP_FILE_PREFIX, get_cache_dir},
-        files::{is_opus, is_rodio_supported},
-        opus::get_opus_source,
+use crate::{
+    global::{
+        logic::{
+            data::{TEMP_FILE_PREFIX, get_cache_dir},
+            files::{is_opus, is_rodio_supported},
+            opus::get_opus_source,
+        },
+        message::Message,
     },
-    message::Message,
+    player::logic::format_conversion::FormatConversion,
 };
 
-#[derive(PartialEq, Clone, Copy)]
-pub enum FormatConversion {
-    Idle,
-    Running,
-    Done,
-    Unnecessary,
-}
-
+// So that the program can identify whose cover art is whose after decoding in background.
 static TRACK_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 pub struct Track {

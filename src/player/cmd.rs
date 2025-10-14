@@ -2,6 +2,7 @@ use std::time::Duration;
 use tokio::runtime::Runtime;
 
 use crate::global::logic::files::dir_to_audio_paths;
+use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::logic::mini_track::MiniTrack;
 use crate::{
     global::{
@@ -12,7 +13,7 @@ use crate::{
         message::{Message, PlayerMessage},
     },
     model::Model,
-    player::logic::{Player, playback_status::PlaybackStatus, track::FormatConversion},
+    player::logic::{Player, playback_status::PlaybackStatus},
 };
 
 pub fn load_now(player: &mut Player) -> Option<Message> {

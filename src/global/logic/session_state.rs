@@ -5,7 +5,7 @@ pub enum RunningState {
     #[default]
     Running,
     RunningFFmpeg,
-    Done,
+    Exit,
 }
 
 #[derive(Default)]

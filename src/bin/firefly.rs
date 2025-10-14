@@ -53,7 +53,7 @@ fn main() -> Result<()> {
     let mut model = Model::new(msg_tx.clone());
     let mut terminal = init_terminal()?;
 
-    while model.session.state != RunningState::Done {
+    while model.session.state != RunningState::Exit {
         // VecDequeue is better for queues
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 

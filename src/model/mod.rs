@@ -21,7 +21,7 @@ pub struct Model {
     pub focused_view_area: FocusedArea,
     pub input_mode: InputMode,
     pub user_input: UserInput,
-    pub confirmation: Confirmation,
+    pub user_confirmation: Confirmation,
     pub show_help: bool,
     pub picker: Arc<Picker>,
 }
@@ -39,7 +39,7 @@ impl Model {
             focused_view_area: FocusedArea::default(),
             input_mode: InputMode::default(),
             user_input: UserInput::default(),
-            confirmation: Confirmation::default(),
+            user_confirmation: Confirmation::default(),
             show_help: false,
             picker: Arc::new(picker),
         }

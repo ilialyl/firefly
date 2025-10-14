@@ -20,8 +20,7 @@ use crate::{
     player::{
         self,
         logic::{
-            playback_status::PlaybackStatus,
-            track::{FormatConversion, Track},
+            format_conversion::FormatConversion, playback_status::PlaybackStatus, track::Track,
         },
     },
     playlist::cmd::playlist_save_confirm_then_resume,
@@ -108,18 +107,18 @@ pub fn tick(
 }
 
 pub fn ask_for_confirmation(prompt: String, msg: Message, model: &mut Model) -> Option<Message> {
-    model.confirmation.msg = Some(msg);
-    model.confirmation.prompt = prompt;
+    model.user_confirmation.msg = Some(msg);
+    model.user_confirmation.prompt = prompt;
     model.input_mode = InputMode::Confirmation;
 
     None
 }
 
 pub fn confirmed(answer: Response, model: &mut Model) -> Option<Message> {
-    let message = model.confirmation.msg.take();
+    let message = model.user_confirmation.msg.take();
     model.input_mode = InputMode::default();
-    model.confirmation.prompt.clear();
-    model.confirmation.response = Some(answer);
+    model.user_confirmation.prompt.clear();
+    model.user_confirmation.response = Some(answer);
 
     message
 }
@@ -160,7 +159,7 @@ pub fn quit(model: &mut Model) -> Option<Message> {
         return Some(to_resume);
     }
 
-    model.session.state = RunningState::Done;
+    model.session.state = RunningState::Exit;
 
     None
 }

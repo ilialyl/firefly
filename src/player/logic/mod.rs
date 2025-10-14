@@ -1,3 +1,4 @@
+pub mod format_conversion;
 pub mod mini_track;
 pub mod playback_status;
 pub mod track;
@@ -21,6 +22,7 @@ use crate::{
 pub struct Player {
     pub current: Option<Track>,
     pub queue: TrackQueue,
+    // Previous is Vec instead of VecDequeue because it's a stack, not queue.
     pub previous: Vec<PathBuf>,
     pub looping: bool,
     pub status: PlaybackStatus,
@@ -30,6 +32,7 @@ pub struct Player {
 }
 
 impl Player {
+    // Sender is needed because it deals with threads.
     pub fn new(msg_tx: Sender<Message>, session: &Session) -> Player {
         let (stream, sink) = Self::get_sink();
         Player {
