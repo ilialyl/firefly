@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     fs,
     sync::mpsc::{self},
 };
@@ -34,6 +35,7 @@ fn main() -> Result<()> {
         fs::create_dir(&cache_dir).expect("Failed to create cache directory.");
     }
 
+    // Clap stuff
     let cli_command = cli().get_matches();
 
     match cli_command.subcommand() {
@@ -46,47 +48,44 @@ fn main() -> Result<()> {
     };
 
     install_panic_hook();
-    let mut terminal = init_terminal()?;
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
     let mut model = Model::new(msg_tx.clone());
+    let mut terminal = init_terminal()?;
 
     while model.session.state != RunningState::Done {
-        let mut current_msg;
+        // VecDequeue is better for queues
+        let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
-        // Tick every loop
-        current_msg = update_global(&mut model, Message::Tick, &msg_tx, &info_tx);
-        while let Some(msg) = current_msg {
-            current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
+        // Tick at the start to keep things updated
+        if let Some(msg) = update_global(&mut model, Message::Tick, &msg_tx, &info_tx) {
+            msg_queue.push_back(msg);
         }
 
         // Draw TUI view
         terminal.draw(|f| draw(&mut model, f))?;
 
         // Handle terminal events
-        current_msg = handle_events(&model)?;
-
-        // Consume message
-        while let Some(msg) = current_msg {
-            current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
+        if let Some(msg) = handle_events(&model)? {
+            msg_queue.push_back(msg);
         }
 
-        // Receive message from other threads and consume it.
+        // Receive message from other threads
         if let Ok(msg) = msg_rx.try_recv() {
-            current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
-            while let Some(msg) = current_msg {
-                current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
-            }
+            msg_queue.push_back(msg);
         }
 
-        // Receive displayable info from other threads and consume it.
+        // Display info sent from other threads
         if let Ok(info) = info_rx.try_recv() {
-            current_msg =
-                update_global(&mut model, Message::UpdateInfoMsg(info), &msg_tx, &info_tx);
-            while let Some(msg) = current_msg {
-                {
-                    current_msg = update_global(&mut model, msg, &msg_tx, &info_tx);
-                }
+            update_global(&mut model, Message::UpdateInfoMsg(info), &msg_tx, &info_tx);
+        }
+
+        // Consume messages
+        while !msg_queue.is_empty()
+            && let Some(msg) = msg_queue.pop_front()
+        {
+            if let Some(msg) = update_global(&mut model, msg, &msg_tx, &info_tx) {
+                msg_queue.push_back(msg);
             }
         }
     }
