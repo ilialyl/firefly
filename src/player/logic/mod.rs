@@ -1,7 +1,6 @@
 pub mod mini_track;
 pub mod playback_status;
 pub mod track;
-pub mod track_queue;
 
 use color_eyre::eyre::{Result, eyre};
 use rodio::{OutputStream, Sink};
@@ -15,7 +14,8 @@ use std::{
 
 use crate::{
     global::{logic::session_state::Session, message::Message},
-    player::logic::{playback_status::PlaybackStatus, track::Track, track_queue::TrackQueue},
+    player::logic::{playback_status::PlaybackStatus, track::Track},
+    queue::logic::TrackQueue,
 };
 
 pub struct Player {

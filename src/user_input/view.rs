@@ -8,14 +8,7 @@ use ratatui::{
 use crate::{global::view::center_xy, user_input::logic::UserInput};
 
 impl UserInput {
-    pub fn render(
-        &self,
-        prompt: &str,
-        percent_x: u16,
-        length_y: u16,
-        frame: &mut Frame,
-        area: Rect,
-    ) {
+    pub fn draw(&self, prompt: &str, percent_x: u16, length_y: u16, frame: &mut Frame, area: Rect) {
         let popup_block = Block::bordered()
             .title(prompt)
             .title_alignment(Alignment::Left)

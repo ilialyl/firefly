@@ -1,6 +1,6 @@
 pub mod confirmation_box;
-pub mod help_view;
-pub mod main_view;
+pub mod help;
+pub mod home;
 
 use ratatui::{
     Frame,
@@ -13,7 +13,7 @@ use crate::{
     user_input::logic::InputMode,
 };
 
-pub fn render_tui(model: &mut Model, frame: &mut Frame) {
+pub fn draw(model: &mut Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -52,7 +52,7 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
         .padding(Padding::horizontal(1))
         .render(outer_layout[0], frame.buffer_mut());
 
-    main_view::draw(model, frame, outer_layout[1]);
+    home::draw(model, frame, outer_layout[1]);
 
     if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
         Block::bordered().render(outer_layout[2], frame.buffer_mut());
@@ -66,17 +66,17 @@ pub fn render_tui(model: &mut Model, frame: &mut Frame) {
     control_bar::draw(main_view_chunk[0], frame, model);
 
     if model.show_help {
-        help_view::draw(frame, frame.area());
+        help::draw(frame, frame.area());
     }
 
     match model.input_mode.clone() {
         InputMode::Insert(prompt, _) => {
             model
                 .user_input
-                .render(prompt.as_str(), 40, 3, frame, frame.area())
+                .draw(prompt.as_str(), 40, 3, frame, frame.area())
         }
         InputMode::Commands => {}
-        InputMode::Confirmation => confirmation_box::render(model, frame, frame.area()),
+        InputMode::Confirmation => confirmation_box::draw(model, frame, frame.area()),
     }
 }
 

@@ -15,7 +15,7 @@ use firefly::{
         },
         message::Message,
         update::update_global,
-        view::render_tui,
+        view::draw,
         view_logic::terminal::{
             handle_events, init_terminal, install_panic_hook, restore_terminal,
         },
@@ -61,7 +61,7 @@ fn main() -> Result<()> {
         }
 
         // Draw TUI view
-        terminal.draw(|f| render_tui(&mut model, f))?;
+        terminal.draw(|f| draw(&mut model, f))?;
 
         // Handle terminal events
         current_msg = handle_events(&model)?;

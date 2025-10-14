@@ -5,8 +5,8 @@ use ratatui::{
 };
 
 use crate::model::Model;
-use crate::player::view::{cover_art, queue, track_details};
-use crate::playlist;
+use crate::player::view::{cover_art, track_details};
+use crate::{playlist, queue};
 
 pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let panels = Layout::default()
@@ -45,7 +45,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     if !model.show_help {
         cover_art::draw(cover_art_area[0], frame, model);
     }
-    queue::draw(left_panel_chunks[1], frame, model);
+    queue::view::draw(left_panel_chunks[1], frame, model);
     track_details::draw(track_details_area[0], frame, model);
     playlist::view::draw(right_panel_chunks[1], frame, model);
 }
