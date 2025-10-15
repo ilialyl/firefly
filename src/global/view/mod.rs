@@ -18,8 +18,8 @@ use crate::{
 };
 
 pub fn draw(model: &mut Model, frame: &mut Frame) {
-    if small_terminal_size(frame.area()) {
-        draw_small_size(model, frame);
+    if terminal_is_small(frame.area()) {
+        draw_mini(model, frame);
     } else {
         if matches!(model.focused_view_area, FocusedArea::Queue) {
             model.focused_view_area.cycle_right();
@@ -28,8 +28,8 @@ pub fn draw(model: &mut Model, frame: &mut Frame) {
     }
 }
 
-pub fn small_terminal_size(area: Rect) -> bool {
-    area.width < 45 && area.height < 15
+pub fn terminal_is_small(area: Rect) -> bool {
+    area.width <= 60 && area.height < 15
 }
 
 fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
@@ -99,7 +99,7 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
     }
 }
 
-fn draw_small_size(model: &mut Model, frame: &mut Frame) {
+fn draw_mini(model: &mut Model, frame: &mut Frame) {
     match model.focused_view_area {
         FocusedArea::ControlBar => {
             if model.player.current.is_some() {
@@ -132,7 +132,12 @@ fn draw_small_size(model: &mut Model, frame: &mut Frame) {
                 Paragraph::new("This is queue, but it's empty.")
                     .render(frame.area(), frame.buffer_mut());
             } else {
-                queue::view::draw(frame.area(), frame, model);
+                let chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints(vec![Constraint::Fill(1), Constraint::Length(1)])
+                    .split(frame.area());
+                queue::view::draw(chunks[0], frame, model);
+                control_bar::draw_mini(chunks[1], frame, model);
             }
         }
     }
