@@ -1,9 +1,9 @@
 use std::sync::mpsc::Sender;
 
 use crate::{
-    global::message::{Message, PlayerMessage},
+    global::message::Message,
     model::Model,
-    player::cmd::*,
+    player::{cmd::*, message::PlayerMessage},
 };
 
 pub fn update_player(

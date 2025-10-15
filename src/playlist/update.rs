@@ -1,9 +1,9 @@
 use std::sync::mpsc::Sender;
 
 use crate::{
-    global::message::{Message, PlaylistMessage},
+    global::message::Message,
     model::Model,
-    playlist::cmd::*,
+    playlist::{cmd::*, message::PlaylistMessage},
 };
 
 pub fn update_playlist(

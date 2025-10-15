@@ -16,11 +16,8 @@ use rand::seq::SliceRandom;
 use color_eyre::eyre::{Result, eyre};
 
 use crate::{
-    global::{
-        logic::files::AUDIO_FORMATS,
-        message::{Message, PlayerMessage},
-    },
-    player::logic::mini_track::MiniTrack,
+    global::{logic::files::AUDIO_FORMATS, message::Message},
+    player::{logic::mini_track::MiniTrack, message::PlayerMessage},
 };
 
 pub struct TrackQueue {

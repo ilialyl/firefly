@@ -1,8 +1,11 @@
 use crate::{
-    global::message::{Message, UserInputMessage},
+    global::message::Message,
     model::Model,
     playlist::cmd::name_playlist,
-    user_input::logic::{InputMode, InputTarget, PromptMsg},
+    user_input::{
+        logic::{InputMode, InputTarget, PromptMsg},
+        message::UserInputMessage,
+    },
 };
 
 pub fn enter_edit_mode(

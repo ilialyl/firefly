@@ -3,11 +3,13 @@ use crossterm::event::{KeyCode, KeyEvent};
 use crate::{
     global::{
         logic::confirmation::Response,
-        message::{Message, PlayerMessage, PlaylistMessage, UserInputMessage},
+        message::Message,
         view_logic::{focused_area::FocusedArea, terminal::CursorMovementDirection},
     },
     model::Model,
-    user_input::logic::InputMode,
+    player::message::PlayerMessage,
+    playlist::message::PlaylistMessage,
+    user_input::{logic::InputMode, message::UserInputMessage},
 };
 
 pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> {

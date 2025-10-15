@@ -4,6 +4,7 @@ use tokio::runtime::Runtime;
 use crate::global::logic::files::dir_to_audio_paths;
 use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::logic::mini_track::MiniTrack;
+use crate::player::message::PlayerMessage;
 use crate::queue::logic::TrackQueue;
 use crate::{
     global::{
@@ -11,7 +12,7 @@ use crate::{
             files::{choose_audio_file, choose_dirs, choose_multiple_audio_files},
             session_state::RunningState,
         },
-        message::{Message, PlayerMessage},
+        message::Message,
     },
     model::Model,
     player::logic::{Player, playback_status::PlaybackStatus},

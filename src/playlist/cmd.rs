@@ -6,14 +6,15 @@ use crate::{
             confirmation::Response,
             files::{choose_dirs, choose_multiple_audio_files, filter_dir_for_audio_files},
         },
-        message::{Message, PlaylistMessage, UserInputMessage},
+        message::Message,
         view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
-    playlist::logic::{
-        playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus,
+    playlist::{
+        logic::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
+        message::PlaylistMessage,
     },
-    user_input::logic::InputTarget,
+    user_input::{logic::InputTarget, message::UserInputMessage},
 };
 
 pub fn playlist_save_confirm_then_resume(
