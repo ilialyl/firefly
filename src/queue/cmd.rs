@@ -57,19 +57,19 @@ pub fn toggle_arrange(player: &mut Player) -> Option<Message> {
     None
 }
 
-pub fn shuffle_queue(player: &mut Player) -> Option<Message> {
+pub fn shuffle(player: &mut Player) -> Option<Message> {
     player.queue.shuffle();
 
     None
 }
 
-pub fn clear_queue(player: &mut Player) -> Option<Message> {
+pub fn clear(player: &mut Player) -> Option<Message> {
     player.queue.clear();
 
     None
 }
 
-pub fn remove_selected_queued_track(player: &mut Player) -> Option<Message> {
+pub fn remove_selected(player: &mut Player) -> Option<Message> {
     player.queue.remove_selected();
 
     None
