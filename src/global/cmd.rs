@@ -89,7 +89,7 @@ pub fn tick(
 
         // Load the next track after current track ends.
         if model.player.status == PlaybackStatus::Idle
-            && !model.player.queue.is_empty()
+            && !model.queue.is_empty()
             && !model.player.looping
             && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
@@ -98,7 +98,7 @@ pub fn tick(
         }
 
         // Load first track if no current track and there is something in the queue.
-    } else if model.player.current.is_none() && !model.player.queue.is_empty() {
+    } else if model.player.current.is_none() && !model.queue.is_empty() {
         debug!("Load first track (player.current is None)");
         player::cmd::skip(model);
     }

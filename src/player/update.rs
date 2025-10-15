@@ -12,7 +12,7 @@ pub fn update_player(
     _msg_tx: &Sender<Message>,
 ) -> Option<Message> {
     match msg {
-        PlayerMessage::LoadNow => load_now(&mut model.player),
+        PlayerMessage::LoadNow => load_now(model),
         PlayerMessage::TogglePlay => toggle_play(model),
         PlayerMessage::Rewind => rewind(model),
         PlayerMessage::Seek => seek(model),

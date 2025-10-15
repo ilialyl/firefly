@@ -114,7 +114,6 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
                 if let Err(e) = model
-                    .player
                     .queue
                     .tx
                     .send(selected.tracks.iter().map(|e| e.to_path_buf()).collect())
@@ -134,7 +133,7 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                if let Err(e) = model.player.queue.tx.send(vec![track.clone()]) {
+                if let Err(e) = model.queue.tx.send(vec![track.clone()]) {
                     log::error!("Error sending Path Vec to queue processing worker: {e}");
                 };
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))

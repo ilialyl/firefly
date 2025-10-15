@@ -128,7 +128,7 @@ fn draw_mini(model: &mut Model, frame: &mut Frame) {
             playlist::view::draw(frame.area(), frame, model);
         }
         FocusedArea::Queue => {
-            if model.player.queue.is_empty() {
+            if model.queue.is_empty() {
                 Paragraph::new("This is queue, but it's empty.")
                     .render(frame.area(), frame.buffer_mut());
             } else {

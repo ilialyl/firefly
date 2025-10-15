@@ -41,7 +41,7 @@ impl TrackQueue {
         }
     }
 
-    pub fn get(&self) -> &VecDeque<MiniTrack> {
+    pub fn get_ref(&self) -> &VecDeque<MiniTrack> {
         &self.tracks
     }
 

@@ -12,9 +12,9 @@ use crate::{
     player::logic::{Player, playback_status::PlaybackStatus},
 };
 
-pub fn load_now(player: &mut Player) -> Option<Message> {
+pub fn load_now(model: &mut Model) -> Option<Message> {
     if let Some(path) = choose_audio_file() {
-        player.queue.prepend_track(&path);
+        model.queue.prepend_track(&path);
         return Some(Message::Player(PlayerMessage::Skip));
     }
 
@@ -100,7 +100,7 @@ pub fn seek(model: &mut Model) -> Option<Message> {
 }
 
 pub fn skip(model: &mut Model) -> Option<Message> {
-    if model.player.queue.is_empty() {
+    if model.queue.is_empty() {
         return None;
     }
 
@@ -111,11 +111,11 @@ pub fn skip(model: &mut Model) -> Option<Message> {
 
     model.session.state = RunningState::Running;
 
-    log::info!("Trying to load {:?}.", model.player.queue.front_path());
+    log::info!("Trying to load {:?}.", model.queue.front_path());
     model.player.sink.clear();
     model
         .player
-        .load_next_track()
+        .load_next_track(&mut model.queue)
         .expect("Error loading next track.");
 
     if let Some(current_track) = model.player.current.as_mut()
@@ -170,7 +170,7 @@ pub fn previous_track(model: &mut Model) -> Option<Message> {
     model.player.sink.clear();
     model
         .player
-        .load_prev_track()
+        .load_prev_track(&mut model.queue)
         .expect("Error loading previous track.");
 
     if let Some(current_track) = model.player.current.as_mut()

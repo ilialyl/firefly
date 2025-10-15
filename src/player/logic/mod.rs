@@ -9,19 +9,17 @@ use rust_ffmpeg::FFmpegProcess;
 use std::{
     ops::{Add, Sub},
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, mpsc::Sender},
+    sync::{Arc, Mutex},
     time::Duration,
 };
 
 use crate::{
-    global::{logic::session_state::Session, message::Message},
     player::logic::{playback_status::PlaybackStatus, track::Track},
     queue::logic::TrackQueue,
 };
 
 pub struct Player {
     pub current: Option<Track>,
-    pub queue: TrackQueue,
     // Previous is Vec instead of VecDequeue because it's a stack, not queue.
     pub previous: Vec<PathBuf>,
     pub looping: bool,
@@ -31,13 +29,18 @@ pub struct Player {
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
 
+impl Default for Player {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Player {
     // Sender is needed because it deals with threads.
-    pub fn new(msg_tx: Sender<Message>, session: &Session) -> Player {
+    pub fn new() -> Player {
         let (stream, sink) = Self::get_sink();
         Player {
             current: None,
-            queue: TrackQueue::new(msg_tx, session.unlocked_tick_rate.clone()),
             previous: Vec::<PathBuf>::new(),
             looping: false,
             status: PlaybackStatus::default(),
@@ -130,8 +133,8 @@ impl Player {
         Ok(())
     }
 
-    pub fn load_next_track(&mut self) -> Result<()> {
-        let path = match self.queue.dequeue() {
+    pub fn load_next_track(&mut self, queue: &mut TrackQueue) -> Result<()> {
+        let path = match queue.dequeue() {
             Some(path) => path,
             None => return Err(eyre!("Queue is empty.")),
         };
@@ -145,22 +148,18 @@ impl Player {
         Ok(())
     }
 
-    pub fn load_prev_track(&mut self) -> Result<()> {
+    pub fn load_prev_track(&mut self, queue: &mut TrackQueue) -> Result<()> {
         let prev = match self.previous.pop() {
             Some(path) => path,
             None => return Err(eyre!("There are no previous tracks.")),
         };
 
         if let Some(current) = self.current.as_mut() {
-            self.queue.prepend_track(&current.real_path);
+            queue.prepend_track(&current.real_path);
         }
 
         self.new_track(&prev)?;
 
         Ok(())
-    }
-
-    pub fn shuffle(&mut self) {
-        self.queue.shuffle();
     }
 }

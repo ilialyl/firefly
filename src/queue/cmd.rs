@@ -3,15 +3,14 @@ use crate::{
         logic::files::{choose_dirs, choose_multiple_audio_files, dir_to_audio_paths},
         message::Message,
     },
-    model::Model,
-    player::logic::{Player, mini_track::MiniTrack},
+    player::logic::mini_track::MiniTrack,
     queue::logic::TrackQueue,
 };
 
-pub fn queue_dir(model: &mut Model) -> Option<Message> {
+pub fn queue_dir(queue: &mut TrackQueue) -> Option<Message> {
     if let Some(dirs) = choose_dirs() {
         for dir in dirs {
-            if let Err(e) = model.player.queue.tx.send(dir_to_audio_paths(&dir)) {
+            if let Err(e) = queue.tx.send(dir_to_audio_paths(&dir)) {
                 log::error!("Error sending Path Vec to queue processing worker: {e}");
             };
         }
@@ -20,57 +19,57 @@ pub fn queue_dir(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn queue_files(model: &mut Model) -> Option<Message> {
+pub fn queue_files(queue: &mut TrackQueue) -> Option<Message> {
     if let Some(path_vec) = choose_multiple_audio_files() {
-        if let Err(e) = model.player.queue.tx.send(path_vec) {
+        if let Err(e) = queue.tx.send(path_vec) {
             log::error!("Error sending Path Vec to queue processing worker: {e}");
         };
     }
     None
 }
 
-pub fn queue_mini_track(mini_track: MiniTrack, player: &mut Player) -> Option<Message> {
-    player.queue.enqueue_mini_track(mini_track);
+pub fn queue_mini_track(mini_track: MiniTrack, queue: &mut TrackQueue) -> Option<Message> {
+    queue.enqueue_mini_track(mini_track);
 
     None
 }
 
-pub fn move_queue_up(player: &mut Player) -> Option<Message> {
-    if let Err(e) = player.queue.move_selected_up() {
+pub fn move_queue_up(queue: &mut TrackQueue) -> Option<Message> {
+    if let Err(e) = queue.move_selected_up() {
         log::error!("{}", e);
     };
 
     None
 }
 
-pub fn move_queue_down(player: &mut Player) -> Option<Message> {
-    if let Err(e) = player.queue.move_selected_down() {
+pub fn move_queue_down(queue: &mut TrackQueue) -> Option<Message> {
+    if let Err(e) = queue.move_selected_down() {
         log::error!("{}", e);
     };
 
     None
 }
 
-pub fn toggle_arrange(player: &mut Player) -> Option<Message> {
-    player.queue.toggle_arrange();
+pub fn toggle_arrange(queue: &mut TrackQueue) -> Option<Message> {
+    queue.toggle_arrange();
 
     None
 }
 
-pub fn shuffle(player: &mut Player) -> Option<Message> {
-    player.queue.shuffle();
+pub fn shuffle(queue: &mut TrackQueue) -> Option<Message> {
+    queue.shuffle();
 
     None
 }
 
-pub fn clear(player: &mut Player) -> Option<Message> {
-    player.queue.clear();
+pub fn clear(queue: &mut TrackQueue) -> Option<Message> {
+    queue.clear();
 
     None
 }
 
-pub fn remove_selected(player: &mut Player) -> Option<Message> {
-    player.queue.remove_selected();
+pub fn remove_selected(queue: &mut TrackQueue) -> Option<Message> {
+    queue.remove_selected();
 
     None
 }
