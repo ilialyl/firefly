@@ -46,6 +46,8 @@ pub enum PlayerMessage {
     ClearQueue,
     RemoveSelectedQueuedTrack,
     CreatedMiniTrack(MiniTrack),
+    ScrollToStart,
+    ScrollToEnd,
 }
 
 pub enum PlaylistMessage {
@@ -61,6 +63,8 @@ pub enum PlaylistMessage {
     ToggleArrangeTracks,
     SendToPlayer,
     AskToSave(Box<Option<Message>>),
+    ScrollToStart,
+    ScrollToEnd,
 }
 
 pub enum UserInputMessage {

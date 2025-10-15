@@ -4,6 +4,7 @@ use tokio::runtime::Runtime;
 use crate::global::logic::files::dir_to_audio_paths;
 use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::logic::mini_track::MiniTrack;
+use crate::queue::logic::TrackQueue;
 use crate::{
     global::{
         logic::{
@@ -249,6 +250,22 @@ pub fn clear_queue(player: &mut Player) -> Option<Message> {
 
 pub fn remove_selected_queued_track(player: &mut Player) -> Option<Message> {
     player.queue.remove_selected();
+
+    None
+}
+
+pub fn scroll_to_start(queue: &mut TrackQueue) -> Option<Message> {
+    if !queue.is_empty() {
+        queue.selected_index = Some(0)
+    }
+
+    None
+}
+
+pub fn scroll_to_end(queue: &mut TrackQueue) -> Option<Message> {
+    if !queue.is_empty() {
+        queue.selected_index = Some(queue.len() - 1)
+    }
 
     None
 }

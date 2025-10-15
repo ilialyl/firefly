@@ -31,6 +31,8 @@ pub fn update_player(
         PlayerMessage::CreatedMiniTrack(mini_track) => {
             queue_mini_track(mini_track, &mut model.player)
         }
+        PlayerMessage::ScrollToStart => scroll_to_start(&mut model.player.queue),
+        PlayerMessage::ScrollToEnd => scroll_to_end(&mut model.player.queue),
         PlayerMessage::RemoveSelectedQueuedTrack => remove_selected_queued_track(&mut model.player),
     }
 }

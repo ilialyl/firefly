@@ -17,9 +17,10 @@ pub fn update_playlist(
         PlaylistMessage::SendToPlayer => send_to_player(model),
         PlaylistMessage::MoveCursor(direction) => move_cursor(direction, &mut model.playlist_ctl),
         PlaylistMessage::AddDir => add_dir(&mut model.playlist_ctl),
-        PlaylistMessage::Delete => {
-            delete_playlist(&mut model.user_confirmation.response, &mut model.playlist_ctl)
-        }
+        PlaylistMessage::Delete => delete_playlist(
+            &mut model.user_confirmation.response,
+            &mut model.playlist_ctl,
+        ),
         PlaylistMessage::RemoveTrack => remove_selected_track(&mut model.playlist_ctl),
         PlaylistMessage::Rename => rename_playlist(&mut model.playlist_ctl),
         PlaylistMessage::SaveSelected => save_selected_playlist(&mut model.playlist_ctl),
@@ -30,5 +31,7 @@ pub fn update_playlist(
             *then_call,
             &mut model.playlist_ctl,
         ),
+        PlaylistMessage::ScrollToStart => scroll_to_start(&mut model.playlist_ctl),
+        PlaylistMessage::ScrollToEnd => scroll_to_end(&mut model.playlist_ctl),
     }
 }

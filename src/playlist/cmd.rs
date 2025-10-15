@@ -316,3 +316,41 @@ pub fn ask_to_save(
 
     None
 }
+
+pub fn scroll_to_end(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    match playlist_ctl.tab_focus {
+        PlaylistTabFocus::Playlists => {
+            if !playlist_ctl.playlist_coll.is_empty() {
+                playlist_ctl.selected_playlist = Some(playlist_ctl.playlist_coll.len() - 1);
+            }
+        }
+        PlaylistTabFocus::Tracks => {
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist() {
+                if !selected_playlist.is_empty() {
+                    selected_playlist.selected_track = Some(selected_playlist.len() - 1);
+                }
+            }
+        }
+    }
+
+    None
+}
+
+pub fn scroll_to_start(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    match playlist_ctl.tab_focus {
+        PlaylistTabFocus::Playlists => {
+            if !playlist_ctl.playlist_coll.is_empty() {
+                playlist_ctl.selected_playlist = Some(0);
+            }
+        }
+        PlaylistTabFocus::Tracks => {
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist() {
+                if !selected_playlist.is_empty() {
+                    selected_playlist.selected_track = Some(0);
+                }
+            }
+        }
+    }
+
+    None
+}

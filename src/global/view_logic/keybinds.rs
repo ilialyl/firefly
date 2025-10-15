@@ -38,6 +38,8 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
                 KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
                 KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
+                KeyCode::Home => Some(Message::Playlist(PlaylistMessage::ScrollToStart)),
+                KeyCode::End => Some(Message::Playlist(PlaylistMessage::ScrollToEnd)),
                 KeyCode::Char('h') => Some(Message::ShowHelp),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
@@ -65,6 +67,8 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Backspace => {
                     Some(Message::Player(PlayerMessage::RemoveSelectedQueuedTrack))
                 }
+                KeyCode::Home => Some(Message::Player(PlayerMessage::ScrollToStart)),
+                KeyCode::End => Some(Message::Player(PlayerMessage::ScrollToEnd)),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },
