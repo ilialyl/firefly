@@ -28,26 +28,15 @@ impl MiniMetadata {
                 album: primary_tag.album().map(|s| s.to_string()),
             }
         } else {
-            MiniMetadata::default()
-        }
-    }
-
-    pub fn format(&self) -> String {
-        let mut s = String::new();
-        if let Some(artist) = self.artist.as_ref() {
-            s.push_str(&format!(
-                "{} - {}",
-                artist,
-                self.title.as_ref().unwrap_or(&"Unnamed".to_string())
-            ));
-
-            if let Some(album) = self.album.as_ref() {
-                s.push_str(&format!(" [{}]", album));
+            MiniMetadata {
+                file_stem: Some(
+                    path.file_stem()
+                        .and_then(|stem| stem.to_str())
+                        .unwrap_or("[Invalid UTF-8 name]")
+                        .to_string(),
+                ),
+                ..Default::default()
             }
-        } else {
-            s.push_str(self.title.as_ref().unwrap_or(&"Unnamed".to_string()));
         }
-
-        s
     }
 }
