@@ -5,15 +5,31 @@ pub mod home;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
-    widgets::{Block, Padding, Widget},
+    text::Line,
+    widgets::{Block, Padding, Paragraph, Widget},
 };
 
 use crate::{
-    global::view_logic::focused_area::FocusedArea, model::Model, player::view::control_bar,
+    global::view_logic::focused_area::FocusedArea,
+    model::Model,
+    player::view::{control_bar, cover_art, track_details},
+    playlist,
     user_input::logic::InputMode,
 };
 
 pub fn draw(model: &mut Model, frame: &mut Frame) {
+    if small_terminal_size(frame.area()) {
+        draw_small_size(model, frame);
+    } else {
+        draw_normal_size(model, frame);
+    }
+}
+
+pub fn small_terminal_size(area: Rect) -> bool {
+    area.width < 45 && area.height < 15
+}
+
+fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -77,6 +93,37 @@ pub fn draw(model: &mut Model, frame: &mut Frame) {
         }
         InputMode::Commands => {}
         InputMode::Confirmation => confirmation_box::draw(model, frame, frame.area()),
+    }
+}
+
+fn draw_small_size(model: &mut Model, frame: &mut Frame) {
+    if model.player.current.is_some() {
+        match model.focused_view_area {
+            FocusedArea::ControlBarAndQueue => {
+                let layout = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints(vec![
+                        Constraint::Length(frame.area().height * 2),
+                        Constraint::Fill(1),
+                    ])
+                    .horizontal_margin(1)
+                    .spacing(1)
+                    .split(frame.area());
+
+                cover_art::draw(layout[0], frame, model);
+                track_details::draw(layout[1], frame, model);
+            }
+            FocusedArea::Playlist => {
+                playlist::view::draw(frame.area(), frame, model);
+            }
+        }
+    } else {
+        Paragraph::new(vec![
+            Line::from("Mini Player"),
+            Line::from("Press Q to queue your tracks."),
+            Line::from("Enlarge for full visual."),
+        ])
+        .render(frame.area(), frame.buffer_mut());
     }
 }
 
