@@ -1,9 +1,10 @@
 use ratatui::{
     Frame,
-    layout::Rect,
+    layout::{Constraint, Rect},
     style::{Style, Stylize},
     widgets::{
-        List, ListItem, ListState, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
+        Cell, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Table,
+        TableState,
     },
 };
 
@@ -15,26 +16,39 @@ use crate::{
 pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_area: Rect) {
     let tab_focus = model.playlist_ctl.tab_focus;
 
+    let header = ["Title", "Artist"]
+        .into_iter()
+        .map(Cell::from)
+        .collect::<Row>();
+
     if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
-        let track_entries: Vec<ListItem> = selected_playlist
+        let track_entries: Vec<Row> = selected_playlist
             .metadata_caches
             .iter()
-            .map(|m| m.format())
-            .map(ListItem::from)
+            .map(|m| {
+                Row::new(vec![
+                    m.title
+                        .clone()
+                        .unwrap_or(m.file_stem.clone().unwrap_or("Unknown".to_string())),
+                    m.artist.clone().unwrap_or(String::new()),
+                ])
+            })
             .collect();
 
-        let highlight = if matches!(tab_focus, PlaylistTabFocus::Tracks) {
+        let widths = [Constraint::Fill(1), Constraint::Percentage(30)];
+
+        let highlight_style = if matches!(tab_focus, PlaylistTabFocus::Tracks) {
             Style::default().reversed()
         } else {
             Style::default()
         };
 
-        let list = List::new(track_entries).highlight_style(highlight);
-
-        let mut list_state = ListState::default();
-        list_state.select(selected_playlist.selected_track);
-
-        StatefulWidget::render(list, entries_area, frame.buffer_mut(), &mut list_state);
+        let mut table_state = TableState::default();
+        table_state.select(selected_playlist.selected_track);
+        Table::new(track_entries, widths)
+            .header(header)
+            .row_highlight_style(highlight_style)
+            .render(entries_area, frame.buffer_mut(), &mut table_state);
 
         let mut scrollbar_state = ScrollbarState::new(selected_playlist.len())
             .position(selected_playlist.selected_track.unwrap_or(0));

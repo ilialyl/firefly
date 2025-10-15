@@ -1,4 +1,4 @@
-pub mod metadata_cache;
+pub mod mini_metadata;
 pub mod playlist_collection;
 pub mod playlist_controller;
 pub mod playlist_tab_focus;
@@ -13,7 +13,7 @@ use color_eyre::eyre::{Result, eyre};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
-    global::logic::files::get_playlists_path, playlist::logic::metadata_cache::MiniMetadata,
+    global::logic::files::get_playlists_path, playlist::logic::mini_metadata::MiniMetadata,
 };
 
 #[derive(Debug)]

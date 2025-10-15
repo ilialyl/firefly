@@ -1136,7 +1136,7 @@ checksum = "0399f9d26e5191ce32c498bebd31e7a3ceabc2745f0ac54af3f335126c3f24b3"
 
 [[package]]
 name = "firefly"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
  "clap",
  "color-eyre",
