@@ -13,7 +13,7 @@ use crate::{
     global::view_logic::focused_area::FocusedArea,
     model::Model,
     player::view::{control_bar, cover_art, track_details},
-    playlist,
+    playlist, queue,
     user_input::logic::InputMode,
 };
 
@@ -21,6 +21,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame) {
     if small_terminal_size(frame.area()) {
         draw_small_size(model, frame);
     } else {
+        if matches!(model.focused_view_area, FocusedArea::Queue) {
+            model.focused_view_area.cycle_right();
+        }
         draw_normal_size(model, frame);
     }
 }
@@ -70,7 +73,7 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
 
     home::draw(model, frame, outer_layout[1]);
 
-    if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
+    if matches!(model.focused_view_area, FocusedArea::ControlBar) {
         Block::bordered().render(outer_layout[2], frame.buffer_mut());
     }
 
@@ -97,9 +100,9 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
 }
 
 fn draw_small_size(model: &mut Model, frame: &mut Frame) {
-    if model.player.current.is_some() {
-        match model.focused_view_area {
-            FocusedArea::ControlBarAndQueue => {
+    match model.focused_view_area {
+        FocusedArea::ControlBar => {
+            if model.player.current.is_some() {
                 let layout = Layout::default()
                     .direction(Direction::Horizontal)
                     .constraints(vec![
@@ -112,18 +115,26 @@ fn draw_small_size(model: &mut Model, frame: &mut Frame) {
 
                 cover_art::draw(layout[0], frame, model);
                 track_details::draw(layout[1], frame, model);
-            }
-            FocusedArea::Playlist => {
-                playlist::view::draw(frame.area(), frame, model);
+            } else {
+                Paragraph::new(vec![
+                    Line::from("Mini Player"),
+                    Line::from("Press Q to queue your tracks."),
+                    Line::from("Enlarge for full visual."),
+                ])
+                .render(frame.area(), frame.buffer_mut());
             }
         }
-    } else {
-        Paragraph::new(vec![
-            Line::from("Mini Player"),
-            Line::from("Press Q to queue your tracks."),
-            Line::from("Enlarge for full visual."),
-        ])
-        .render(frame.area(), frame.buffer_mut());
+        FocusedArea::Playlist => {
+            playlist::view::draw(frame.area(), frame, model);
+        }
+        FocusedArea::Queue => {
+            if model.player.queue.is_empty() {
+                Paragraph::new("This is queue, but it's empty.")
+                    .render(frame.area(), frame.buffer_mut());
+            } else {
+                queue::view::draw(frame.area(), frame, model);
+            }
+        }
     }
 }
 

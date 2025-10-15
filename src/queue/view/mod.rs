@@ -41,7 +41,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         " Queue "
     };
 
-    let bottom_title = if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
+    let bottom_title = if matches!(model.focused_view_area, FocusedArea::ControlBar) {
         format!(
             " {} of {} ",
             model.player.queue.get_selected().unwrap_or(0) + 1,
@@ -51,7 +51,9 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         String::new()
     };
 
-    let block = if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
+    let block = if matches!(model.focused_view_area, FocusedArea::ControlBar)
+        || matches!(model.focused_view_area, FocusedArea::Queue)
+    {   
         if model.player.queue.is_empty() {
             Block::default()
         } else {

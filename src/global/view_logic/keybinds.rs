@@ -13,32 +13,6 @@ use crate::{
 pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> {
     match model.input_mode {
         InputMode::Commands => match model.focused_view_area {
-            FocusedArea::ControlBarAndQueue => match key_event.code {
-                KeyCode::Esc => Some(Message::Quit),
-                KeyCode::Char('n') => Some(Message::Player(PlayerMessage::LoadNow)),
-                KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
-                KeyCode::Char('s') => Some(Message::Player(PlayerMessage::Skip)),
-                KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume)),
-                KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume)),
-                KeyCode::Right => Some(Message::Player(PlayerMessage::Seek)),
-                KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind)),
-                KeyCode::Char('l') => Some(Message::Player(PlayerMessage::ToggleLoop)),
-                KeyCode::Char('q') => Some(Message::Player(PlayerMessage::QueueFiles)),
-                KeyCode::Char('Q') => Some(Message::Player(PlayerMessage::QueueDir)),
-                KeyCode::Up => Some(Message::Player(PlayerMessage::MoveQueueUp)),
-                KeyCode::Down => Some(Message::Player(PlayerMessage::MoveQueueDown)),
-                KeyCode::Char('a') => Some(Message::Player(PlayerMessage::ToggleArrange)),
-                KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
-                KeyCode::Char('m') => Some(Message::Player(PlayerMessage::ShuffleQueue)),
-                KeyCode::Char('h') => Some(Message::ShowHelp),
-                KeyCode::Delete => Some(Message::Player(PlayerMessage::ClearQueue)),
-                KeyCode::Backspace => {
-                    Some(Message::Player(PlayerMessage::RemoveSelectedQueuedTrack))
-                }
-                KeyCode::Tab => Some(Message::CycleTabs),
-                _ => None,
-            },
-
             FocusedArea::Playlist => match key_event.code {
                 KeyCode::Esc => Some(Message::Quit),
                 KeyCode::Char('a') => Some(Message::Playlist(PlaylistMessage::ToggleArrangeTracks)),
@@ -65,6 +39,32 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
                 KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),
                 KeyCode::Char('h') => Some(Message::ShowHelp),
+                KeyCode::Tab => Some(Message::CycleTabs),
+                _ => None,
+            },
+
+            _ => match key_event.code {
+                KeyCode::Esc => Some(Message::Quit),
+                KeyCode::Char('n') => Some(Message::Player(PlayerMessage::LoadNow)),
+                KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
+                KeyCode::Char('s') => Some(Message::Player(PlayerMessage::Skip)),
+                KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume)),
+                KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume)),
+                KeyCode::Right => Some(Message::Player(PlayerMessage::Seek)),
+                KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind)),
+                KeyCode::Char('l') => Some(Message::Player(PlayerMessage::ToggleLoop)),
+                KeyCode::Char('q') => Some(Message::Player(PlayerMessage::QueueFiles)),
+                KeyCode::Char('Q') => Some(Message::Player(PlayerMessage::QueueDir)),
+                KeyCode::Up => Some(Message::Player(PlayerMessage::MoveQueueUp)),
+                KeyCode::Down => Some(Message::Player(PlayerMessage::MoveQueueDown)),
+                KeyCode::Char('a') => Some(Message::Player(PlayerMessage::ToggleArrange)),
+                KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
+                KeyCode::Char('m') => Some(Message::Player(PlayerMessage::ShuffleQueue)),
+                KeyCode::Char('h') => Some(Message::ShowHelp),
+                KeyCode::Delete => Some(Message::Player(PlayerMessage::ClearQueue)),
+                KeyCode::Backspace => {
+                    Some(Message::Player(PlayerMessage::RemoveSelectedQueuedTrack))
+                }
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },
