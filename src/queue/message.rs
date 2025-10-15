@@ -1,4 +1,4 @@
-use crate::player::logic::mini_track::MiniTrack;
+use crate::queue::logic::mini_track::MiniTrack;
 
 pub enum QueueMessage {
     ToggleArrange,

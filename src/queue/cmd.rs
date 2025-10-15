@@ -3,8 +3,7 @@ use crate::{
         logic::files::{choose_dirs, choose_multiple_audio_files, dir_to_audio_paths},
         message::Message,
     },
-    player::logic::mini_track::MiniTrack,
-    queue::logic::TrackQueue,
+    queue::logic::{TrackQueue, mini_track::MiniTrack},
 };
 
 pub fn queue_dir(queue: &mut TrackQueue) -> Option<Message> {

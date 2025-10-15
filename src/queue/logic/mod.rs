@@ -1,3 +1,5 @@
+pub mod mini_track;
+
 use std::{
     collections::VecDeque,
     fs,
@@ -17,8 +19,7 @@ use color_eyre::eyre::{Result, eyre};
 
 use crate::{
     global::{logic::files::AUDIO_FORMATS, message::Message},
-    player::logic::mini_track::MiniTrack,
-    queue::message::QueueMessage,
+    queue::{logic::mini_track::MiniTrack, message::QueueMessage},
 };
 
 pub struct TrackQueue {
