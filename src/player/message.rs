@@ -1,5 +1,3 @@
-use crate::player::logic::mini_track::MiniTrack;
-
 pub enum PlayerMessage {
     LoadNow,
     TogglePlay,
@@ -9,16 +7,5 @@ pub enum PlayerMessage {
     DecreaseVolume,
     Seek,
     Rewind,
-    ToggleArrange,
     ToggleLoop,
-    MoveQueueUp,
-    MoveQueueDown,
-    QueueFiles,
-    QueueDir,
-    ShuffleQueue,
-    ClearQueue,
-    RemoveSelectedQueuedTrack,
-    CreatedMiniTrack(MiniTrack),
-    ScrollToStart,
-    ScrollToEnd,
 }

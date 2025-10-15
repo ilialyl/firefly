@@ -9,6 +9,7 @@ use crate::{
     model::Model,
     player::message::PlayerMessage,
     playlist::message::PlaylistMessage,
+    queue::message::QueueMessage,
     user_input::{logic::InputMode, message::UserInputMessage},
 };
 
@@ -57,20 +58,18 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Right => Some(Message::Player(PlayerMessage::Seek)),
                 KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind)),
                 KeyCode::Char('l') => Some(Message::Player(PlayerMessage::ToggleLoop)),
-                KeyCode::Char('q') => Some(Message::Player(PlayerMessage::QueueFiles)),
-                KeyCode::Char('Q') => Some(Message::Player(PlayerMessage::QueueDir)),
-                KeyCode::Up => Some(Message::Player(PlayerMessage::MoveQueueUp)),
-                KeyCode::Down => Some(Message::Player(PlayerMessage::MoveQueueDown)),
-                KeyCode::Char('a') => Some(Message::Player(PlayerMessage::ToggleArrange)),
+                KeyCode::Char('q') => Some(Message::Queue(QueueMessage::QueueFiles)),
+                KeyCode::Char('Q') => Some(Message::Queue(QueueMessage::QueueDir)),
+                KeyCode::Up => Some(Message::Queue(QueueMessage::MoveUp)),
+                KeyCode::Down => Some(Message::Queue(QueueMessage::MoveDown)),
+                KeyCode::Char('a') => Some(Message::Queue(QueueMessage::ToggleArrange)),
                 KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
-                KeyCode::Char('m') => Some(Message::Player(PlayerMessage::ShuffleQueue)),
+                KeyCode::Char('m') => Some(Message::Queue(QueueMessage::Shuffle)),
                 KeyCode::Char('h') => Some(Message::ShowHelp),
-                KeyCode::Delete => Some(Message::Player(PlayerMessage::ClearQueue)),
-                KeyCode::Backspace => {
-                    Some(Message::Player(PlayerMessage::RemoveSelectedQueuedTrack))
-                }
-                KeyCode::Home => Some(Message::Player(PlayerMessage::ScrollToStart)),
-                KeyCode::End => Some(Message::Player(PlayerMessage::ScrollToEnd)),
+                KeyCode::Delete => Some(Message::Queue(QueueMessage::Clear)),
+                KeyCode::Backspace => Some(Message::Queue(QueueMessage::RemoveSelected)),
+                KeyCode::Home => Some(Message::Queue(QueueMessage::ScrollToStart)),
+                KeyCode::End => Some(Message::Queue(QueueMessage::ScrollToEnd)),
                 KeyCode::Tab => Some(Message::CycleTabs),
                 _ => None,
             },

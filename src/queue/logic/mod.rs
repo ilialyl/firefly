@@ -17,7 +17,8 @@ use color_eyre::eyre::{Result, eyre};
 
 use crate::{
     global::{logic::files::AUDIO_FORMATS, message::Message},
-    player::{logic::mini_track::MiniTrack, message::PlayerMessage},
+    player::logic::mini_track::MiniTrack,
+    queue::message::QueueMessage,
 };
 
 pub struct TrackQueue {
@@ -192,7 +193,7 @@ impl TrackQueue {
                 path_vec.iter().for_each(|p| {
                     let mini_track = MiniTrack::new(&p);
                     if let Err(e) =
-                        msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(mini_track)))
+                        msg_tx.send(Message::Queue(QueueMessage::CreatedMiniTrack(mini_track)))
                     {
                         log::error!("Error sending MiniTrack back to main thread: {e}")
                     };

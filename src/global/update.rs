@@ -5,6 +5,7 @@ use crate::{
     model::Model,
     player::update::update_player,
     playlist::update::update_playlist,
+    queue::update::update_queue,
     user_input::update::update_userinput,
 };
 
@@ -19,6 +20,7 @@ pub fn update_global(
         Message::AskConfirmation(prompt, msg) => ask_for_confirmation(prompt, *msg, model),
         Message::Confirm(answer) => confirmed(answer, model),
         Message::Player(player_msg) => update_player(model, player_msg, msg_tx),
+        Message::Queue(queue_msg) => update_queue(model, queue_msg, msg_tx),
         Message::Playlist(playlist_msg) => update_playlist(model, playlist_msg, msg_tx),
         Message::UserInput(userinput_update) => update_userinput(model, userinput_update),
         Message::ConversionStarted(handle) => conversion_started(handle, model),
