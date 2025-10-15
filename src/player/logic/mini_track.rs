@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::playlist::logic::metadata_cache::MiniMetadata;
+use crate::playlist::logic::mini_metadata::MiniMetadata;
 
 #[derive(Clone)]
 pub struct MiniTrack {
