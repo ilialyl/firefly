@@ -32,7 +32,7 @@ fn main() -> Result<()> {
 
     let cache_dir = get_cache_dir();
     if !cache_dir.exists() {
-        fs::create_dir(&cache_dir).expect("Failed to create cache directory.");
+        fs::create_dir(&cache_dir)?;
     }
 
     // Clap stuff
