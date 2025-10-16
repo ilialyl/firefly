@@ -99,14 +99,7 @@ impl Player {
             let current_pos = self.sink.get_pos();
             let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
                 Some(dur) => dur,
-                None => {
-                    self.sink.clear();
-                    let source = current.get_source()?;
-                    self.sink.append(source);
-                    self.sink.play();
-
-                    return Ok(());
-                }
+                None => return Self::reload(self),
             };
 
             self.sink.clear();
