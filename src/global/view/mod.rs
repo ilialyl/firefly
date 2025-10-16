@@ -5,6 +5,7 @@ pub mod home;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
+    style::Stylize,
     text::Line,
     widgets::{Block, Padding, Paragraph, Widget},
 };
@@ -60,9 +61,9 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
         .render(outer_layout[0], frame.buffer_mut());
 
     let top_left_text = if model.show_help {
-        "Hide Help <H>"
+        Line::from("Hide Help <H>").bold()
     } else {
-        "Help <H>"
+        Line::from("Help <H>")
     };
 
     Block::new()

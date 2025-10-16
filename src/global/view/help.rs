@@ -84,6 +84,7 @@ fn get_player_controls() -> Vec<(String, String)> {
         ("Play/Pause", "<Space>"),
         ("Shuffle Queue", "<M>"),
         ("Arrange Queue", "<A>"),
+        ("Skip to Selected Track in Queue", "<Enter>"),
         ("Remove Selected Track in Queue", "<Del>"),
         ("Clear Queue", "<Backspace>"),
         ("Move Queue Up", "<↑>"),
