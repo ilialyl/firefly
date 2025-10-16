@@ -61,7 +61,13 @@ pub fn rewind(model: &mut Model) -> Option<Message> {
         Duration::from_secs(5)
     };
 
+    let status = model.player.status.clone();
+
     model.player.rewind(rewind_dur).expect("Error rewinding.");
+
+    if matches!(status, PlaybackStatus::Paused) {
+        model.player.sink.pause();
+    }
 
     None
 }
