@@ -37,7 +37,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
 
         let widths = [Constraint::Fill(1), Constraint::Percentage(30)];
 
-        let highlight_style = if matches!(tab_focus, PlaylistTabFocus::Tracks) {
+        let highlight_style = if !matches!(model.focused_view_area, FocusedArea::Playlist) {
+            Style::default()
+        } else if matches!(tab_focus, PlaylistTabFocus::Tracks) {
             Style::default().reversed()
         } else {
             Style::default()
