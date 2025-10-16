@@ -24,7 +24,9 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         .map(ListItem::from)
         .collect();
 
-    let highlight = if model.queue.is_arrange() {
+    let highlight = if matches!(model.focused_view_area, FocusedArea::Playlist) {
+        Style::default() // Because Queue and Player are counted as the same Area, which leaves Playlist.
+    } else if model.queue.is_arrange() {
         Style::default().reversed().italic()
     } else {
         Style::default().reversed()
