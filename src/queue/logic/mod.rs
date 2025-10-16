@@ -183,6 +183,17 @@ impl TrackQueue {
         }
     }
 
+    pub fn skip_to_selected(&mut self) {
+        if let Some(selected) = self.selected_index {
+            self.tracks.drain(0..selected);
+        }
+        if self.is_empty() {
+            self.selected_index = None;
+        } else {
+            self.selected_index = Some(0);
+        }
+    }
+
     pub fn start_queue_processing_worker(
         msg_tx: Sender<Message>,
         rx: Receiver<Vec<PathBuf>>,

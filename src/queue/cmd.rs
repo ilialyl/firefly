@@ -3,6 +3,8 @@ use crate::{
         logic::files::{choose_dirs, choose_multiple_audio_files, dir_to_audio_paths},
         message::Message,
     },
+    model::Model,
+    player::{self},
     queue::logic::{TrackQueue, mini_track::MiniTrack},
 };
 
@@ -85,6 +87,13 @@ pub fn scroll_to_end(queue: &mut TrackQueue) -> Option<Message> {
     if !queue.is_empty() {
         queue.selected_index = Some(queue.len() - 1)
     }
+
+    None
+}
+
+pub fn skip_to_selected(model: &mut Model) -> Option<Message> {
+    model.queue.skip_to_selected();
+    player::cmd::skip(model);
 
     None
 }

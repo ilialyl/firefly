@@ -12,4 +12,5 @@ pub enum QueueMessage {
     ScrollToEnd,
     RemoveSelected,
     CreatedMiniTrack(MiniTrack),
+    SkipToSelected,
 }

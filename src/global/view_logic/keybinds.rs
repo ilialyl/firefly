@@ -66,6 +66,7 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
                 KeyCode::Char('m') => Some(Message::Queue(QueueMessage::Shuffle)),
                 KeyCode::Char('h') => Some(Message::ShowHelp),
+                KeyCode::Enter => Some(Message::Queue(QueueMessage::SkipToSelected)),
                 KeyCode::Delete => Some(Message::Queue(QueueMessage::RemoveSelected)),
                 KeyCode::Backspace => Some(Message::Queue(QueueMessage::Clear)),
                 KeyCode::Home => Some(Message::Queue(QueueMessage::ScrollToStart)),

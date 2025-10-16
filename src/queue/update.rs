@@ -25,5 +25,6 @@ pub fn update_queue(
         QueueMessage::CreatedMiniTrack(mini_track) => {
             queue_mini_track(mini_track, &mut model.queue)
         }
+        QueueMessage::SkipToSelected => skip_to_selected(model),
     }
 }
