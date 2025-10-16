@@ -236,7 +236,7 @@ impl Playlist {
         self.dirty_flag = true;
     }
 
-    pub fn as_vec_string(&mut self) -> Vec<String> {
+    pub fn as_vec_string(&self) -> Vec<String> {
         let mut vec_string: Vec<String> = Vec::new();
         for track in &self.tracks {
             if let Some(os_name) = track.file_name() {
