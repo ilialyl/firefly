@@ -30,7 +30,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
                     m.title
                         .clone()
                         .unwrap_or(m.file_stem.clone().unwrap_or("Unknown".to_string())),
-                    m.artist.clone().unwrap_or(String::new()),
+                    m.artist.clone().unwrap_or_default(),
                 ])
             })
             .collect();

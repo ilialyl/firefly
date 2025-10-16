@@ -161,7 +161,7 @@ impl Playlist {
         let json_data = fs::read_to_string(file)?;
         let tracks: Vec<PathBuf> = serde_json::from_str(&json_data)?;
         let metadata_caches: Vec<MiniMetadata> =
-            tracks.par_iter().map(|p| MiniMetadata::from(&p)).collect();
+            tracks.par_iter().map(|p| MiniMetadata::from(p)).collect();
 
         let mut playlist = Playlist {
             tracks,

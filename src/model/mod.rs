@@ -36,7 +36,7 @@ impl Model {
         Self {
             player: Player::default(),
             queue: TrackQueue::new(msg_tx, session.unlocked_tick_rate.clone()),
-            session: session,
+            session,
             playlist_ctl: PlaylistController::default(),
             info_msg: String::new(),
             focused_view_area: FocusedArea::default(),

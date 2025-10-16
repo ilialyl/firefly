@@ -325,11 +325,10 @@ pub fn scroll_to_end(playlist_ctl: &mut PlaylistController) -> Option<Message> {
             }
         }
         PlaylistTabFocus::Tracks => {
-            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist() {
-                if !selected_playlist.is_empty() {
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
+                && !selected_playlist.is_empty() {
                     selected_playlist.selected_track = Some(selected_playlist.len() - 1);
                 }
-            }
         }
     }
 
@@ -344,11 +343,10 @@ pub fn scroll_to_start(playlist_ctl: &mut PlaylistController) -> Option<Message>
             }
         }
         PlaylistTabFocus::Tracks => {
-            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist() {
-                if !selected_playlist.is_empty() {
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
+                && !selected_playlist.is_empty() {
                     selected_playlist.selected_track = Some(0);
                 }
-            }
         }
     }
 

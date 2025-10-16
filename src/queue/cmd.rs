@@ -21,11 +21,10 @@ pub fn queue_dir(queue: &mut TrackQueue) -> Option<Message> {
 }
 
 pub fn queue_files(queue: &mut TrackQueue) -> Option<Message> {
-    if let Some(path_vec) = choose_multiple_audio_files() {
-        if let Err(e) = queue.tx.send(path_vec) {
+    if let Some(path_vec) = choose_multiple_audio_files()
+        && let Err(e) = queue.tx.send(path_vec) {
             log::error!("Error sending Path Vec to queue processing worker: {e}");
         };
-    }
     None
 }
 

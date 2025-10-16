@@ -61,7 +61,7 @@ pub fn rewind(model: &mut Model) -> Option<Message> {
         Duration::from_secs(5)
     };
 
-    let status = model.player.status.clone();
+    let status = model.player.status;
 
     model.player.rewind(rewind_dur).expect("Error rewinding.");
 
