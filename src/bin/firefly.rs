@@ -54,7 +54,7 @@ fn main() -> Result<()> {
     let mut terminal = init_terminal()?;
 
     while model.session.state != RunningState::Exit {
-        // VecDequeue is better for queues
+        // VecDeque is better for queues
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated

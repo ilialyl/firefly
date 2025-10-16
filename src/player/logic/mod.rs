@@ -19,7 +19,7 @@ use crate::{
 
 pub struct Player {
     pub current: Option<Track>,
-    // Previous is Vec instead of VecDequeue because it's a stack, not queue.
+    // Previous is Vec instead of VecDeque because it's a stack, not queue.
     pub previous: Vec<PathBuf>,
     pub looping: bool,
     pub status: PlaybackStatus,
