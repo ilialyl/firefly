@@ -9,7 +9,7 @@ use color_eyre::eyre::Result;
 use firefly::{
     global::{
         logic::{
-            cli::{clear_cache, cli, display_nlog},
+            cli::{clear_cache, cli},
             data::get_cache_dir,
             logger::setup_logger,
             session_state::RunningState,
@@ -23,6 +23,9 @@ use firefly::{
     },
     model::Model,
 };
+
+#[cfg(not(target_os = "windows"))]
+use firefly::global::logic::cli::display_nlog;
 
 #[allow(clippy::single_match)]
 fn main() -> Result<()> {
@@ -45,9 +48,10 @@ fn main() -> Result<()> {
             return Ok(());
         }
         Some(("log", args)) => {
-            if let Some(n_line) = args.get_one::<usize>("nlines") {
+            if let Some(_n_line) = args.get_one::<usize>("nlines") {
                 println!();
-                display_nlog(*n_line);
+                #[cfg(not(target_os = "windows"))]
+                display_nlog(*_n_line);
                 println!();
             }
 

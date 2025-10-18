@@ -1,16 +1,20 @@
-use std::{
-    fs::{self, File},
-    io::{BufReader, BufWriter},
-    path::Path,
-};
+use std::{fs, path::Path};
 
+#[cfg(not(target_os = "windows"))]
+use crate::global::logic::data::get_data_dir;
 use clap::{ArgAction, Command, arg};
 use color_eyre::eyre::Result;
 use glob::glob;
 use log::info;
+#[cfg(not(target_os = "windows"))]
+use std::{
+    fs::File,
+    io::{BufReader, BufWriter},
+};
+#[cfg(not(target_os = "windows"))]
 use tail::BackwardsReader;
 
-use crate::global::logic::data::{TEMP_FILE_PREFIX, get_data_dir};
+use crate::global::logic::data::TEMP_FILE_PREFIX;
 
 pub fn cli() -> Command {
     Command::new("firefly")
@@ -54,6 +58,7 @@ pub fn clear_cache(dir: &Path) -> Result<()> {
     Ok(())
 }
 
+#[cfg(not(target_os = "windows"))]
 pub fn display_nlog(number_of_lines: usize) {
     let filename = get_data_dir().join("firefly.log");
     let fd = File::open(filename).unwrap();
