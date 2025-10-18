@@ -9,7 +9,7 @@ use color_eyre::eyre::Result;
 use firefly::{
     global::{
         logic::{
-            cli::{clear_cache, cli},
+            cli::{clear_cache, cli, display_nlog},
             data::get_cache_dir,
             logger::setup_logger,
             session_state::RunningState,
@@ -42,6 +42,15 @@ fn main() -> Result<()> {
         Some(("clean", _)) => {
             clear_cache(&cache_dir)?;
             println!("Success");
+            return Ok(());
+        }
+        Some(("log", args)) => {
+            if let Some(n_line) = args.get_one::<usize>("nlines") {
+                println!();
+                display_nlog(*n_line);
+                println!();
+            }
+
             return Ok(());
         }
         _ => {}
