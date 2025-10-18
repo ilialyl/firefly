@@ -1,3 +1,5 @@
+pub mod mini_track;
+
 use std::{
     collections::VecDeque,
     fs,
@@ -16,17 +18,14 @@ use rand::seq::SliceRandom;
 use color_eyre::eyre::{Result, eyre};
 
 use crate::{
-    global::{
-        logic::files::AUDIO_FORMATS,
-        message::{Message, PlayerMessage},
-    },
-    player::logic::mini_track::MiniTrack,
+    global::{logic::files::AUDIO_FORMATS, message::Message},
+    queue::{logic::mini_track::MiniTrack, message::QueueMessage},
 };
 
 pub struct TrackQueue {
     // A Track is too heavy, hence MiniTrack.
     tracks: VecDeque<MiniTrack>,
-    selected_index: Option<usize>,
+    pub selected_index: Option<usize>,
     arrange_mode: bool,
     pub tx: Sender<Vec<PathBuf>>,
 }
@@ -43,7 +42,7 @@ impl TrackQueue {
         }
     }
 
-    pub fn get(&self) -> &VecDeque<MiniTrack> {
+    pub fn get_ref(&self) -> &VecDeque<MiniTrack> {
         &self.tracks
     }
 
@@ -184,6 +183,17 @@ impl TrackQueue {
         }
     }
 
+    pub fn skip_to_selected(&mut self) {
+        if let Some(selected) = self.selected_index {
+            self.tracks.drain(0..selected);
+        }
+        if self.is_empty() {
+            self.selected_index = None;
+        } else {
+            self.selected_index = Some(0);
+        }
+    }
+
     pub fn start_queue_processing_worker(
         msg_tx: Sender<Message>,
         rx: Receiver<Vec<PathBuf>>,
@@ -193,9 +203,9 @@ impl TrackQueue {
             while let Ok(path_vec) = rx.recv() {
                 unlocked_tick_rate.store(true, Ordering::Relaxed);
                 path_vec.iter().for_each(|p| {
-                    let mini_track = MiniTrack::new(&p);
+                    let mini_track = MiniTrack::new(p);
                     if let Err(e) =
-                        msg_tx.send(Message::Player(PlayerMessage::CreatedMiniTrack(mini_track)))
+                        msg_tx.send(Message::Queue(QueueMessage::CreatedMiniTrack(mini_track)))
                     {
                         log::error!("Error sending MiniTrack back to main thread: {e}")
                     };

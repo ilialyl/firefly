@@ -10,12 +10,14 @@ use crate::{
     },
     player::logic::Player,
     playlist::logic::playlist_controller::PlaylistController,
+    queue::logic::TrackQueue,
     user_input::logic::{InputMode, UserInput},
 };
 
 pub struct Model {
     pub session: Session,
     pub player: Player,
+    pub queue: TrackQueue,
     pub playlist_ctl: PlaylistController,
     pub info_msg: String,
     pub focused_view_area: FocusedArea,
@@ -32,8 +34,9 @@ impl Model {
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         let session = Session::default();
         Self {
-            player: Player::new(msg_tx, &session),
-            session: session,
+            player: Player::default(),
+            queue: TrackQueue::new(msg_tx, session.unlocked_tick_rate.clone()),
+            session,
             playlist_ctl: PlaylistController::default(),
             info_msg: String::new(),
             focused_view_area: FocusedArea::default(),

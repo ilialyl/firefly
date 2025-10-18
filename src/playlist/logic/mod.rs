@@ -1,4 +1,4 @@
-pub mod metadata_cache;
+pub mod mini_metadata;
 pub mod playlist_collection;
 pub mod playlist_controller;
 pub mod playlist_tab_focus;
@@ -13,7 +13,7 @@ use color_eyre::eyre::{Result, eyre};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
-    global::logic::files::get_playlists_path, playlist::logic::metadata_cache::MiniMetadata,
+    global::logic::files::get_playlists_path, playlist::logic::mini_metadata::MiniMetadata,
 };
 
 #[derive(Debug)]
@@ -161,7 +161,7 @@ impl Playlist {
         let json_data = fs::read_to_string(file)?;
         let tracks: Vec<PathBuf> = serde_json::from_str(&json_data)?;
         let metadata_caches: Vec<MiniMetadata> =
-            tracks.par_iter().map(|p| MiniMetadata::from(&p)).collect();
+            tracks.par_iter().map(|p| MiniMetadata::from(p)).collect();
 
         let mut playlist = Playlist {
             tracks,
@@ -236,7 +236,7 @@ impl Playlist {
         self.dirty_flag = true;
     }
 
-    pub fn as_vec_string(&mut self) -> Vec<String> {
+    pub fn as_vec_string(&self) -> Vec<String> {
         let mut vec_string: Vec<String> = Vec::new();
         for track in &self.tracks {
             if let Some(os_name) = track.file_name() {

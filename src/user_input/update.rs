@@ -1,7 +1,7 @@
 use crate::{
-    global::message::{Message, UserInputMessage},
+    global::message::Message,
     model::Model,
-    user_input::cmd::*,
+    user_input::{cmd::*, message::UserInputMessage},
 };
 
 pub fn update_userinput(model: &mut Model, msg: UserInputMessage) -> Option<Message> {

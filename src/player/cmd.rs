@@ -1,24 +1,20 @@
 use std::time::Duration;
 use tokio::runtime::Runtime;
 
-use crate::global::logic::files::dir_to_audio_paths;
 use crate::player::logic::format_conversion::FormatConversion;
-use crate::player::logic::mini_track::MiniTrack;
+use crate::player::message::PlayerMessage;
 use crate::{
     global::{
-        logic::{
-            files::{choose_audio_file, choose_dirs, choose_multiple_audio_files},
-            session_state::RunningState,
-        },
-        message::{Message, PlayerMessage},
+        logic::{files::choose_audio_file, session_state::RunningState},
+        message::Message,
     },
     model::Model,
     player::logic::{Player, playback_status::PlaybackStatus},
 };
 
-pub fn load_now(player: &mut Player) -> Option<Message> {
+pub fn load_now(model: &mut Model) -> Option<Message> {
     if let Some(path) = choose_audio_file() {
-        player.queue.prepend_track(&path);
+        model.queue.prepend_track(&path);
         return Some(Message::Player(PlayerMessage::Skip));
     }
 
@@ -35,49 +31,6 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
     } else {
         model.player.sink.play();
     }
-
-    None
-}
-
-pub fn queue_dir(model: &mut Model) -> Option<Message> {
-    if let Some(dirs) = choose_dirs() {
-        for dir in dirs {
-            if let Err(e) = model.player.queue.tx.send(dir_to_audio_paths(&dir)) {
-                log::error!("Error sending Path Vec to queue processing worker: {e}");
-            };
-        }
-    }
-
-    None
-}
-
-pub fn queue_files(model: &mut Model) -> Option<Message> {
-    if let Some(path_vec) = choose_multiple_audio_files() {
-        if let Err(e) = model.player.queue.tx.send(path_vec) {
-            log::error!("Error sending Path Vec to queue processing worker: {e}");
-        };
-    }
-    None
-}
-
-pub fn queue_mini_track(mini_track: MiniTrack, player: &mut Player) -> Option<Message> {
-    player.queue.enqueue_mini_track(mini_track);
-
-    None
-}
-
-pub fn move_queue_up(player: &mut Player) -> Option<Message> {
-    if let Err(e) = player.queue.move_selected_up() {
-        log::error!("{}", e);
-    };
-
-    None
-}
-
-pub fn move_queue_down(player: &mut Player) -> Option<Message> {
-    if let Err(e) = player.queue.move_selected_down() {
-        log::error!("{}", e);
-    };
 
     None
 }
@@ -108,7 +61,13 @@ pub fn rewind(model: &mut Model) -> Option<Message> {
         Duration::from_secs(5)
     };
 
+    let status = model.player.status;
+
     model.player.rewind(rewind_dur).expect("Error rewinding.");
+
+    if matches!(status, PlaybackStatus::Paused) {
+        model.player.sink.pause();
+    }
 
     None
 }
@@ -147,7 +106,7 @@ pub fn seek(model: &mut Model) -> Option<Message> {
 }
 
 pub fn skip(model: &mut Model) -> Option<Message> {
-    if model.player.queue.is_empty() {
+    if model.queue.is_empty() {
         return None;
     }
 
@@ -158,11 +117,11 @@ pub fn skip(model: &mut Model) -> Option<Message> {
 
     model.session.state = RunningState::Running;
 
-    log::info!("Trying to load {:?}.", model.player.queue.front_path());
+    log::info!("Trying to load {:?}.", model.queue.front_path());
     model.player.sink.clear();
     model
         .player
-        .load_next_track()
+        .load_next_track(&mut model.queue)
         .expect("Error loading next track.");
 
     if let Some(current_track) = model.player.current.as_mut()
@@ -171,12 +130,6 @@ pub fn skip(model: &mut Model) -> Option<Message> {
     {
         model.player.reload().expect("Error reloading track.");
     }
-
-    None
-}
-
-pub fn toggle_arrange(player: &mut Player) -> Option<Message> {
-    player.queue.toggle_arrange();
 
     None
 }
@@ -223,7 +176,7 @@ pub fn previous_track(model: &mut Model) -> Option<Message> {
     model.player.sink.clear();
     model
         .player
-        .load_prev_track()
+        .load_prev_track(&mut model.queue)
         .expect("Error loading previous track.");
 
     if let Some(current_track) = model.player.current.as_mut()
@@ -231,24 +184,6 @@ pub fn previous_track(model: &mut Model) -> Option<Message> {
     {
         model.player.reload().expect("Error reloading track.");
     }
-
-    None
-}
-
-pub fn shuffle_queue(player: &mut Player) -> Option<Message> {
-    player.queue.shuffle();
-
-    None
-}
-
-pub fn clear_queue(player: &mut Player) -> Option<Message> {
-    player.queue.clear();
-
-    None
-}
-
-pub fn remove_selected_queued_track(player: &mut Player) -> Option<Message> {
-    player.queue.remove_selected();
 
     None
 }

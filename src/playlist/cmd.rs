@@ -6,14 +6,15 @@ use crate::{
             confirmation::Response,
             files::{choose_dirs, choose_multiple_audio_files, filter_dir_for_audio_files},
         },
-        message::{Message, PlaylistMessage, UserInputMessage},
+        message::Message,
         view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
-    playlist::logic::{
-        playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus,
+    playlist::{
+        logic::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
+        message::PlaylistMessage,
     },
-    user_input::logic::InputTarget,
+    user_input::{logic::InputTarget, message::UserInputMessage},
 };
 
 pub fn playlist_save_confirm_then_resume(
@@ -113,7 +114,6 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
                 if let Err(e) = model
-                    .player
                     .queue
                     .tx
                     .send(selected.tracks.iter().map(|e| e.to_path_buf()).collect())
@@ -133,7 +133,7 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                if let Err(e) = model.player.queue.tx.send(vec![track.clone()]) {
+                if let Err(e) = model.queue.tx.send(vec![track.clone()]) {
                     log::error!("Error sending Path Vec to queue processing worker: {e}");
                 };
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
@@ -311,6 +311,42 @@ pub fn ask_to_save(
                     then_call,
                 )))),
             ));
+        }
+    }
+
+    None
+}
+
+pub fn scroll_to_end(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    match playlist_ctl.tab_focus {
+        PlaylistTabFocus::Playlists => {
+            if !playlist_ctl.playlist_coll.is_empty() {
+                playlist_ctl.selected_playlist = Some(playlist_ctl.playlist_coll.len() - 1);
+            }
+        }
+        PlaylistTabFocus::Tracks => {
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
+                && !selected_playlist.is_empty() {
+                    selected_playlist.selected_track = Some(selected_playlist.len() - 1);
+                }
+        }
+    }
+
+    None
+}
+
+pub fn scroll_to_start(playlist_ctl: &mut PlaylistController) -> Option<Message> {
+    match playlist_ctl.tab_focus {
+        PlaylistTabFocus::Playlists => {
+            if !playlist_ctl.playlist_coll.is_empty() {
+                playlist_ctl.selected_playlist = Some(0);
+            }
+        }
+        PlaylistTabFocus::Tracks => {
+            if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
+                && !selected_playlist.is_empty() {
+                    selected_playlist.selected_track = Some(0);
+                }
         }
     }
 

@@ -4,15 +4,16 @@ use ratatui_image::protocol::StatefulProtocol;
 use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
-    global::{logic::confirmation::Response, view_logic::terminal::CursorMovementDirection},
-    player::logic::mini_track::MiniTrack,
-    user_input::logic::{InputTarget, PromptMsg},
+    global::logic::confirmation::Response, player::message::PlayerMessage,
+    playlist::message::PlaylistMessage, queue::message::QueueMessage,
+    user_input::message::UserInputMessage,
 };
 
 pub enum Message {
     Tick,
     Quit,
     Player(PlayerMessage),
+    Queue(QueueMessage),
     Playlist(PlaylistMessage),
     UserInput(UserInputMessage),
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
@@ -25,52 +26,4 @@ pub enum Message {
     DisplayInfoMsg(String),
     ProtocolCreated(StatefulProtocol, u32),
     ShowHelp,
-}
-
-pub enum PlayerMessage {
-    LoadNow,
-    TogglePlay,
-    Skip,
-    PreviousTrack,
-    IncreaseVolume,
-    DecreaseVolume,
-    Seek,
-    Rewind,
-    ToggleArrange,
-    ToggleLoop,
-    MoveQueueUp,
-    MoveQueueDown,
-    QueueFiles,
-    QueueDir,
-    ShuffleQueue,
-    ClearQueue,
-    RemoveSelectedQueuedTrack,
-    CreatedMiniTrack(MiniTrack),
-}
-
-pub enum PlaylistMessage {
-    LoadPlaylists,
-    MoveCursor(CursorMovementDirection),
-    Create,
-    Rename,
-    Delete,
-    SaveSelected,
-    AddTracks,
-    AddDir,
-    RemoveTrack,
-    ToggleArrangeTracks,
-    SendToPlayer,
-    AskToSave(Box<Option<Message>>),
-}
-
-pub enum UserInputMessage {
-    Submit(InputTarget),
-    Insert(char),
-    Apply(InputTarget),
-    Delete,
-    MoveCursorLeft,
-    MoveCursorRight,
-    EnterEditMode(PromptMsg, InputTarget),
-    Exit,
-    ExitEarly(InputTarget),
 }

@@ -1,11 +1,16 @@
-use std::{fs, path::Path};
+use std::{
+    fs::{self, File},
+    io::{BufReader, BufWriter},
+    path::Path,
+};
 
-use clap::Command;
+use clap::{ArgAction, Command, arg};
 use color_eyre::eyre::Result;
 use glob::glob;
 use log::info;
+use tail::BackwardsReader;
 
-use crate::global::logic::data::TEMP_FILE_PREFIX;
+use crate::global::logic::data::{TEMP_FILE_PREFIX, get_data_dir};
 
 pub fn cli() -> Command {
     Command::new("firefly")
@@ -15,6 +20,14 @@ pub fn cli() -> Command {
         .allow_external_subcommands(true)
         .subcommand(
             Command::new("clean").about("Remove FLAC files generated from format conversion."),
+        )
+        .subcommand(
+            Command::new("log").about("Display lines from log.").arg(
+                arg!(-n --nlines "Display recent n number of lines from log.")
+                    .action(ArgAction::Set)
+                    .value_parser(clap::value_parser!(usize))
+                    .default_value("10"),
+            ),
         )
 }
 
@@ -39,4 +52,14 @@ pub fn clear_cache(dir: &Path) -> Result<()> {
     }
 
     Ok(())
+}
+
+pub fn display_nlog(number_of_lines: usize) {
+    let filename = get_data_dir().join("firefly.log");
+    let fd = File::open(filename).unwrap();
+    let mut fd = BufReader::new(fd);
+    let mut reader = BackwardsReader::new(number_of_lines, &mut fd);
+
+    let mut out = BufWriter::new(std::io::stdout());
+    reader.read_all(&mut out);
 }

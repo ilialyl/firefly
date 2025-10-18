@@ -72,6 +72,45 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     frame.render_widget(misc, area[2]);
 }
 
+pub fn draw_mini(area: Rect, frame: &mut Frame, model: &mut Model) {
+    let play_str = match model.player.status {
+        PlaybackStatus::Playing => "Playing",
+        PlaybackStatus::Idle => "Idle",
+        PlaybackStatus::Paused => "Paused",
+    };
+
+    let duration_str = if let Some(current_track) = model.player.current.as_mut() {
+        format!(
+            "{} / {}",
+            duration_as_str(&current_track.pos),
+            duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
+        )
+    } else {
+        String::from("00:00 / 00:00")
+    };
+
+    let misc_str = format!(
+        "{} {} {}",
+        duration_str,
+        if model.player.looping { "L" } else { " " },
+        get_volume_str(model.player.sink.volume()),
+    );
+
+    let area = Layout::horizontal(vec![
+        Constraint::Fill(1),
+        Constraint::Length((misc_str.len()) as u16),
+    ])
+    .flex(Flex::SpaceAround)
+    .spacing(2)
+    .split(area);
+
+    let play = Paragraph::new(play_str).centered();
+    let misc = Paragraph::new(misc_str).centered();
+
+    frame.render_widget(play, area[0]);
+    frame.render_widget(misc, area[1]);
+}
+
 fn get_volume_str(volume: f32) -> String {
     format!("Volume: {}%", (volume * 100.00).ceil() as i32)
 }

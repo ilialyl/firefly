@@ -9,7 +9,7 @@ use color_eyre::eyre::Result;
 use firefly::{
     global::{
         logic::{
-            cli::{clear_cache, cli},
+            cli::{clear_cache, cli, display_nlog},
             data::get_cache_dir,
             logger::setup_logger,
             session_state::RunningState,
@@ -32,7 +32,7 @@ fn main() -> Result<()> {
 
     let cache_dir = get_cache_dir();
     if !cache_dir.exists() {
-        fs::create_dir(&cache_dir).expect("Failed to create cache directory.");
+        fs::create_dir(&cache_dir)?;
     }
 
     // Clap stuff
@@ -42,6 +42,15 @@ fn main() -> Result<()> {
         Some(("clean", _)) => {
             clear_cache(&cache_dir)?;
             println!("Success");
+            return Ok(());
+        }
+        Some(("log", args)) => {
+            if let Some(n_line) = args.get_one::<usize>("nlines") {
+                println!();
+                display_nlog(*n_line);
+                println!();
+            }
+
             return Ok(());
         }
         _ => {}
@@ -54,7 +63,7 @@ fn main() -> Result<()> {
     let mut terminal = init_terminal()?;
 
     while model.session.state != RunningState::Exit {
-        // VecDequeue is better for queues
+        // VecDeque is better for queues
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated

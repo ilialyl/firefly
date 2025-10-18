@@ -5,15 +5,35 @@ pub mod home;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
-    widgets::{Block, Padding, Widget},
+    style::Stylize,
+    text::Line,
+    widgets::{Block, Padding, Paragraph, Widget},
 };
 
 use crate::{
-    global::view_logic::focused_area::FocusedArea, model::Model, player::view::control_bar,
+    global::view_logic::focused_area::FocusedArea,
+    model::Model,
+    player::view::{control_bar, cover_art, track_details},
+    playlist, queue,
     user_input::logic::InputMode,
 };
 
 pub fn draw(model: &mut Model, frame: &mut Frame) {
+    if terminal_is_small(frame.area()) {
+        draw_mini(model, frame);
+    } else {
+        if matches!(model.focused_view_area, FocusedArea::Queue) {
+            model.focused_view_area.cycle_right();
+        }
+        draw_normal_size(model, frame);
+    }
+}
+
+pub fn terminal_is_small(area: Rect) -> bool {
+    area.width <= 60 && area.height < 15
+}
+
+fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -41,9 +61,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame) {
         .render(outer_layout[0], frame.buffer_mut());
 
     let top_left_text = if model.show_help {
-        "Hide Help <H>"
+        Line::from("Hide Help <H>").bold()
     } else {
-        "Help <H>"
+        Line::from("Help <H>")
     };
 
     Block::new()
@@ -54,7 +74,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame) {
 
     home::draw(model, frame, outer_layout[1]);
 
-    if matches!(model.focused_view_area, FocusedArea::ControlBarAndQueue) {
+    if matches!(model.focused_view_area, FocusedArea::ControlBar) {
         Block::bordered().render(outer_layout[2], frame.buffer_mut());
     }
 
@@ -77,6 +97,50 @@ pub fn draw(model: &mut Model, frame: &mut Frame) {
         }
         InputMode::Commands => {}
         InputMode::Confirmation => confirmation_box::draw(model, frame, frame.area()),
+    }
+}
+
+fn draw_mini(model: &mut Model, frame: &mut Frame) {
+    match model.focused_view_area {
+        FocusedArea::ControlBar => {
+            if model.player.current.is_some() {
+                let layout = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints(vec![
+                        Constraint::Length(frame.area().height * 2),
+                        Constraint::Fill(1),
+                    ])
+                    .horizontal_margin(1)
+                    .spacing(1)
+                    .split(frame.area());
+
+                cover_art::draw(layout[0], frame, model);
+                track_details::draw(layout[1], frame, model);
+            } else {
+                Paragraph::new(vec![
+                    Line::from("Mini Player"),
+                    Line::from("Press Q to queue your tracks."),
+                    Line::from("Enlarge for full visual."),
+                ])
+                .render(frame.area(), frame.buffer_mut());
+            }
+        }
+        FocusedArea::Playlist => {
+            playlist::view::draw(frame.area(), frame, model);
+        }
+        FocusedArea::Queue => {
+            if model.queue.is_empty() {
+                Paragraph::new("This is queue, but it's empty.")
+                    .render(frame.area(), frame.buffer_mut());
+            } else {
+                let chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints(vec![Constraint::Fill(1), Constraint::Length(1)])
+                    .split(frame.area());
+                queue::view::draw(chunks[0], frame, model);
+                control_bar::draw_mini(chunks[1], frame, model);
+            }
+        }
     }
 }
 
