@@ -11,6 +11,7 @@ use firefly::{
         logic::{
             cli::cli,
             data::{clear_cache, get_cache_dir},
+            files::get_playlists_path,
             logger::{get_log_path, setup_logger},
             session_state::RunningState,
         },
@@ -45,6 +46,10 @@ fn main() -> Result<()> {
         }
         Some(("log", _)) => {
             println!("{}", get_log_path().display());
+            return Ok(());
+        }
+        Some(("playlist", _)) => {
+            println!("{}", get_playlists_path().display());
             return Ok(());
         }
         _ => {}

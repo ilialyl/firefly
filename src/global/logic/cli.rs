@@ -9,5 +9,6 @@ pub fn cli() -> Command {
         .subcommand(
             Command::new("clean").about("Remove FLAC files generated from format conversion."),
         )
-        .subcommand(Command::new("log").about("Get log path"))
+        .subcommand(Command::new("log").about("Print log path"))
+        .subcommand(Command::new("playlist").about("Print playlist path"))
 }

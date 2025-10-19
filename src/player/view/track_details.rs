@@ -28,10 +28,12 @@ fn get_metadata_lines(tagged_file: &TaggedFile, path: &Path) -> Vec<String> {
             .track()
             .map(|n| format!("#{} ", n))
             .unwrap_or("".to_string());
-        let title = tag
-            .title()
-            .map(|s| format!("{} ", s))
-            .unwrap_or("No Title".to_string());
+        let title = tag.title().map(|s| format!("{} ", s)).unwrap_or(
+            path.file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("No Title")
+                .to_string(),
+        );
         let artist = tag
             .artist()
             .map(|s| format!("{} ", s))
