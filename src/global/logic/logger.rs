@@ -1,4 +1,4 @@
-use std::time::SystemTime;
+use std::{path::PathBuf, time::SystemTime};
 
 use color_eyre::eyre::Result;
 
@@ -16,7 +16,11 @@ pub fn setup_logger() -> Result<()> {
             ))
         })
         .level(log::LevelFilter::Debug)
-        .chain(fern::log_file(get_data_dir().join("firefly.log"))?)
+        .chain(fern::log_file(get_log_path())?)
         .apply()?;
     Ok(())
+}
+
+pub fn get_log_path() -> PathBuf {
+    get_data_dir().join("firefly.log")
 }

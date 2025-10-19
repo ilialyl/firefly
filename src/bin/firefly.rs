@@ -9,9 +9,9 @@ use color_eyre::eyre::Result;
 use firefly::{
     global::{
         logic::{
-            cli::{clear_cache, cli},
-            data::get_cache_dir,
-            logger::setup_logger,
+            cli::cli,
+            data::{clear_cache, get_cache_dir},
+            logger::{get_log_path, setup_logger},
             session_state::RunningState,
         },
         message::Message,
@@ -24,10 +24,6 @@ use firefly::{
     model::Model,
 };
 
-#[cfg(not(target_os = "windows"))]
-use firefly::global::logic::cli::display_nlog;
-
-#[allow(clippy::single_match)]
 fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
@@ -47,14 +43,8 @@ fn main() -> Result<()> {
             println!("Success");
             return Ok(());
         }
-        Some(("log", args)) => {
-            if let Some(_n_line) = args.get_one::<usize>("nlines") {
-                println!();
-                #[cfg(not(target_os = "windows"))]
-                display_nlog(*_n_line);
-                println!();
-            }
-
+        Some(("log", _)) => {
+            println!("{}", get_log_path().display());
             return Ok(());
         }
         _ => {}
