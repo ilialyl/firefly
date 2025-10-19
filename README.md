@@ -36,15 +36,22 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 
 ### Fedora Linux
 Build from source.
-#### Requirements
+#### Dependencies
 - [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 - [wayland-devel](https://packages.fedoraproject.org/pkgs/wayland/wayland-devel/)
 - [alsa-lib-devel](https://packages.fedoraproject.org/pkgs/alsa-lib/alsa-lib-devel/)
 - [opus-devel](https://packages.fedoraproject.org/pkgs/opus/opus-devel/)
 - [FFmpeg](https://ffmpeg.org/) (only if the file type you want to play isn't listed above)
-#### Steps
-1. Clone this repository
-2. run `cargo run --release --bin firefly`
+```
+# Install dependencies
+sudo dnf install wayland-devel alsa-lib-devel rust opus-devel cargo git
+
+# Clone the repository
+git clone https://github.com/ilialyl/firefly && cd firefly
+
+# Build and run (optimized)
+cargo run --release
+```
 
 ### Others
 Building from source is possible but instruction is omitted due to unknown list of dependencies.
