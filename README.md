@@ -59,6 +59,7 @@ Building from source is possible but instruction is omitted due to unknown list 
 ## Known Issue
 - Rewinding can be slow on systems that use [ALSA](https://www.alsa-project.org/wiki/Main_Page).
 - Wezterm (Windows) does not display cover art.
+- Does not work with WSL as no audio output is connected.
 
 ## Bug Report
 If you find any bugs, you can open an [issue](https://github.com/ilialyl/firefly/issues). I will get to it as soon as possible.
