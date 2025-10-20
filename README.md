@@ -53,8 +53,9 @@ git clone https://github.com/ilialyl/firefly && cd firefly
 cargo run --release
 ```
 
-### Others
-Building from source is possible but instruction is omitted due to unknown list of dependencies.
+### Notes
+- Startup speed depends on the number of tracks across all playlists (a couple of seconds delay after >500 tracks).
+- The memory usage spike at startup is due to loading the metadata of all playlists' contents in parallel.
 
 ## Known Issue
 - Rewinding can be slow on systems that use [ALSA](https://www.alsa-project.org/wiki/Main_Page).
