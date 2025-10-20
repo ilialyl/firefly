@@ -1,6 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use color_eyre::eyre::Result;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::playlist::logic::{Playlist, get_playlists_path};
 
@@ -21,15 +22,11 @@ impl Default for PlaylistCollection {
 impl PlaylistCollection {
     pub fn load_playlists(&mut self) -> Result<()> {
         log::debug!("Loading Playlists");
-        let mut playlists: Vec<Playlist> = Vec::new();
-        let playlist_paths = Self::get_playlist_files()?;
-        for path in playlist_paths {
-            let playlist = Playlist::from(&path);
-            if let Ok(p) = playlist {
-                playlists.push(p);
-                log::debug!("Loading Playlist: {:?}", path);
-            }
-        }
+        let paths = Self::get_playlist_files()?;
+        let playlists = paths
+            .par_iter()
+            .filter_map(|p| Playlist::from(p).ok())
+            .collect::<Vec<Playlist>>();
 
         self.playlists = playlists;
 
