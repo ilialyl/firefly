@@ -76,7 +76,7 @@ pub fn draw(frame: &mut Frame, area: Rect) {
     instruction.render(vertical_chunks[1], frame.buffer_mut());
 }
 
-fn get_player_controls() -> Vec<(String, String)> {
+fn get_player_controls<'a>() -> Vec<(&'a str, &'a str)> {
     vec![
         ("Load Now", "<N>"),
         ("Queue", "<Q>"),
@@ -96,12 +96,12 @@ fn get_player_controls() -> Vec<(String, String)> {
         ("Focus Playlist", "<Tab>"),
         ("Quit", "<Esc>"),
     ]
-    .iter()
-    .map(|(a, b)| (a.to_string(), b.to_string()))
+    .into_iter()
+    .map(|(a, b)| (a, b))
     .collect()
 }
 
-fn get_playlist_controls() -> Vec<(String, String)> {
+fn get_playlist_controls<'a>() -> Vec<(&'a str, &'a str)> {
     vec![
         ("Navigate", "<↑↓←→>"),
         ("New Playlist", "<N>"),
@@ -115,7 +115,7 @@ fn get_playlist_controls() -> Vec<(String, String)> {
         ("Send Selected to Player", "<F1/Enter>"),
         ("Focus Player", "<Tab>"),
     ]
-    .iter()
-    .map(|(a, b)| (a.to_string(), b.to_string()))
+    .into_iter()
+    .map(|(a, b)| (a, b))
     .collect()
 }
