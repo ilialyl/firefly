@@ -97,11 +97,11 @@ impl PlaylistController {
         }
     }
 
-    pub fn get_all_playlist_names(&self) -> Vec<String> {
+    pub fn get_all_playlist_names(&self) -> Vec<&str> {
         self.playlist_coll
             .get_playlists()
             .iter()
-            .map(|p| p.get_name().unwrap_or("New Playlist".to_string()))
+            .map(|p| p.get_name().unwrap_or("New Playlist"))
             .collect()
     }
 

@@ -48,13 +48,18 @@ pub fn create_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message>
 }
 
 pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
-    let current_playlist_names = model.playlist_ctl.get_all_playlist_names();
+    let current_playlist_names: Vec<String> = model
+        .playlist_ctl
+        .get_all_playlist_names()
+        .iter()
+        .map(|&s| s.to_string())
+        .collect();
 
     if let Some(name) = model.user_input.input_history.pop()
         && let Some(playlist) = model.playlist_ctl.playlist_coll.get_playlist(index)
         && !current_playlist_names.contains(&name)
     {
-        playlist.rename(name.as_str());
+        playlist.rename(&name);
         return Some(Message::UserInput(UserInputMessage::Exit));
     }
 
@@ -326,9 +331,10 @@ pub fn scroll_to_end(playlist_ctl: &mut PlaylistController) -> Option<Message> {
         }
         PlaylistTabFocus::Tracks => {
             if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
-                && !selected_playlist.is_empty() {
-                    selected_playlist.selected_track = Some(selected_playlist.len() - 1);
-                }
+                && !selected_playlist.is_empty()
+            {
+                selected_playlist.selected_track = Some(selected_playlist.len() - 1);
+            }
         }
     }
 
@@ -344,9 +350,10 @@ pub fn scroll_to_start(playlist_ctl: &mut PlaylistController) -> Option<Message>
         }
         PlaylistTabFocus::Tracks => {
             if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
-                && !selected_playlist.is_empty() {
-                    selected_playlist.selected_track = Some(0);
-                }
+                && !selected_playlist.is_empty()
+            {
+                selected_playlist.selected_track = Some(0);
+            }
         }
     }
 

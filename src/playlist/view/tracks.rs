@@ -28,9 +28,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
             .map(|m| {
                 Row::new(vec![
                     m.title
-                        .clone()
-                        .unwrap_or(m.file_stem.clone().unwrap_or("Unknown".to_string())),
-                    m.artist.clone().unwrap_or_default(),
+                        .as_deref()
+                        .unwrap_or(m.file_stem.as_deref().unwrap_or("Unknown")),
+                    m.artist.as_deref().unwrap_or_default(),
                 ])
             })
             .collect();

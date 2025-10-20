@@ -185,8 +185,8 @@ impl Playlist {
         Ok(playlist)
     }
 
-    pub fn get_name(&self) -> Option<String> {
-        self.name.clone()
+    pub fn get_name(&self) -> Option<&str> {
+        self.name.as_deref()
     }
 
     pub fn rename(&mut self, name: &str) {
@@ -236,21 +236,21 @@ impl Playlist {
         self.dirty_flag = true;
     }
 
-    pub fn as_vec_string(&self) -> Vec<String> {
-        let mut vec_string: Vec<String> = Vec::new();
+    pub fn as_vec_str(&self) -> Vec<&str> {
+        let mut vec_str: Vec<&str> = Vec::new();
         for track in &self.tracks {
             if let Some(os_name) = track.file_name() {
                 if let Some(name) = os_name.to_str() {
-                    vec_string.push(name.to_string());
+                    vec_str.push(name);
                 } else {
-                    vec_string.push("[Invalid UTF-8 name]".to_string());
+                    vec_str.push("[Invalid UTF-8 name]");
                 }
             } else {
-                vec_string.push("[No file name]".to_string());
+                vec_str.push("[No file name]");
             }
         }
 
-        vec_string
+        vec_str
     }
 
     pub fn len(&self) -> usize {

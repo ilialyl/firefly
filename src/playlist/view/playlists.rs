@@ -15,7 +15,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
 
     let playlist_entries: Vec<ListItem> = playlists
         .iter()
-        .map(|p| p.get_name().unwrap_or("New Playlist".to_string()))
+        .map(|p| p.get_name().unwrap_or("New Playlist"))
         .map(ListItem::from)
         .collect();
 
