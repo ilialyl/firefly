@@ -105,7 +105,7 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
         && let Some(dirs) = choose_dirs()
     {
         dirs.iter()
-            .for_each(|dir| match filter_dir_for_audio_files(&dir) {
+            .for_each(|dir| match filter_dir_for_audio_files(dir) {
                 Ok(vec_path) => {
                     let new_tracks: Vec<PathBuf> =
                         vec_path.into_iter().filter(|p| p.is_file()).collect();

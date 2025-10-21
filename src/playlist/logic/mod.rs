@@ -57,9 +57,9 @@ impl Playlist {
 
     pub fn trash_save_file(&self) {
         if let Some(name) = self.get_name() {
-            let path = Self::get_path_from_name(&name);
+            let path = Self::get_path_from_name(name);
             let trash_dir = get_playlists_path().join("deleted");
-            let trash_path = trash_dir.join(Self::get_filename(&name));
+            let trash_path = trash_dir.join(Self::get_filename(name));
 
             if path.exists() {
                 if !trash_dir.exists() {
@@ -195,7 +195,7 @@ impl Playlist {
 
     pub fn rename(&mut self, name: &str) {
         if let Some(current_name) = self.get_name() {
-            let path = Self::get_path_from_name(&current_name);
+            let path = Self::get_path_from_name(current_name);
             if path.exists() {
                 std::fs::remove_file(&path).unwrap();
             }

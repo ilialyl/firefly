@@ -11,7 +11,7 @@ use crate::{
 pub fn queue_dir(queue: &mut TrackQueue) -> Option<Message> {
     if let Some(dirs) = choose_dirs() {
         dirs.iter().for_each(|dir| {
-            if let Err(e) = queue.tx.send(dir_to_audio_paths(&dir)) {
+            if let Err(e) = queue.tx.send(dir_to_audio_paths(dir)) {
                 log::error!("Error sending Path Vec to queue processing worker: {e}");
             };
         });

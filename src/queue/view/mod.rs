@@ -11,7 +11,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let queue_entries: Vec<ListItem> = model
         .queue
         .get_ref()
-        .into_iter()
+        .iter()
         .map(|t| {
             if let Some(metadata) = t.borrow().metadata.as_ref() {
                 metadata.title.clone().unwrap_or(

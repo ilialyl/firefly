@@ -41,14 +41,13 @@ impl PlaylistCollection {
         if let Some(playlist) = self.get_playlist(playlist_idx) {
             let start = playlist.len();
             playlist.add_track_path(track_path);
-            if let Some(track) = playlist.mini_tracks.get(start..playlist.len()) {
-                if let Err(e) = tx.send((
+            if let Some(track) = playlist.mini_tracks.get(start..playlist.len())
+                && let Err(e) = tx.send((
                     playlist_idx,
                     track.iter().map(|t| t.borrow().path.clone()).collect(),
                 )) {
                     log::error!("Error sending path vec to metadata loader: {e}");
                 }
-            }
         }
     }
 

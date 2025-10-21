@@ -97,7 +97,6 @@ fn get_player_controls<'a>() -> Vec<(&'a str, &'a str)> {
         ("Quit", "<Esc>"),
     ]
     .into_iter()
-    .map(|(a, b)| (a, b))
     .collect()
 }
 
@@ -116,6 +115,5 @@ fn get_playlist_controls<'a>() -> Vec<(&'a str, &'a str)> {
         ("Focus Player", "<Tab>"),
     ]
     .into_iter()
-    .map(|(a, b)| (a, b))
     .collect()
 }
