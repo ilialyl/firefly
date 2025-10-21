@@ -35,9 +35,9 @@ impl Model {
         let session = Session::default();
         Self {
             player: Player::default(),
-            queue: TrackQueue::new(msg_tx, session.unlocked_tick_rate.clone()),
+            queue: TrackQueue::new(msg_tx.clone(), session.unlocked_tick_rate.clone()),
+            playlist_ctl: PlaylistController::new(msg_tx, session.unlocked_tick_rate.clone()),
             session,
-            playlist_ctl: PlaylistController::default(),
             info_msg: String::new(),
             focused_view_area: FocusedArea::default(),
             input_mode: InputMode::default(),

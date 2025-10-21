@@ -10,7 +10,6 @@ use std::{
 };
 
 use color_eyre::eyre::{Result, eyre};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
     global::logic::files::get_playlists_path, playlist::logic::mini_metadata::MiniMetadata,
@@ -160,12 +159,10 @@ impl Playlist {
     pub fn from(file: &Path) -> Result<Playlist> {
         let json_data = fs::read_to_string(file)?;
         let tracks: Vec<PathBuf> = serde_json::from_str(&json_data)?;
-        let metadata_caches: Vec<MiniMetadata> =
-            tracks.par_iter().map(|p| MiniMetadata::from(p)).collect();
 
         let mut playlist = Playlist {
             tracks,
-            metadata_caches,
+            metadata_caches: Vec::new(),
             name: Some(
                 file.file_stem()
                     .and_then(|os| os.to_str())
@@ -258,7 +255,7 @@ impl Playlist {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.tracks.is_empty() && self.metadata_caches.is_empty()
+        self.tracks.is_empty()
     }
 
     pub fn is_dirty(&self) -> bool {

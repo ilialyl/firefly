@@ -11,7 +11,10 @@ use crate::{
     },
     model::Model,
     playlist::{
-        logic::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
+        logic::{
+            mini_metadata::MiniMetadata, playlist_controller::PlaylistController,
+            playlist_tab_focus::PlaylistTabFocus,
+        },
         message::PlaylistMessage,
     },
     user_input::{logic::InputTarget, message::UserInputMessage},
@@ -355,6 +358,18 @@ pub fn scroll_to_start(playlist_ctl: &mut PlaylistController) -> Option<Message>
                 selected_playlist.selected_track = Some(0);
             }
         }
+    }
+
+    None
+}
+
+pub fn append_metadata(
+    index: usize,
+    mini_metadata: MiniMetadata,
+    playlist_ctl: &mut PlaylistController,
+) -> Option<Message> {
+    if let Some(playlist) = playlist_ctl.playlist_coll.get_playlist(index) {
+        playlist.metadata_caches.push(mini_metadata);
     }
 
     None

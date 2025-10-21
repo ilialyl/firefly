@@ -1,4 +1,7 @@
-use crate::global::{message::Message, view_logic::terminal::CursorMovementDirection};
+use crate::{
+    global::{logic::Index, message::Message, view_logic::terminal::CursorMovementDirection},
+    playlist::logic::mini_metadata::MiniMetadata,
+};
 
 pub enum PlaylistMessage {
     LoadPlaylists,
@@ -15,4 +18,5 @@ pub enum PlaylistMessage {
     AskToSave(Box<Option<Message>>),
     ScrollToStart,
     ScrollToEnd,
+    LoadedMetadata(Index, MiniMetadata),
 }

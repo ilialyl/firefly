@@ -33,5 +33,8 @@ pub fn update_playlist(
         ),
         PlaylistMessage::ScrollToStart => scroll_to_start(&mut model.playlist_ctl),
         PlaylistMessage::ScrollToEnd => scroll_to_end(&mut model.playlist_ctl),
+        PlaylistMessage::LoadedMetadata(index, mini_metadata) => {
+            append_metadata(index, mini_metadata, &mut model.playlist_ctl)
+        }
     }
 }
