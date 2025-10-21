@@ -73,13 +73,15 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
 }
 
 pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected) = playlist_ctl.get_selected_playlist()
+    if let Some(selected) = playlist_ctl.selected_playlist
         && let Some(path_vec) = choose_multiple_audio_files()
     {
-        let playlist = selected;
-
         let new_tracks: Vec<PathBuf> = path_vec.into_iter().filter(|p| p.is_file()).collect();
-        new_tracks.iter().for_each(|p| playlist.add(p));
+        new_tracks.iter().for_each(|p| {
+            playlist_ctl
+                .playlist_coll
+                .add_tracks_to_playlist(p, selected)
+        });
     }
 
     None
@@ -99,7 +101,7 @@ pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Me
 }
 
 pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
+    if let Some(selected_playlist_idx) = playlist_ctl.selected_playlist
         && let Some(dir_paths) = choose_dirs()
     {
         for dir in dir_paths {
@@ -107,7 +109,11 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
                 Ok(vec_path) => {
                     let new_tracks: Vec<PathBuf> =
                         vec_path.into_iter().filter(|p| p.is_file()).collect();
-                    new_tracks.iter().for_each(|p| selected_playlist.add(p));
+                    new_tracks.into_iter().for_each(|t| {
+                        playlist_ctl
+                            .playlist_coll
+                            .add_tracks_to_playlist(t.as_path(), selected_playlist_idx)
+                    });
                 }
                 Err(e) => log::error!("{}", e),
             }
@@ -124,7 +130,7 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                 if let Err(e) = model
                     .queue
                     .tx
-                    .send(selected.tracks.iter().map(|e| e.to_path_buf()).collect())
+                    .send(selected.tracks.iter().map(|p| p.path.clone()).collect())
                 {
                     log::error!("Error sending Path Vec to queue processing worker: {e}");
                 };
@@ -141,7 +147,7 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                 && let Some(index) = playlist.selected_track
                 && let Some(track) = playlist.tracks.get(index)
             {
-                if let Err(e) = model.queue.tx.send(vec![track.clone()]) {
+                if let Err(e) = model.queue.tx.send(vec![track.path.clone()]) {
                     log::error!("Error sending Path Vec to queue processing worker: {e}");
                 };
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
@@ -369,7 +375,12 @@ pub fn append_metadata(
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
     if let Some(playlist) = playlist_ctl.playlist_coll.get_playlist(index) {
-        playlist.metadata_caches.push(mini_metadata);
+        for track in playlist.tracks.iter_mut() {
+            if track.metadata.is_none() {
+                track.metadata = Some(mini_metadata);
+                return None;
+            }
+        }
     }
 
     None

@@ -11,14 +11,18 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let queue_entries: Vec<ListItem> = model
         .queue
         .get_ref()
-        .iter()
+        .into_iter()
         .map(|t| {
-            t.metadata.title.as_deref().unwrap_or(
-                t.path
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("[Invalid UTF-8 name]"),
-            )
+            if let Some(metadata) = t.metadata.as_ref() {
+                metadata.title.as_deref().unwrap_or(
+                    t.path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("[Invalid UTF-8 name]"),
+                )
+            } else {
+                ""
+            }
         })
         .map(ListItem::from)
         .collect();

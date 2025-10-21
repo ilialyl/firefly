@@ -1,6 +1,6 @@
 use std::{
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -37,6 +37,21 @@ impl PlaylistCollection {
         }
     }
 
+    pub fn add_tracks_to_playlist(&mut self, track_path: &Path, playlist_idx: usize) {
+        let tx = self.metadata_tx.clone();
+        if let Some(playlist) = self.get_playlist(playlist_idx) {
+            let start = playlist.len();
+            playlist.add_track_path(track_path);
+            if let Some(track) = playlist.tracks.get(start..playlist.len()) {
+                if let Err(e) =
+                    tx.send((playlist_idx, track.iter().map(|t| t.path.clone()).collect()))
+                {
+                    log::error!("Error sending path vec to metadata loader: {e}");
+                }
+            }
+        }
+    }
+
     pub fn load_playlists(&mut self) -> Result<()> {
         log::debug!("Loading Playlists");
         let paths = Self::get_playlist_files()?;
@@ -47,7 +62,7 @@ impl PlaylistCollection {
 
         self.playlists = playlists;
         self.playlists.iter().enumerate().for_each(|(i, p)| {
-            if let Err(e) = self.metadata_tx.send((i, p.tracks.clone())) {
+            if let Err(e) = self.metadata_tx.send((i, p.get_pathbuf_vec())) {
                 log::error!("Error sending track paths to metadata loading thread: {e}");
             }
         });

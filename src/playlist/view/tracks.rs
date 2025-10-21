@@ -23,15 +23,27 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
 
     if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
         let track_entries: Vec<Row> = selected_playlist
-            .metadata_caches
+            .tracks
             .iter()
-            .map(|m| {
-                Row::new(vec![
-                    m.title
-                        .as_deref()
-                        .unwrap_or(m.file_stem.as_deref().unwrap_or("Unknown")),
-                    m.artist.as_deref().unwrap_or_default(),
-                ])
+            .map(|t| {
+                if let Some(m) = t.metadata.as_ref() {
+                    Row::new(vec![
+                        m.title
+                            .clone()
+                            .unwrap_or(m.file_stem.clone().unwrap_or_default()),
+                        m.artist.clone().unwrap_or_default(),
+                    ])
+                } else {
+                    Row::new(vec![
+                        t.path
+                            .as_path()
+                            .file_stem()
+                            .and_then(|stem| stem.to_str())
+                            .unwrap_or("[Invalid UTF-8 name]")
+                            .to_string(),
+                        String::new(),
+                    ])
+                }
             })
             .collect();
 
