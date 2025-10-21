@@ -23,10 +23,10 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
 
     if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
         let track_entries: Vec<Row> = selected_playlist
-            .tracks
+            .mini_tracks
             .iter()
             .map(|t| {
-                if let Some(m) = t.metadata.as_ref() {
+                if let Some(m) = t.borrow().metadata.as_ref() {
                     Row::new(vec![
                         m.title
                             .clone()
@@ -35,7 +35,8 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
                     ])
                 } else {
                     Row::new(vec![
-                        t.path
+                        t.borrow()
+                            .path
                             .as_path()
                             .file_stem()
                             .and_then(|stem| stem.to_str())

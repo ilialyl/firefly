@@ -13,15 +13,22 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         .get_ref()
         .into_iter()
         .map(|t| {
-            if let Some(metadata) = t.metadata.as_ref() {
-                metadata.title.as_deref().unwrap_or(
-                    t.path
+            if let Some(metadata) = t.borrow().metadata.as_ref() {
+                metadata.title.clone().unwrap_or(
+                    t.borrow()
+                        .path
                         .file_stem()
                         .and_then(|s| s.to_str())
-                        .unwrap_or("[Invalid UTF-8 name]"),
+                        .unwrap_or("[Invalid UTF-8 name]")
+                        .to_string(),
                 )
             } else {
-                ""
+                t.borrow()
+                    .path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("[Invalid UTF-8 name]")
+                    .to_string()
             }
         })
         .map(ListItem::from)

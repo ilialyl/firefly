@@ -127,13 +127,10 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
     match model.playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
-                if let Err(e) = model
-                    .queue
-                    .tx
-                    .send(selected.tracks.iter().map(|p| p.path.clone()).collect())
-                {
-                    log::error!("Error sending Path Vec to queue processing worker: {e}");
-                };
+                selected
+                    .mini_tracks
+                    .iter()
+                    .for_each(|m| model.queue.enqueue_mini_track_ref(m.clone()));
 
                 Some(Message::DisplayInfoMsg(
                     "Sent Playlist to Player".to_string(),
@@ -145,11 +142,9 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
         PlaylistTabFocus::Tracks => {
             if let Some(playlist) = model.playlist_ctl.get_selected_playlist()
                 && let Some(index) = playlist.selected_track
-                && let Some(track) = playlist.tracks.get(index)
+                && let Some(mini_track) = playlist.mini_tracks.get(index)
             {
-                if let Err(e) = model.queue.tx.send(vec![track.path.clone()]) {
-                    log::error!("Error sending Path Vec to queue processing worker: {e}");
-                };
+                model.queue.enqueue_mini_track_ref(mini_track.clone());
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None
@@ -375,9 +370,9 @@ pub fn append_metadata(
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
     if let Some(playlist) = playlist_ctl.playlist_coll.get_playlist(index) {
-        for track in playlist.tracks.iter_mut() {
-            if track.metadata.is_none() {
-                track.metadata = Some(mini_metadata);
+        for track in playlist.mini_tracks.iter_mut() {
+            if track.borrow().metadata.is_none() {
+                track.borrow_mut().metadata = Some(mini_metadata);
                 return None;
             }
         }

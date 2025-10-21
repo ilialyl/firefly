@@ -1,9 +1,11 @@
 pub mod mini_track;
 
 use std::{
+    cell::RefCell,
     collections::VecDeque,
     fs,
     path::{Path, PathBuf},
+    rc::Rc,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -24,7 +26,7 @@ use crate::{
 
 pub struct TrackQueue {
     // A Track is too heavy, hence MiniTrack.
-    tracks: VecDeque<MiniTrack>,
+    tracks: VecDeque<Rc<RefCell<MiniTrack>>>,
     pub selected_index: Option<usize>,
     arrange_mode: bool,
     pub tx: Sender<Vec<PathBuf>>,
@@ -35,19 +37,19 @@ impl TrackQueue {
         let (tx, rx) = mpsc::channel::<Vec<PathBuf>>();
         Self::start_queue_processing_worker(msg_tx, rx, unlocked_tick_rate);
         Self {
-            tracks: VecDeque::new() as VecDeque<MiniTrack>,
+            tracks: VecDeque::new(),
             selected_index: None,
             arrange_mode: false,
             tx,
         }
     }
 
-    pub fn get_ref(&self) -> &VecDeque<MiniTrack> {
+    pub fn get_ref(&self) -> &VecDeque<Rc<RefCell<MiniTrack>>> {
         &self.tracks
     }
 
-    pub fn front_path(&self) -> Option<&PathBuf> {
-        self.tracks.front().map(|t| &t.path)
+    pub fn front_path(&self) -> Option<PathBuf> {
+        self.tracks.front().map(|t| t.borrow().path.clone())
     }
 
     pub fn get_selected(&self) -> Option<usize> {
@@ -59,14 +61,15 @@ impl TrackQueue {
     }
 
     pub fn prepend_track(&mut self, path: &Path) {
-        self.tracks.push_front(MiniTrack::new(path));
+        self.tracks
+            .push_front(Rc::new(RefCell::new(MiniTrack::new(path))));
     }
 
     pub fn enqueue_paths(&mut self, path_vec: Vec<PathBuf>) {
-        let new_tracks: Vec<MiniTrack> = path_vec
+        let new_tracks: Vec<Rc<RefCell<MiniTrack>>> = path_vec
             .iter()
             .filter(|p| p.is_file())
-            .map(|p| MiniTrack::new(p))
+            .map(|p| Rc::new(RefCell::new(MiniTrack::new(p))))
             .collect();
 
         self.tracks.extend(new_tracks);
@@ -76,6 +79,13 @@ impl TrackQueue {
     }
 
     pub fn enqueue_mini_track(&mut self, mini_track: MiniTrack) {
+        self.tracks.push_back(Rc::new(RefCell::new(mini_track)));
+        if !self.is_empty() && self.selected_index.is_none() {
+            self.selected_index = Some(0)
+        }
+    }
+
+    pub fn enqueue_mini_track_ref(&mut self, mini_track: Rc<RefCell<MiniTrack>>) {
         self.tracks.push_back(mini_track);
         if !self.is_empty() && self.selected_index.is_none() {
             self.selected_index = Some(0)
@@ -83,7 +93,7 @@ impl TrackQueue {
     }
 
     pub fn dequeue(&mut self) -> Option<PathBuf> {
-        let path = self.tracks.pop_front().map(|t| t.path);
+        let path = self.tracks.pop_front().map(|t| t.borrow().path.clone());
         if self.is_empty() {
             self.selected_index = None;
         }
@@ -93,7 +103,7 @@ impl TrackQueue {
 
     pub fn enqueue_dir(&mut self, dir: &Path) {
         if let Ok(entries) = fs::read_dir(dir) {
-            let new_tracks: Vec<MiniTrack> = entries
+            let new_tracks: Vec<Rc<RefCell<MiniTrack>>> = entries
                 .filter_map(|r| r.ok())
                 .map(|p| p.path())
                 .filter(|p| p.is_file())
@@ -104,7 +114,7 @@ impl TrackQueue {
                         .filter(|e| AUDIO_FORMATS.contains(e))
                         .map(|_| p)
                 })
-                .map(|p| MiniTrack::new(&p))
+                .map(|p| Rc::new(RefCell::new(MiniTrack::new(&p))))
                 .collect();
 
             self.tracks.extend(new_tracks);
@@ -157,7 +167,7 @@ impl TrackQueue {
 
     pub fn shuffle(&mut self) {
         let mut rng = rng();
-        let mut vec: Vec<MiniTrack> = self.tracks.clone().into_iter().collect();
+        let mut vec: Vec<Rc<RefCell<MiniTrack>>> = self.tracks.clone().into_iter().collect();
         vec.shuffle(&mut rng);
         self.tracks = vec.into_iter().collect();
     }

@@ -10,7 +10,6 @@ use std::{
 };
 
 use color_eyre::eyre::Result;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
     global::{logic::Index, message::Message},
@@ -42,10 +41,11 @@ impl PlaylistCollection {
         if let Some(playlist) = self.get_playlist(playlist_idx) {
             let start = playlist.len();
             playlist.add_track_path(track_path);
-            if let Some(track) = playlist.tracks.get(start..playlist.len()) {
-                if let Err(e) =
-                    tx.send((playlist_idx, track.iter().map(|t| t.path.clone()).collect()))
-                {
+            if let Some(track) = playlist.mini_tracks.get(start..playlist.len()) {
+                if let Err(e) = tx.send((
+                    playlist_idx,
+                    track.iter().map(|t| t.borrow().path.clone()).collect(),
+                )) {
                     log::error!("Error sending path vec to metadata loader: {e}");
                 }
             }
@@ -56,7 +56,7 @@ impl PlaylistCollection {
         log::debug!("Loading Playlists");
         let paths = Self::get_playlist_files()?;
         let playlists = paths
-            .par_iter()
+            .iter()
             .filter_map(|p| Playlist::from(p).ok())
             .collect::<Vec<Playlist>>();
 
