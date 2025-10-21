@@ -89,12 +89,12 @@ fn get_metadata_lines(tagged_file: &TaggedFile, path: &Path) -> Vec<String> {
 
         let mut padded_vec = Vec::<String>::new();
         if let Some((last, rest)) = vec.split_last() {
-            for line in rest {
+            rest.iter().for_each(|line| {
                 if !line.is_empty() {
                     padded_vec.push(line.clone());
                     padded_vec.push(String::new());
                 }
-            }
+            });
             padded_vec.push(last.clone());
         }
         padded_vec

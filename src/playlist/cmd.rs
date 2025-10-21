@@ -102,10 +102,10 @@ pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Me
 
 pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     if let Some(selected_playlist_idx) = playlist_ctl.selected_playlist
-        && let Some(dir_paths) = choose_dirs()
+        && let Some(dirs) = choose_dirs()
     {
-        for dir in dir_paths {
-            match filter_dir_for_audio_files(&dir) {
+        dirs.iter()
+            .for_each(|dir| match filter_dir_for_audio_files(&dir) {
                 Ok(vec_path) => {
                     let new_tracks: Vec<PathBuf> =
                         vec_path.into_iter().filter(|p| p.is_file()).collect();
@@ -116,8 +116,7 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
                     });
                 }
                 Err(e) => log::error!("{}", e),
-            }
-        }
+            });
     }
 
     None

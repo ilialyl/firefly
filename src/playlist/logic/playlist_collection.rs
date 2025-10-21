@@ -21,7 +21,7 @@ use crate::{
 
 pub struct PlaylistCollection {
     playlists: Vec<Playlist>,
-    metadata_tx: Sender<(Index, Vec<PathBuf>)>,
+    metadata_loader_tx: Sender<(Index, Vec<PathBuf>)>,
 }
 
 impl PlaylistCollection {
@@ -32,12 +32,12 @@ impl PlaylistCollection {
         log::debug!("Initialized PlaylistCollection");
         PlaylistCollection {
             playlists: Vec::<Playlist>::new(),
-            metadata_tx: tx,
+            metadata_loader_tx: tx,
         }
     }
 
     pub fn add_tracks_to_playlist(&mut self, track_path: &Path, playlist_idx: usize) {
-        let tx = self.metadata_tx.clone();
+        let tx = self.metadata_loader_tx.clone();
         if let Some(playlist) = self.get_playlist(playlist_idx) {
             let start = playlist.len();
             playlist.add_track_path(track_path);
@@ -62,7 +62,7 @@ impl PlaylistCollection {
 
         self.playlists = playlists;
         self.playlists.iter().enumerate().for_each(|(i, p)| {
-            if let Err(e) = self.metadata_tx.send((i, p.get_pathbuf_vec())) {
+            if let Err(e) = self.metadata_loader_tx.send((i, p.get_pathbuf_vec())) {
                 log::error!("Error sending track paths to metadata loading thread: {e}");
             }
         });

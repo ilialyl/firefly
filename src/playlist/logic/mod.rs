@@ -242,18 +242,21 @@ impl Playlist {
     }
 
     pub fn as_vec_string(&self) -> Vec<String> {
-        let mut vec_str: Vec<String> = Vec::new();
-        for track in &self.mini_tracks {
-            if let Some(os_name) = track.borrow_mut().path.file_name() {
-                if let Some(name) = os_name.to_str() {
-                    vec_str.push(name.to_string());
+        let vec_str: Vec<String> = self
+            .mini_tracks
+            .iter()
+            .map(|track| {
+                if let Some(os_name) = track.borrow_mut().path.file_name() {
+                    if let Some(name) = os_name.to_str() {
+                        name.to_string()
+                    } else {
+                        "[Invalid UTF-8 name]".to_string()
+                    }
                 } else {
-                    vec_str.push("[Invalid UTF-8 name]".to_string());
+                    "[No file name]".to_string()
                 }
-            } else {
-                vec_str.push("[No file name]".to_string());
-            }
-        }
+            })
+            .collect();
 
         vec_str
     }
