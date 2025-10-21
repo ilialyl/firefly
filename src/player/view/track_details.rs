@@ -17,6 +17,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
             Paragraph::new(metadata.join("\n")),
             center_vertical(area, (metadata.len() + 1) as u16),
         );
+    } else {
+        let text = "Press Q to open file dialog to queue files.\n\n\nPress H to view all keybinds.";
+        frame.render_widget(
+            Paragraph::new(text),
+            center_vertical(area, text.lines().count() as u16),
+        );
     }
 }
 
