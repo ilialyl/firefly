@@ -79,7 +79,7 @@ fn main() -> Result<()> {
         }
 
         // Receive message from other threads
-        if let Ok(msg) = msg_rx.try_recv() {
+        while let Ok(msg) = msg_rx.try_recv() {
             msg_queue.push_back(msg);
         }
 
