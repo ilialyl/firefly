@@ -112,7 +112,7 @@ pub fn get_playlists_path() -> PathBuf {
     playlists_path
 }
 
-pub fn dir_to_audio_paths(dir: &Path) -> Vec<PathBuf> {
+pub fn audio_paths_from_dir(dir: &Path) -> Vec<PathBuf> {
     if let Ok(entries) = fs::read_dir(dir) {
         entries
             .filter_map(|r| r.ok())

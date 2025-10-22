@@ -214,6 +214,7 @@ pub fn set_track_protocol(
 }
 
 pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: &Sender<Message>) {
+    log::debug!("Creating protocol...");
     let picture_data = picture.data().to_vec();
     let msg_tx = msg_tx.clone();
 

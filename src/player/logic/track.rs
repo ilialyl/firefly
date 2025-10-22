@@ -53,6 +53,7 @@ pub struct Track {
 
 impl Track {
     pub fn new(path: &Path) -> Result<Track> {
+        log::debug!("Creating a new track from path: {:?}", path);
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
         let temp_path = Self::get_temp_file(path);
@@ -136,6 +137,7 @@ impl Track {
     }
 
     pub fn read_duration_from_tag(tagged_file: &TaggedFile) -> Duration {
+        log::debug!("Reading duration from tag...");
         tagged_file.properties().duration()
     }
 

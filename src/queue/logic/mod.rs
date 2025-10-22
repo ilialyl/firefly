@@ -213,6 +213,7 @@ impl TrackQueue {
             while let Ok(path_vec) = rx.recv() {
                 unlocked_tick_rate.store(true, Ordering::Relaxed);
                 path_vec.iter().for_each(|p| {
+                    log::debug!("Processing {:?}...", p);
                     let mini_track = MiniTrack::new(p);
                     if let Err(e) =
                         msg_tx.send(Message::Queue(QueueMessage::CreatedMiniTrack(mini_track)))
