@@ -371,6 +371,7 @@ pub fn append_metadata(
     if let Some(playlist) = playlist_ctl.playlist_coll.get_playlist(index) {
         for track in playlist.mini_tracks.iter_mut() {
             if track.borrow().metadata.is_none() {
+                log::debug!("Appending metadata...");
                 track.borrow_mut().metadata = Some(mini_metadata);
                 return None;
             }

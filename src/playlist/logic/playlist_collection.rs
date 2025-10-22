@@ -45,9 +45,10 @@ impl PlaylistCollection {
                 && let Err(e) = tx.send((
                     playlist_idx,
                     track.iter().map(|t| t.borrow().path.clone()).collect(),
-                )) {
-                    log::error!("Error sending path vec to metadata loader: {e}");
-                }
+                ))
+            {
+                log::error!("Error sending path vec to metadata loader: {e}");
+            }
         }
     }
 
@@ -122,9 +123,12 @@ impl PlaylistCollection {
     ) {
         thread::spawn(move || {
             while let Ok((index, path_vec)) = rx.recv() {
+                log::debug!("Unlocked tick rate");
                 unlocked_tick_rate.store(true, Ordering::Relaxed);
                 path_vec.iter().for_each(|p| {
+                    log::debug!("[Metadata Loader] creating MiniMetadata from {:p}...", p);
                     let metadata = MiniMetadata::from(p);
+                    log::debug!("[Metadata Loader] sending to main thread...");
                     if let Err(e) = msg_tx.send(Message::Playlist(PlaylistMessage::LoadedMetadata(
                         index, metadata,
                     ))) {
@@ -132,6 +136,7 @@ impl PlaylistCollection {
                     };
                 });
                 unlocked_tick_rate.store(false, Ordering::Relaxed);
+                log::debug!("Limited tick rate");
             }
         });
     }

@@ -58,7 +58,13 @@ pub fn tick(
             && let Some(picture) = current_track.picture.as_mut()
         {
             current_track.started_decoding = true;
-            create_protocol(picture, current_track.id, model.picker.clone(), msg_tx);
+            create_protocol(
+                picture,
+                current_track.id,
+                model.picker.clone(),
+                msg_tx,
+                info_tx,
+            );
         }
 
         // Convert file format to FLAC if current format is not supported, if not already.
@@ -203,18 +209,32 @@ pub fn set_track_protocol(
     protocol: StatefulProtocol,
     id: u32,
     model: &mut Model,
+    info_tx: &Sender<String>,
 ) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_mut()
         && id == current_track.id
     {
         log::debug!("Setting protocol...");
         current_track.protocol = Some(protocol);
+        if let Err(e) = info_tx.send(String::new()) {
+            log::error!("{e}");
+        };
     }
 
     None
 }
 
-pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: &Sender<Message>) {
+pub fn create_protocol(
+    picture: &Picture,
+    id: u32,
+    picker: Arc<Picker>,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<String>,
+) {
+    if let Err(e) = info_tx.send("Loading Cover Art...".to_string()) {
+        log::error!("{e}");
+    };
+
     log::debug!("Creating protocol...");
     let picture_data = picture.data().to_vec();
     let msg_tx = msg_tx.clone();
