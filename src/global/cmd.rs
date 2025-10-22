@@ -207,6 +207,7 @@ pub fn set_track_protocol(
     if let Some(current_track) = model.player.current.as_mut()
         && id == current_track.id
     {
+        log::debug!("Setting protocol...");
         current_track.protocol = Some(protocol);
     }
 
@@ -224,7 +225,9 @@ pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: 
             .ok()
             .and_then(|r| r.decode().ok())
         {
+            log::debug!("Created Dynamic Image.");
             let protocol = picker.new_resize_protocol(crop_to_square(dyn_img));
+            log::debug!("Cropped to square.");
             if let Err(e) = msg_tx.send(Message::ProtocolCreated(protocol, id)) {
                 log::error!("Error sending Protocol back to main thread: {e}");
             }

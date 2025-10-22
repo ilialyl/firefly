@@ -5,7 +5,6 @@ use std::{
 };
 
 use color_eyre::eyre::{Result, eyre};
-use lofty::{file::TaggedFile, probe::Probe};
 use rfd::FileDialog;
 
 use crate::global::logic::data::get_data_dir;
@@ -84,13 +83,6 @@ pub fn filter_dir_for_audio_files(dir: &Path) -> Result<Vec<PathBuf>> {
         .collect();
 
     Ok(path_vec)
-}
-
-pub fn read_metadata(track: &Path, track_temp: &Path) -> Result<TaggedFile> {
-    match Probe::open(track)?.read() {
-        Ok(f) => Ok(f),
-        Err(_) => Ok(Probe::open(track_temp)?.read()?),
-    }
 }
 
 pub fn ffmpeg_available() -> bool {
