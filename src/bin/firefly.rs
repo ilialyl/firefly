@@ -61,14 +61,11 @@ fn main() -> Result<()> {
         Some(("with", args)) => {
             if let Some(path_strs) = args.get_many::<String>("paths") {
                 let paths: Vec<PathBuf> = path_strs.map(PathBuf::from).collect();
-                println!("{:?}", paths);
                 let valid_paths: Vec<PathBuf> =
                     paths.into_iter().filter(|path| path.exists()).collect();
                 if valid_paths.is_empty() {
                     return Err(eyre!("No path is valid."));
                 }
-
-                println!("{:?}", valid_paths);
                 msg_tx
                     .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
                     .unwrap();
