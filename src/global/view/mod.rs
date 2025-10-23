@@ -44,7 +44,7 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
         .split(frame.area());
 
     let top_right_text = if model.info_msg.is_empty() {
-        format!("v{}", env!("CARGO_PKG_VERSION"))
+        format!("v{} ", env!("CARGO_PKG_VERSION"))
     } else {
         model.info_msg.clone()
     };
@@ -61,9 +61,9 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
         .render(outer_layout[0], frame.buffer_mut());
 
     let top_left_text = if model.show_help {
-        Line::from("Hide Help <H>").bold()
+        Line::from(" Hide Help <H>").bold()
     } else {
-        Line::from("Help <H>")
+        Line::from(" Help <H>")
     };
 
     Block::new()
