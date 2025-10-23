@@ -1,4 +1,4 @@
-use clap::Command;
+use clap::{Arg, Command};
 
 pub fn cli() -> Command {
     Command::new("firefly")
@@ -11,4 +11,14 @@ pub fn cli() -> Command {
         )
         .subcommand(Command::new("log").about("Print log path"))
         .subcommand(Command::new("playlist").about("Print playlist path"))
+        .subcommand(
+            Command::new("add")
+                .about("Add an audio file or a directory to be enqueued.")
+                .arg(
+                    Arg::new("path")
+                        .help("Path of a directory or an audio file.")
+                        .required(true)
+                        .value_parser(clap::value_parser!(String)),
+                ),
+        )
 }

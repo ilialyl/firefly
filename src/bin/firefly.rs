@@ -1,6 +1,7 @@
 use std::{
     collections::VecDeque,
     fs,
+    path::Path,
     sync::mpsc::{self},
 };
 
@@ -23,6 +24,7 @@ use firefly::{
         },
     },
     model::Model,
+    queue::message::QueueMessage,
 };
 
 fn main() -> Result<()> {
@@ -34,6 +36,10 @@ fn main() -> Result<()> {
     if !cache_dir.exists() {
         fs::create_dir(&cache_dir)?;
     }
+
+    let (msg_tx, msg_rx) = mpsc::channel::<Message>();
+    let (info_tx, info_rx) = mpsc::channel::<String>();
+    let mut model = Model::new(msg_tx.clone());
 
     // Clap stuff
     let cli_command = cli().get_matches();
@@ -52,14 +58,36 @@ fn main() -> Result<()> {
             println!("{}", get_playlists_path().display());
             return Ok(());
         }
+        Some(("add", args)) => {
+            if let Some(path_str) = args.get_one::<String>("path") {
+                let path = Path::new(path_str);
+                if path.exists() {
+                    if path.is_file() {
+                        println!("Your file is {:?}.", path);
+                        msg_tx
+                            .send(Message::Queue(QueueMessage::QueueFileManually(
+                                path.to_path_buf(),
+                            )))
+                            .unwrap()
+                    } else if path.is_dir() {
+                        println!("Your directory is {:?}.", path);
+                        msg_tx
+                            .send(Message::Queue(QueueMessage::QueueDirManually(
+                                path.to_path_buf(),
+                            )))
+                            .unwrap()
+                    }
+                } else {
+                    println!("Path not found.");
+                    return Ok(());
+                }
+            }
+        }
         _ => {}
     };
 
-    install_panic_hook();
-    let (msg_tx, msg_rx) = mpsc::channel::<Message>();
-    let (info_tx, info_rx) = mpsc::channel::<String>();
-    let mut model = Model::new(msg_tx.clone());
     let mut terminal = init_terminal()?;
+    install_panic_hook();
 
     while model.session.state != RunningState::Exit {
         // VecDeque is better for queues

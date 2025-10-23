@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::{
     global::{
         logic::files::{audio_paths_from_dir, choose_dirs, choose_multiple_audio_files},
@@ -8,7 +10,7 @@ use crate::{
     queue::logic::{TrackQueue, mini_track::MiniTrack},
 };
 
-pub fn queue_dir(queue: &mut TrackQueue) -> Option<Message> {
+pub fn queue_dirs_with_file_dialog(queue: &mut TrackQueue) -> Option<Message> {
     if let Some(dirs) = choose_dirs() {
         dirs.iter().for_each(|dir| {
             if let Err(e) = queue.tx.send(audio_paths_from_dir(dir)) {
@@ -20,7 +22,10 @@ pub fn queue_dir(queue: &mut TrackQueue) -> Option<Message> {
     None
 }
 
-pub fn queue_files(queue: &mut TrackQueue, player: &mut Player) -> Option<Message> {
+pub fn queue_files_with_file_dialog(
+    queue: &mut TrackQueue,
+    player: &mut Player,
+) -> Option<Message> {
     if let Some(mut path_vec) = choose_multiple_audio_files()
         && !path_vec.is_empty()
     {
@@ -35,6 +40,19 @@ pub fn queue_files(queue: &mut TrackQueue, player: &mut Player) -> Option<Messag
             log::error!("Error sending Path Vec to queue processing worker: {e}");
         }
     }
+    None
+}
+
+pub fn queue_dirs(path: &Path, queue: &mut TrackQueue) -> Option<Message> {
+    if let Err(e) = queue.tx.send(audio_paths_from_dir(path)) {
+        log::error!("Error sending Path Vec to queue processing worker: {e}");
+    };
+
+    None
+}
+
+pub fn queue_file(path: &Path, queue: &mut TrackQueue) -> Option<Message> {
+    queue.enqueue_paths(vec![path.to_path_buf()]);
     None
 }
 
