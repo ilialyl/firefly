@@ -12,12 +12,13 @@ pub fn cli() -> Command {
         .subcommand(Command::new("log").about("Print log path"))
         .subcommand(Command::new("playlist").about("Print playlist path"))
         .subcommand(
-            Command::new("add")
-                .about("Add an audio file or a directory to be enqueued.")
+            Command::new("with")
+                .about("Open with paths of audio files or directories enqueued.")
                 .arg(
-                    Arg::new("path")
-                        .help("Path of a directory or an audio file.")
+                    Arg::new("paths")
+                        .help("Paths of directories or audio files, works with glob patterns.")
                         .required(true)
+                        .num_args(1..)
                         .value_parser(clap::value_parser!(String)),
                 ),
         )

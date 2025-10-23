@@ -1,11 +1,11 @@
 use std::{
     collections::VecDeque,
     fs,
-    path::Path,
+    path::PathBuf,
     sync::mpsc::{self},
 };
 
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Result, eyre};
 
 use firefly::{
     global::{
@@ -58,29 +58,20 @@ fn main() -> Result<()> {
             println!("{}", get_playlists_path().display());
             return Ok(());
         }
-        Some(("add", args)) => {
-            if let Some(path_str) = args.get_one::<String>("path") {
-                let path = Path::new(path_str);
-                if path.exists() {
-                    if path.is_file() {
-                        println!("Your file is {:?}.", path);
-                        msg_tx
-                            .send(Message::Queue(QueueMessage::QueueFileManually(
-                                path.to_path_buf(),
-                            )))
-                            .unwrap()
-                    } else if path.is_dir() {
-                        println!("Your directory is {:?}.", path);
-                        msg_tx
-                            .send(Message::Queue(QueueMessage::QueueDirManually(
-                                path.to_path_buf(),
-                            )))
-                            .unwrap()
-                    }
-                } else {
-                    println!("Path not found.");
-                    return Ok(());
+        Some(("with", args)) => {
+            if let Some(path_strs) = args.get_many::<String>("paths") {
+                let paths: Vec<PathBuf> = path_strs.map(PathBuf::from).collect();
+                println!("{:?}", paths);
+                let valid_paths: Vec<PathBuf> =
+                    paths.into_iter().filter(|path| path.exists()).collect();
+                if valid_paths.is_empty() {
+                    return Err(eyre!("No path is valid."));
                 }
+
+                println!("{:?}", valid_paths);
+                msg_tx
+                    .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
+                    .unwrap();
             }
         }
         _ => {}

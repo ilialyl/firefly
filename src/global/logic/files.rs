@@ -85,6 +85,28 @@ pub fn filter_dir_for_audio_files(dir: &Path) -> Result<Vec<PathBuf>> {
     Ok(path_vec)
 }
 
+pub fn filter_paths_for_audio_files(paths: Vec<PathBuf>) -> Vec<PathBuf> {
+    let mut valid_paths: Vec<PathBuf> = Vec::new();
+    paths.into_iter().for_each(|p| {
+        if p.exists() {
+            if p.is_dir() {
+                let audio_files = audio_paths_from_dir(&p);
+                valid_paths.extend(audio_files);
+            } else if let Some(valid_p) = p
+                .clone()
+                .extension()
+                .and_then(|e| e.to_str())
+                .filter(|e| AUDIO_FORMATS.contains(e))
+                .map(|_| p)
+            {
+                valid_paths.push(valid_p);
+            }
+        }
+    });
+
+    valid_paths
+}
+
 pub fn ffmpeg_available() -> bool {
     let output = Command::new("ffmpeg").arg("-version").output();
 

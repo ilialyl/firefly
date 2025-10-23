@@ -16,11 +16,10 @@ pub fn update_queue(
         QueueMessage::MoveDown => move_queue_down(&mut model.queue),
         QueueMessage::MoveUp => move_queue_up(&mut model.queue),
         QueueMessage::QueueDirsWithFileDialog => queue_dirs_with_file_dialog(&mut model.queue),
-        QueueMessage::QueueDirManually(pathbuf) => queue_dirs(&pathbuf, &mut model.queue),
+        QueueMessage::QueuePaths(pathbufs) => queue_paths(pathbufs, &mut model.queue),
         QueueMessage::QueueFilesWithFileDialog => {
             queue_files_with_file_dialog(&mut model.queue, &mut model.player)
         }
-        QueueMessage::QueueFileManually(pathbuf) => queue_file(&pathbuf, &mut model.queue),
         QueueMessage::RemoveSelected => remove_selected(&mut model.queue),
         QueueMessage::ScrollToEnd => scroll_to_end(&mut model.queue),
         QueueMessage::ScrollToStart => scroll_to_start(&mut model.queue),

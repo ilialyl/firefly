@@ -1,8 +1,11 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 use crate::{
     global::{
-        logic::files::{audio_paths_from_dir, choose_dirs, choose_multiple_audio_files},
+        logic::files::{
+            audio_paths_from_dir, choose_dirs, choose_multiple_audio_files,
+            filter_paths_for_audio_files,
+        },
         message::Message,
     },
     model::Model,
@@ -43,16 +46,19 @@ pub fn queue_files_with_file_dialog(
     None
 }
 
-pub fn queue_dirs(path: &Path, queue: &mut TrackQueue) -> Option<Message> {
-    if let Err(e) = queue.tx.send(audio_paths_from_dir(path)) {
-        log::error!("Error sending Path Vec to queue processing worker: {e}");
-    };
+pub fn queue_paths(paths: Vec<PathBuf>, queue: &mut TrackQueue) -> Option<Message> {
+    let mut valid_paths = filter_paths_for_audio_files(paths);
 
-    None
-}
+    if !valid_paths.is_empty() {
+        if let Some(first) = valid_paths.first() {
+            queue.enqueue_paths(vec![first.to_path_buf()]);
+            valid_paths.remove(0);
+        }
+        if let Err(e) = queue.tx.send(valid_paths) {
+            log::error!("Error sending Path Vec to queue processing worker: {e}");
+        };
+    }
 
-pub fn queue_file(path: &Path, queue: &mut TrackQueue) -> Option<Message> {
-    queue.enqueue_paths(vec![path.to_path_buf()]);
     None
 }
 
