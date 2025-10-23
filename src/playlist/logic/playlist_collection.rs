@@ -55,12 +55,14 @@ impl PlaylistCollection {
     pub fn load_playlists(&mut self) -> Result<()> {
         log::debug!("Loading Playlists");
         let paths = Self::get_playlist_files()?;
-        let playlists = paths
+        let mut playlists = paths
             .iter()
             .filter_map(|p| Playlist::from(p).ok())
             .collect::<Vec<Playlist>>();
+        playlists.sort_by_key(|playlist| playlist.name.as_deref().unwrap_or("").to_lowercase());
 
         self.playlists = playlists;
+
         self.playlists.iter().enumerate().for_each(|(i, p)| {
             if let Err(e) = self.metadata_loader_tx.send((i, p.get_pathbuf_vec())) {
                 log::error!("Error sending track paths to metadata loading thread: {e}");
