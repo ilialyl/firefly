@@ -1,16 +1,10 @@
-use std::sync::mpsc::Sender;
-
 use crate::{
     global::message::Message,
     model::Model,
     queue::{cmd::*, message::QueueMessage},
 };
 
-pub fn update_queue(
-    model: &mut Model,
-    msg: QueueMessage,
-    _msg_tx: &Sender<Message>,
-) -> Option<Message> {
+pub fn update_queue(model: &mut Model, msg: QueueMessage) -> Option<Message> {
     match msg {
         QueueMessage::Clear => clear(&mut model.queue),
         QueueMessage::MoveDown => move_queue_down(&mut model.queue),

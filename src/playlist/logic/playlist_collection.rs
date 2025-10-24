@@ -12,12 +12,14 @@ use std::{
 use color_eyre::eyre::Result;
 
 use crate::{
-    global::{logic::Index, message::Message},
+    global::message::Message,
     playlist::{
         logic::{Playlist, get_playlists_path, mini_metadata::MiniMetadata},
         message::PlaylistMessage,
     },
 };
+
+pub type Index = usize;
 
 pub struct PlaylistCollection {
     playlists: Vec<Playlist>,

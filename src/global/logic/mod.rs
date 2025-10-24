@@ -6,6 +6,5 @@ pub mod image;
 pub mod logger;
 pub mod mpris;
 pub mod opus;
+pub mod senders;
 pub mod session_state;
-
-pub type Index = usize;

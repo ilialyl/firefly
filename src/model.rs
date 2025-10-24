@@ -1,11 +1,10 @@
-use std::sync::{Arc, mpsc::Sender};
+use std::sync::Arc;
 
 use ratatui_image::picker::Picker;
 
 use crate::{
     global::{
-        logic::{confirmation::Confirmation, session_state::Session},
-        message::Message,
+        logic::{confirmation::Confirmation, senders::Senders, session_state::Session},
         view_logic::focused_area::FocusedArea,
     },
     player::logic::Player,
@@ -26,18 +25,21 @@ pub struct Model {
     pub user_confirmation: Confirmation,
     pub show_help: bool,
     pub picker: Arc<Picker>,
+    pub senders: Senders,
 }
 
 impl Model {
-    pub fn new(msg_tx: Sender<Message>) -> Self {
+    pub fn new(senders: Senders) -> Self {
         log::debug!("Initialized Model");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         let session = Session::default();
         Self {
             player: Player::default(),
-            queue: TrackQueue::new(msg_tx.clone(), session.unlocked_tick_rate.clone()),
-            playlist_ctl: PlaylistController::new(msg_tx, session.unlocked_tick_rate.clone()),
-            session,
+            queue: TrackQueue::new(senders.msg.clone(), session.unlocked_tick_rate.clone()),
+            playlist_ctl: PlaylistController::new(
+                senders.msg.clone(),
+                session.unlocked_tick_rate.clone(),
+            ),
             info_msg: String::new(),
             focused_view_area: FocusedArea::default(),
             input_mode: InputMode::default(),
@@ -45,6 +47,8 @@ impl Model {
             user_confirmation: Confirmation::default(),
             show_help: false,
             picker: Arc::new(picker),
+            session,
+            senders,
         }
     }
 }

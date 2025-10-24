@@ -27,11 +27,7 @@ use crate::{
     user_input::logic::InputMode,
 };
 
-pub fn tick(
-    model: &mut Model,
-    msg_tx: &Sender<Message>,
-    info_tx: &Sender<String>,
-) -> Option<Message> {
+pub fn tick(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
@@ -62,8 +58,8 @@ pub fn tick(
                 picture,
                 current_track.id,
                 model.picker.clone(),
-                msg_tx,
-                info_tx,
+                &model.senders.msg,
+                &model.senders.info,
             );
         }
 
@@ -73,8 +69,8 @@ pub fn tick(
             Track::convert_format(
                 &current_track.real_path,
                 &current_track.temp_path,
-                msg_tx,
-                info_tx,
+                &model.senders.msg,
+                &model.senders.info,
             );
         }
 
@@ -188,12 +184,12 @@ pub fn acknowledge_info(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn display_info_msg(info: String, info_tx: &Sender<String>) -> Option<Message> {
-    if let Err(e) = info_tx.send(info.clone()) {
+pub fn display_info_msg(info: String, model: &mut Model) -> Option<Message> {
+    if let Err(e) = model.senders.info.send(info.clone()) {
         log::error!("Error sending info to display: {e}");
     }
 
-    let cloned_tx = info_tx.clone();
+    let cloned_tx = model.senders.info.clone();
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(2));
         debug!("Clearing info message.");
@@ -209,14 +205,13 @@ pub fn set_track_protocol(
     protocol: StatefulProtocol,
     id: u32,
     model: &mut Model,
-    info_tx: &Sender<String>,
 ) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_mut()
         && id == current_track.id
     {
         log::debug!("Setting protocol...");
         current_track.protocol = Some(protocol);
-        if let Err(e) = info_tx.send(String::new()) {
+        if let Err(e) = model.senders.info.send(String::new()) {
             log::error!("{e}");
         };
     }

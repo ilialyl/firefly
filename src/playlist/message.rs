@@ -1,6 +1,6 @@
 use crate::{
-    global::{logic::Index, message::Message, view_logic::terminal::CursorMovementDirection},
-    playlist::logic::mini_metadata::MiniMetadata,
+    global::{message::Message, view_logic::terminal::CursorMovementDirection},
+    playlist::logic::{mini_metadata::MiniMetadata, playlist_collection::Index},
 };
 
 pub enum PlaylistMessage {

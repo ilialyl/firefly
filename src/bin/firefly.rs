@@ -8,7 +8,7 @@ use std::{
 use async_std::task;
 use color_eyre::eyre::{Result, eyre};
 
-use firefly::global::logic::mpris::run_server;
+use firefly::global::logic::{mpris::run_server, senders::Senders};
 use firefly::{
     global::{
         logic::{
@@ -42,9 +42,13 @@ async fn main() -> Result<()> {
 
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
-    let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
-    let mut model = Model::new(msg_tx.clone());
+    let senders = Senders {
+        msg: msg_tx,
+        info: info_tx,
+    };
+    let mut model = Model::new(senders);
 
+    let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
     std::thread::spawn(move || {
         task::block_on(async {
             if let Err(e) = run_server(msg_async_tx).await {
@@ -78,7 +82,9 @@ async fn main() -> Result<()> {
                 if valid_paths.is_empty() {
                     return Err(eyre!("No path is valid."));
                 }
-                msg_tx
+                model
+                    .senders
+                    .msg
                     .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
                     .unwrap();
             }
@@ -94,7 +100,7 @@ async fn main() -> Result<()> {
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated
-        if let Some(msg) = update_global(&mut model, Message::Tick, &msg_tx, &info_tx) {
+        if let Some(msg) = update_global(&mut model, Message::Tick) {
             msg_queue.push_back(msg);
         }
 
@@ -111,21 +117,21 @@ async fn main() -> Result<()> {
             msg_queue.push_back(msg);
         }
 
-        // Receive message from other threads
+        // Async receiver
         while let Ok(msg) = msg_async_rx.try_recv() {
             msg_queue.push_back(msg);
         }
 
         // Display info sent from other threads
         if let Ok(info) = info_rx.try_recv() {
-            update_global(&mut model, Message::UpdateInfoMsg(info), &msg_tx, &info_tx);
+            update_global(&mut model, Message::UpdateInfoMsg(info));
         }
 
         // Consume messages
         while !msg_queue.is_empty()
             && let Some(msg) = msg_queue.pop_front()
         {
-            if let Some(msg) = update_global(&mut model, msg, &msg_tx, &info_tx) {
+            if let Some(msg) = update_global(&mut model, msg) {
                 msg_queue.push_back(msg);
             }
         }
