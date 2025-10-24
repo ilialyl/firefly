@@ -17,6 +17,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
             Paragraph::new(metadata.join("\n")),
             center_vertical(area, (metadata.len() + 1) as u16),
         );
+    } else {
+        let text = "Press Q to open file dialog to queue files.\n\nAlternatively, run \"firefly add <path>\" or \"cargo run -r -- add <path>\".\n\nPress H to view all keybinds.";
+        frame.render_widget(
+            Paragraph::new(text),
+            center_vertical(area, text.lines().count() as u16),
+        );
     }
 }
 
@@ -89,12 +95,12 @@ fn get_metadata_lines(tagged_file: &TaggedFile, path: &Path) -> Vec<String> {
 
         let mut padded_vec = Vec::<String>::new();
         if let Some((last, rest)) = vec.split_last() {
-            for line in rest {
+            rest.iter().for_each(|line| {
                 if !line.is_empty() {
                     padded_vec.push(line.clone());
                     padded_vec.push(String::new());
                 }
-            }
+            });
             padded_vec.push(last.clone());
         }
         padded_vec

@@ -1,30 +1,64 @@
+use std::path::PathBuf;
+
 use crate::{
     global::{
-        logic::files::{choose_dirs, choose_multiple_audio_files, dir_to_audio_paths},
+        logic::files::{
+            audio_paths_from_dir, choose_dirs, choose_multiple_audio_files,
+            filter_paths_for_audio_files,
+        },
         message::Message,
     },
     model::Model,
-    player::{self},
+    player::{self, logic::Player},
     queue::logic::{TrackQueue, mini_track::MiniTrack},
 };
 
-pub fn queue_dir(queue: &mut TrackQueue) -> Option<Message> {
+pub fn queue_dirs_with_file_dialog(queue: &mut TrackQueue) -> Option<Message> {
     if let Some(dirs) = choose_dirs() {
-        for dir in dirs {
-            if let Err(e) = queue.tx.send(dir_to_audio_paths(&dir)) {
+        dirs.iter().for_each(|dir| {
+            if let Err(e) = queue.tx.send(audio_paths_from_dir(dir)) {
                 log::error!("Error sending Path Vec to queue processing worker: {e}");
             };
-        }
+        });
     }
 
     None
 }
 
-pub fn queue_files(queue: &mut TrackQueue) -> Option<Message> {
-    if let Some(path_vec) = choose_multiple_audio_files()
-        && let Err(e) = queue.tx.send(path_vec) {
+pub fn queue_files_with_file_dialog(
+    queue: &mut TrackQueue,
+    player: &mut Player,
+) -> Option<Message> {
+    if let Some(mut path_vec) = choose_multiple_audio_files()
+        && !path_vec.is_empty()
+    {
+        if player.current.is_none()
+            && queue.is_empty()
+            && let Some(first) = path_vec.first()
+        {
+            queue.enqueue_paths(vec![first.to_path_buf()]);
+            path_vec.remove(0);
+        }
+        if let Err(e) = queue.tx.send(path_vec) {
+            log::error!("Error sending Path Vec to queue processing worker: {e}");
+        }
+    }
+    None
+}
+
+pub fn queue_paths(paths: Vec<PathBuf>, queue: &mut TrackQueue) -> Option<Message> {
+    let mut valid_paths = filter_paths_for_audio_files(paths);
+
+    if !valid_paths.is_empty() {
+        if let Some(first) = valid_paths.first() {
+            queue.enqueue_paths(vec![first.to_path_buf()]);
+            valid_paths.remove(0);
+        }
+        if let Err(e) = queue.tx.send(valid_paths) {
             log::error!("Error sending Path Vec to queue processing worker: {e}");
         };
+    }
+
     None
 }
 

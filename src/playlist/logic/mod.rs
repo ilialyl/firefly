@@ -4,37 +4,34 @@ pub mod playlist_controller;
 pub mod playlist_tab_focus;
 
 use std::{
+    cell::RefCell,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
+    rc::Rc,
 };
 
 use color_eyre::eyre::{Result, eyre};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::{
-    global::logic::files::get_playlists_path, playlist::logic::mini_metadata::MiniMetadata,
-};
+use crate::{global::logic::files::get_playlists_path, queue::logic::mini_track::MiniTrack};
 
 #[derive(Debug)]
 pub struct Playlist {
     name: Option<String>,
-    pub tracks: Vec<PathBuf>,
+    pub mini_tracks: Vec<Rc<RefCell<MiniTrack>>>,
     pub selected_track: Option<usize>,
     dirty_flag: bool,
     path: Option<PathBuf>,
-    pub metadata_caches: Vec<MiniMetadata>,
 }
 
 impl Default for Playlist {
     fn default() -> Self {
         Playlist {
             name: None,
-            tracks: Vec::<PathBuf>::new(),
+            mini_tracks: Vec::new(),
             selected_track: None,
             dirty_flag: true,
             path: None,
-            metadata_caches: Vec::new(),
         }
     }
 }
@@ -43,7 +40,7 @@ impl Playlist {
     pub fn save_to_file(&mut self) -> Result<()> {
         self.dirty_flag = false;
 
-        let json_data = serde_json::to_string(&self.tracks)?;
+        let json_data = serde_json::to_string(&self.get_pathbuf_vec())?;
         if let Some(name) = &self.name {
             let path = Self::get_path_from_name(name);
 
@@ -60,9 +57,9 @@ impl Playlist {
 
     pub fn trash_save_file(&self) {
         if let Some(name) = self.get_name() {
-            let path = Self::get_path_from_name(&name);
+            let path = Self::get_path_from_name(name);
             let trash_dir = get_playlists_path().join("deleted");
-            let trash_path = trash_dir.join(Self::get_filename(&name));
+            let trash_path = trash_dir.join(Self::get_filename(name));
 
             if path.exists() {
                 if !trash_dir.exists() {
@@ -97,23 +94,24 @@ impl Playlist {
     pub fn select_next_track(&mut self, is_arrange: bool) {
         let mut is_arrange = is_arrange;
 
-        if self.tracks.is_empty() {
+        if self.mini_tracks.is_empty() {
             return;
         }
 
         if let Some(selected_index) = self.selected_track
-            && selected_index.eq(&self.tracks.len().saturating_sub(1))
+            && selected_index.eq(&self.mini_tracks.len().saturating_sub(1))
         {
             is_arrange = false;
         }
 
-        self.selected_track =
-            Some((self.selected_track.unwrap_or(0) + 1).min(self.tracks.len().saturating_sub(1)));
+        self.selected_track = Some(
+            (self.selected_track.unwrap_or(0) + 1).min(self.mini_tracks.len().saturating_sub(1)),
+        );
 
         if let Some(selected_index) = self.selected_track
             && is_arrange
         {
-            self.tracks
+            self.mini_tracks
                 .swap(selected_index, selected_index.saturating_sub(1));
 
             self.dirty_flag = true;
@@ -122,7 +120,7 @@ impl Playlist {
 
     pub fn select_prev_track(&mut self, is_arrange: bool) {
         let mut is_arrange = is_arrange;
-        if self.tracks.is_empty() {
+        if self.mini_tracks.is_empty() {
             return;
         }
 
@@ -136,9 +134,9 @@ impl Playlist {
 
         if let Some(selected_index) = self.selected_track
             && is_arrange
-            && self.tracks.len() > selected_index
+            && self.mini_tracks.len() > selected_index
         {
-            self.tracks.swap(selected_index, selected_index + 1);
+            self.mini_tracks.swap(selected_index, selected_index + 1);
 
             self.dirty_flag = true;
         }
@@ -159,13 +157,19 @@ impl Playlist {
 
     pub fn from(file: &Path) -> Result<Playlist> {
         let json_data = fs::read_to_string(file)?;
-        let tracks: Vec<PathBuf> = serde_json::from_str(&json_data)?;
-        let metadata_caches: Vec<MiniMetadata> =
-            tracks.par_iter().map(|p| MiniMetadata::from(p)).collect();
+        let path_vec: Vec<PathBuf> = serde_json::from_str(&json_data)?;
+        let tracks = path_vec
+            .into_iter()
+            .map(|p| {
+                Rc::new(RefCell::new(MiniTrack {
+                    path: p,
+                    metadata: None,
+                }))
+            })
+            .collect();
 
         let mut playlist = Playlist {
-            tracks,
-            metadata_caches,
+            mini_tracks: tracks,
             name: Some(
                 file.file_stem()
                     .and_then(|os| os.to_str())
@@ -185,13 +189,13 @@ impl Playlist {
         Ok(playlist)
     }
 
-    pub fn get_name(&self) -> Option<String> {
-        self.name.clone()
+    pub fn get_name(&self) -> Option<&str> {
+        self.name.as_deref()
     }
 
     pub fn rename(&mut self, name: &str) {
         if let Some(current_name) = self.get_name() {
-            let path = Self::get_path_from_name(&current_name);
+            let path = Self::get_path_from_name(current_name);
             if path.exists() {
                 std::fs::remove_file(&path).unwrap();
             }
@@ -202,14 +206,16 @@ impl Playlist {
         self.save_to_file().expect("Error saving after rename.");
     }
 
-    pub fn add(&mut self, track: &Path) {
+    pub fn add_track_path(&mut self, track: &Path) {
         if track.is_file() {
             if self.is_empty() {
                 self.selected_track = Some(0);
             }
 
-            self.tracks.push(track.to_path_buf());
-            self.metadata_caches.push(MiniMetadata::from(track));
+            self.mini_tracks.push(Rc::new(RefCell::new(MiniTrack {
+                path: track.to_path_buf(),
+                metadata: None,
+            })));
 
             self.dirty_flag = true;
         }
@@ -226,8 +232,7 @@ impl Playlist {
     }
 
     pub fn remove(&mut self, idx: usize) {
-        self.tracks.remove(idx);
-        self.metadata_caches.remove(idx);
+        self.mini_tracks.remove(idx);
 
         if self.is_empty() {
             self.selected_track = None;
@@ -237,31 +242,48 @@ impl Playlist {
     }
 
     pub fn as_vec_string(&self) -> Vec<String> {
-        let mut vec_string: Vec<String> = Vec::new();
-        for track in &self.tracks {
-            if let Some(os_name) = track.file_name() {
-                if let Some(name) = os_name.to_str() {
-                    vec_string.push(name.to_string());
+        let vec_str: Vec<String> = self
+            .mini_tracks
+            .iter()
+            .map(|track| {
+                if let Some(os_name) = track.borrow_mut().path.file_name() {
+                    if let Some(name) = os_name.to_str() {
+                        name.to_string()
+                    } else {
+                        "[Invalid UTF-8 name]".to_string()
+                    }
                 } else {
-                    vec_string.push("[Invalid UTF-8 name]".to_string());
+                    "[No file name]".to_string()
                 }
-            } else {
-                vec_string.push("[No file name]".to_string());
-            }
-        }
+            })
+            .collect();
 
-        vec_string
+        vec_str
     }
 
     pub fn len(&self) -> usize {
-        self.tracks.len()
+        self.mini_tracks.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.tracks.is_empty() && self.metadata_caches.is_empty()
+        self.mini_tracks.is_empty()
     }
 
     pub fn is_dirty(&self) -> bool {
         self.dirty_flag
+    }
+
+    pub fn get_path_vec(&self) -> Vec<PathBuf> {
+        self.mini_tracks
+            .iter()
+            .map(|t| t.borrow().path.clone())
+            .collect()
+    }
+
+    pub fn get_pathbuf_vec(&self) -> Vec<PathBuf> {
+        self.mini_tracks
+            .iter()
+            .map(|t| t.borrow().path.clone())
+            .collect()
     }
 }

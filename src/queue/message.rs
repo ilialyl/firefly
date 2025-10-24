@@ -1,11 +1,14 @@
+use std::path::PathBuf;
+
 use crate::queue::logic::mini_track::MiniTrack;
 
 pub enum QueueMessage {
     ToggleArrange,
     MoveUp,
     MoveDown,
-    QueueFiles,
-    QueueDir,
+    QueueFilesWithFileDialog,
+    QueueDirsWithFileDialog,
+    QueuePaths(Vec<PathBuf>),
     Shuffle,
     Clear,
     ScrollToStart,

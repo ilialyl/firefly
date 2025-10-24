@@ -27,11 +27,7 @@ use crate::{
     user_input::logic::InputMode,
 };
 
-pub fn tick(
-    model: &mut Model,
-    msg_tx: &Sender<Message>,
-    info_tx: &Sender<String>,
-) -> Option<Message> {
+pub fn tick(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
@@ -58,7 +54,13 @@ pub fn tick(
             && let Some(picture) = current_track.picture.as_mut()
         {
             current_track.started_decoding = true;
-            create_protocol(picture, current_track.id, model.picker.clone(), msg_tx);
+            create_protocol(
+                picture,
+                current_track.id,
+                model.picker.clone(),
+                &model.senders.msg,
+                &model.senders.info,
+            );
         }
 
         // Convert file format to FLAC if current format is not supported, if not already.
@@ -67,8 +69,8 @@ pub fn tick(
             Track::convert_format(
                 &current_track.real_path,
                 &current_track.temp_path,
-                msg_tx,
-                info_tx,
+                &model.senders.msg,
+                &model.senders.info,
             );
         }
 
@@ -182,12 +184,12 @@ pub fn acknowledge_info(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn display_info_msg(info: String, info_tx: &Sender<String>) -> Option<Message> {
-    if let Err(e) = info_tx.send(info.clone()) {
+pub fn display_info_msg(info: String, model: &mut Model) -> Option<Message> {
+    if let Err(e) = model.senders.info.send(info.clone()) {
         log::error!("Error sending info to display: {e}");
     }
 
-    let cloned_tx = info_tx.clone();
+    let cloned_tx = model.senders.info.clone();
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(2));
         debug!("Clearing info message.");
@@ -207,13 +209,28 @@ pub fn set_track_protocol(
     if let Some(current_track) = model.player.current.as_mut()
         && id == current_track.id
     {
+        log::debug!("Setting protocol...");
         current_track.protocol = Some(protocol);
+        if let Err(e) = model.senders.info.send(String::new()) {
+            log::error!("{e}");
+        };
     }
 
     None
 }
 
-pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: &Sender<Message>) {
+pub fn create_protocol(
+    picture: &Picture,
+    id: u32,
+    picker: Arc<Picker>,
+    msg_tx: &Sender<Message>,
+    info_tx: &Sender<String>,
+) {
+    if let Err(e) = info_tx.send("Loading Cover Art...".to_string()) {
+        log::error!("{e}");
+    };
+
+    log::debug!("Creating protocol...");
     let picture_data = picture.data().to_vec();
     let msg_tx = msg_tx.clone();
 
@@ -223,7 +240,9 @@ pub fn create_protocol(picture: &Picture, id: u32, picker: Arc<Picker>, msg_tx: 
             .ok()
             .and_then(|r| r.decode().ok())
         {
+            log::debug!("Created Dynamic Image.");
             let protocol = picker.new_resize_protocol(crop_to_square(dyn_img));
+            log::debug!("Cropped to square.");
             if let Err(e) = msg_tx.send(Message::ProtocolCreated(protocol, id)) {
                 log::error!("Error sending Protocol back to main thread: {e}");
             }

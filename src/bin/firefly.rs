@@ -1,17 +1,21 @@
 use std::{
     collections::VecDeque,
     fs,
+    path::PathBuf,
     sync::mpsc::{self},
 };
 
-use color_eyre::eyre::Result;
+use async_std::task;
+use color_eyre::eyre::{Result, eyre};
 
+use firefly::global::logic::{mpris::run_server, senders::Senders};
 use firefly::{
     global::{
         logic::{
-            cli::{clear_cache, cli},
-            data::get_cache_dir,
-            logger::setup_logger,
+            cli::cli,
+            data::{clear_cache, get_cache_dir},
+            files::get_playlists_path,
+            logger::{get_log_path, setup_logger},
             session_state::RunningState,
         },
         message::Message,
@@ -22,13 +26,11 @@ use firefly::{
         },
     },
     model::Model,
+    queue::message::QueueMessage,
 };
 
-#[cfg(not(target_os = "windows"))]
-use firefly::global::logic::cli::display_nlog;
-
-#[allow(clippy::single_match)]
-fn main() -> Result<()> {
+#[async_std::main]
+async fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
     setup_logger()?;
@@ -37,6 +39,25 @@ fn main() -> Result<()> {
     if !cache_dir.exists() {
         fs::create_dir(&cache_dir)?;
     }
+
+    let (msg_tx, msg_rx) = mpsc::channel::<Message>();
+    let (info_tx, info_rx) = mpsc::channel::<String>();
+    let senders = Senders {
+        msg: msg_tx,
+        info: info_tx,
+    };
+    let mut model = Model::new(senders);
+
+    let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
+
+    #[cfg(not(target_os = "windows"))]
+    std::thread::spawn(move || {
+        task::block_on(async {
+            if let Err(e) = run_server(msg_async_tx).await {
+                eprintln!("Server error: {e}");
+            }
+        });
+    });
 
     // Clap stuff
     let cli_command = cli().get_matches();
@@ -47,31 +68,41 @@ fn main() -> Result<()> {
             println!("Success");
             return Ok(());
         }
-        Some(("log", args)) => {
-            if let Some(_n_line) = args.get_one::<usize>("nlines") {
-                println!();
-                #[cfg(not(target_os = "windows"))]
-                display_nlog(*_n_line);
-                println!();
-            }
-
+        Some(("log", _)) => {
+            println!("{}", get_log_path().display());
             return Ok(());
+        }
+        Some(("playlist", _)) => {
+            println!("{}", get_playlists_path().display());
+            return Ok(());
+        }
+        Some(("with", args)) => {
+            if let Some(path_strs) = args.get_many::<String>("paths") {
+                let paths: Vec<PathBuf> = path_strs.map(PathBuf::from).collect();
+                let valid_paths: Vec<PathBuf> =
+                    paths.into_iter().filter(|path| path.exists()).collect();
+                if valid_paths.is_empty() {
+                    return Err(eyre!("No path is valid."));
+                }
+                model
+                    .senders
+                    .msg
+                    .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
+                    .unwrap();
+            }
         }
         _ => {}
     };
 
-    install_panic_hook();
-    let (msg_tx, msg_rx) = mpsc::channel::<Message>();
-    let (info_tx, info_rx) = mpsc::channel::<String>();
-    let mut model = Model::new(msg_tx.clone());
     let mut terminal = init_terminal()?;
+    install_panic_hook();
 
     while model.session.state != RunningState::Exit {
         // VecDeque is better for queues
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated
-        if let Some(msg) = update_global(&mut model, Message::Tick, &msg_tx, &info_tx) {
+        if let Some(msg) = update_global(&mut model, Message::Tick) {
             msg_queue.push_back(msg);
         }
 
@@ -84,20 +115,25 @@ fn main() -> Result<()> {
         }
 
         // Receive message from other threads
-        if let Ok(msg) = msg_rx.try_recv() {
+        while let Ok(msg) = msg_rx.try_recv() {
+            msg_queue.push_back(msg);
+        }
+
+        // Async receiver
+        while let Ok(msg) = msg_async_rx.try_recv() {
             msg_queue.push_back(msg);
         }
 
         // Display info sent from other threads
         if let Ok(info) = info_rx.try_recv() {
-            update_global(&mut model, Message::UpdateInfoMsg(info), &msg_tx, &info_tx);
+            update_global(&mut model, Message::UpdateInfoMsg(info));
         }
 
         // Consume messages
         while !msg_queue.is_empty()
             && let Some(msg) = msg_queue.pop_front()
         {
-            if let Some(msg) = update_global(&mut model, msg, &msg_tx, &info_tx) {
+            if let Some(msg) = update_global(&mut model, msg) {
                 msg_queue.push_back(msg);
             }
         }

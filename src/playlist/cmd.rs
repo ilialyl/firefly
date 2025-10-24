@@ -11,7 +11,10 @@ use crate::{
     },
     model::Model,
     playlist::{
-        logic::{playlist_controller::PlaylistController, playlist_tab_focus::PlaylistTabFocus},
+        logic::{
+            mini_metadata::MiniMetadata, playlist_controller::PlaylistController,
+            playlist_tab_focus::PlaylistTabFocus,
+        },
         message::PlaylistMessage,
     },
     user_input::{logic::InputTarget, message::UserInputMessage},
@@ -48,13 +51,18 @@ pub fn create_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message>
 }
 
 pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
-    let current_playlist_names = model.playlist_ctl.get_all_playlist_names();
+    let current_playlist_names: Vec<String> = model
+        .playlist_ctl
+        .get_all_playlist_names()
+        .iter()
+        .map(|&s| s.to_string())
+        .collect();
 
     if let Some(name) = model.user_input.input_history.pop()
         && let Some(playlist) = model.playlist_ctl.playlist_coll.get_playlist(index)
         && !current_playlist_names.contains(&name)
     {
-        playlist.rename(name.as_str());
+        playlist.rename(&name);
         return Some(Message::UserInput(UserInputMessage::Exit));
     }
 
@@ -65,13 +73,15 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
 }
 
 pub fn add_tracks(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected) = playlist_ctl.get_selected_playlist()
+    if let Some(selected) = playlist_ctl.selected_playlist
         && let Some(path_vec) = choose_multiple_audio_files()
     {
-        let playlist = selected;
-
         let new_tracks: Vec<PathBuf> = path_vec.into_iter().filter(|p| p.is_file()).collect();
-        new_tracks.iter().for_each(|p| playlist.add(p));
+        new_tracks.iter().for_each(|p| {
+            playlist_ctl
+                .playlist_coll
+                .add_tracks_to_playlist(p, selected)
+        });
     }
 
     None
@@ -91,19 +101,22 @@ pub fn remove_selected_track(playlist_ctl: &mut PlaylistController) -> Option<Me
 }
 
 pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
-        && let Some(dir_paths) = choose_dirs()
+    if let Some(selected_playlist_idx) = playlist_ctl.selected_playlist
+        && let Some(dirs) = choose_dirs()
     {
-        for dir in dir_paths {
-            match filter_dir_for_audio_files(&dir) {
+        dirs.iter()
+            .for_each(|dir| match filter_dir_for_audio_files(dir) {
                 Ok(vec_path) => {
                     let new_tracks: Vec<PathBuf> =
                         vec_path.into_iter().filter(|p| p.is_file()).collect();
-                    new_tracks.iter().for_each(|p| selected_playlist.add(p));
+                    new_tracks.into_iter().for_each(|t| {
+                        playlist_ctl
+                            .playlist_coll
+                            .add_tracks_to_playlist(t.as_path(), selected_playlist_idx)
+                    });
                 }
                 Err(e) => log::error!("{}", e),
-            }
-        }
+            });
     }
 
     None
@@ -113,13 +126,10 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
     match model.playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
-                if let Err(e) = model
-                    .queue
-                    .tx
-                    .send(selected.tracks.iter().map(|e| e.to_path_buf()).collect())
-                {
-                    log::error!("Error sending Path Vec to queue processing worker: {e}");
-                };
+                selected
+                    .mini_tracks
+                    .iter()
+                    .for_each(|m| model.queue.enqueue_mini_track_ref(m.clone()));
 
                 Some(Message::DisplayInfoMsg(
                     "Sent Playlist to Player".to_string(),
@@ -131,11 +141,9 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
         PlaylistTabFocus::Tracks => {
             if let Some(playlist) = model.playlist_ctl.get_selected_playlist()
                 && let Some(index) = playlist.selected_track
-                && let Some(track) = playlist.tracks.get(index)
+                && let Some(mini_track) = playlist.mini_tracks.get(index)
             {
-                if let Err(e) = model.queue.tx.send(vec![track.clone()]) {
-                    log::error!("Error sending Path Vec to queue processing worker: {e}");
-                };
+                model.queue.enqueue_mini_track_ref(mini_track.clone());
                 Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
             } else {
                 None
@@ -326,9 +334,10 @@ pub fn scroll_to_end(playlist_ctl: &mut PlaylistController) -> Option<Message> {
         }
         PlaylistTabFocus::Tracks => {
             if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
-                && !selected_playlist.is_empty() {
-                    selected_playlist.selected_track = Some(selected_playlist.len() - 1);
-                }
+                && !selected_playlist.is_empty()
+            {
+                selected_playlist.selected_track = Some(selected_playlist.len() - 1);
+            }
         }
     }
 
@@ -344,9 +353,28 @@ pub fn scroll_to_start(playlist_ctl: &mut PlaylistController) -> Option<Message>
         }
         PlaylistTabFocus::Tracks => {
             if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
-                && !selected_playlist.is_empty() {
-                    selected_playlist.selected_track = Some(0);
-                }
+                && !selected_playlist.is_empty()
+            {
+                selected_playlist.selected_track = Some(0);
+            }
+        }
+    }
+
+    None
+}
+
+pub fn append_metadata(
+    index: usize,
+    mini_metadata: MiniMetadata,
+    playlist_ctl: &mut PlaylistController,
+) -> Option<Message> {
+    if let Some(playlist) = playlist_ctl.playlist_coll.get_playlist(index) {
+        for track in playlist.mini_tracks.iter_mut() {
+            if track.borrow().metadata.is_none() {
+                log::debug!("Appending metadata...");
+                track.borrow_mut().metadata = Some(mini_metadata);
+                return None;
+            }
         }
     }
 

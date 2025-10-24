@@ -5,7 +5,6 @@ use std::{
 };
 
 use color_eyre::eyre::{Result, eyre};
-use lofty::{file::TaggedFile, probe::Probe};
 use rfd::FileDialog;
 
 use crate::global::logic::data::get_data_dir;
@@ -86,11 +85,26 @@ pub fn filter_dir_for_audio_files(dir: &Path) -> Result<Vec<PathBuf>> {
     Ok(path_vec)
 }
 
-pub fn read_metadata(track: &Path, track_temp: &Path) -> Result<TaggedFile> {
-    match Probe::open(track)?.read() {
-        Ok(f) => Ok(f),
-        Err(_) => Ok(Probe::open(track_temp)?.read()?),
-    }
+pub fn filter_paths_for_audio_files(paths: Vec<PathBuf>) -> Vec<PathBuf> {
+    let mut valid_paths: Vec<PathBuf> = Vec::new();
+    paths.into_iter().for_each(|p| {
+        if p.exists() {
+            if p.is_dir() {
+                let audio_files = audio_paths_from_dir(&p);
+                valid_paths.extend(audio_files);
+            } else if let Some(valid_p) = p
+                .clone()
+                .extension()
+                .and_then(|e| e.to_str())
+                .filter(|e| AUDIO_FORMATS.contains(e))
+                .map(|_| p)
+            {
+                valid_paths.push(valid_p);
+            }
+        }
+    });
+
+    valid_paths
 }
 
 pub fn ffmpeg_available() -> bool {
@@ -112,7 +126,7 @@ pub fn get_playlists_path() -> PathBuf {
     playlists_path
 }
 
-pub fn dir_to_audio_paths(dir: &Path) -> Vec<PathBuf> {
+pub fn audio_paths_from_dir(dir: &Path) -> Vec<PathBuf> {
     if let Ok(entries) = fs::read_dir(dir) {
         entries
             .filter_map(|r| r.ok())

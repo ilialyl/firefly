@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use lofty::{file::TaggedFileExt, probe::Probe, tag::Accessor};
+use lofty::{config::ParseOptions, file::TaggedFileExt, probe::Probe, tag::Accessor};
 
 #[derive(Debug, Default, Clone)]
 pub struct MiniMetadata {
@@ -13,7 +13,9 @@ pub struct MiniMetadata {
 impl MiniMetadata {
     pub fn from(path: &Path) -> Self {
         if let Ok(probe) = Probe::open(path)
-            && let Ok(tagged_file) = probe.read()
+            && let Ok(tagged_file) = probe
+                .options(ParseOptions::new().read_cover_art(false))
+                .read()
             && let Some(primary_tag) = tagged_file.primary_tag()
         {
             MiniMetadata {

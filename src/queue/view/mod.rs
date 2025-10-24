@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState, Padding, StatefulWidget},
 };
 
-use crate::{global::view_logic::focused_area::FocusedArea, model::Model, player::logic::Player};
+use crate::{global::view_logic::focused_area::FocusedArea, model::Model};
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let queue_entries: Vec<ListItem> = model
@@ -13,13 +13,23 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         .get_ref()
         .iter()
         .map(|t| {
-            t.metadata.title.clone().unwrap_or(
-                t.path
+            if let Some(metadata) = t.borrow().metadata.as_ref() {
+                metadata.title.clone().unwrap_or(
+                    t.borrow()
+                        .path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("[Invalid UTF-8 name]")
+                        .to_string(),
+                )
+            } else {
+                t.borrow()
+                    .path
                     .file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or("[Invalid UTF-8 name]")
-                    .to_string(),
-            )
+                    .to_string()
+            }
         })
         .map(ListItem::from)
         .collect();
@@ -72,17 +82,4 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     };
 
     StatefulWidget::render(list.block(block), area, frame.buffer_mut(), &mut list_state);
-}
-
-fn _get_previous_tracks(player: &Player) -> Vec<String> {
-    let mut tracks: Vec<String> = Vec::new();
-    player.previous.iter().for_each(|track| {
-        if let Some(track_name) = track.file_name().and_then(|os| os.to_str()) {
-            tracks.push(track_name.to_string());
-        } else {
-            tracks.push("[Invalid UTF-8 name]".into());
-        }
-    });
-
-    tracks
 }

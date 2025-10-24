@@ -1,4 +1,4 @@
-use std::{fs::create_dir_all, time::SystemTime};
+use std::{fs::create_dir_all, path::PathBuf, time::SystemTime};
 
 use color_eyre::eyre::Result;
 
@@ -25,4 +25,8 @@ pub fn setup_logger() -> Result<()> {
         .chain(fern::log_file(log_path)?)
         .apply()?;
     Ok(())
+}
+
+pub fn get_log_path() -> PathBuf {
+    get_data_dir().join("firefly.log")
 }

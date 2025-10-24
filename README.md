@@ -1,17 +1,18 @@
 # Firefly, Terminal Audio Player
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and UI built with [Ratatui](https://ratatui.rs/).
-![example_img](example_img/firefly_v0-7-0.gif)
-(Showcase as of v0.7.0)
-## Features (v0.8.0)
+![example_img](example_img/firefly_v0-10-0.gif)
+(Showcase as of v0.10.0, using [Kitty](https://sw.kovidgoyal.net/kitty/) with Atelier Dune Dark theme.)
+## Features (v0.10.0)
 - Play, Pause, Rewind, and Seek.
 - Persistent Playlists
 - Volume Control from 0-200%
 - Track Looping
-- File Dialog
+- Pick Files from File Dialog or Command-Line Argument.
 - Track and Directory queuing
 - Queue Arrangement, Shuffling, Clearing
 - Skip Forward or Backward
 - Metadata Display (Cover Art, Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
+- [Linux] Basic Media Key Controls (Play and Pause)
 
 ### Formats Supported
 - FLAC ([Symphonia](https://github.com/pdeljanov/Symphonia))
@@ -23,19 +24,21 @@ It can still play other formats by converting formats not supported by Rodio to 
 
 Temporary FLAC files stay on disk for reuse, which can be cleared by running `cargo run --release -- clean` or `firefly clean`
 
-### Roadmap
+### Roadmap - open to suggestions
 - [x] Playlists (v0.6.0)
 - [x] Album art display for supported terminals (v0.7.0)
 - [x] UI overhaul (v0.7.0)
 
-## Usage
-### Windows
-- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) (Extract first)
-#### Optional Dependencies
-- [FFmpeg](https://ffmpeg.org/) (If you want to play unsupported file types.)
+## Installation
+### x86-64 Windows
+- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
+### x86-64 Linux
+- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
+### Optional Dependencies
+- [FFmpeg](https://ffmpeg.org/) - if you want to play unsupported file types.
 
+## Build from source
 ### Fedora Linux
-Build from source.
 #### Dependencies
 - [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 - [wayland-devel](https://packages.fedoraproject.org/pkgs/wayland/wayland-devel/)
@@ -53,9 +56,43 @@ git clone https://github.com/ilialyl/firefly && cd firefly
 cargo run --release
 ```
 
-### Notes
-- Startup speed depends on the number of tracks across all playlists (a couple of seconds delay after >500 tracks).
-- The memory usage spike at startup is due to loading the metadata of all playlists' contents in parallel.
+## Usage
+### Windows
+- Launch the executable.
+### Linux
+```
+chmod +x firefly # allow the file to be executed
+./firefly
+```
+
+### CLI Examples (command line knowledge assumed)
+#### Windows
+```
+# Launch with a single file or directory
+.\firefly.exe with example.mp3
+.\firefly.exe with music/
+
+# Launch with multiple files or directories
+.\firefly.exe with example.mp3 music/
+
+# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.)
+shopt -s globstar # enable globstar
+.\firefly.exe with ./**/*.opus
+```
+
+#### Linux
+```
+# Launch with a single file or directory
+./firefly with example.mp3
+./firefly with music/
+
+# Launch with multiple files or directories
+./firefly with example.mp3 music/
+
+# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.)
+shopt -s globstar # enable globstar
+./firefly with ./**/*.opus
+```
 
 ## Known Issue
 - Rewinding can be slow on systems that use [ALSA](https://www.alsa-project.org/wiki/Main_Page).

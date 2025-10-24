@@ -1,7 +1,12 @@
+use std::sync::{Arc, atomic::AtomicBool, mpsc::Sender};
+
 use color_eyre::eyre::Result;
 
-use crate::playlist::logic::{
-    Playlist, playlist_collection::PlaylistCollection, playlist_tab_focus::PlaylistTabFocus,
+use crate::{
+    global::message::Message,
+    playlist::logic::{
+        Playlist, playlist_collection::PlaylistCollection, playlist_tab_focus::PlaylistTabFocus,
+    },
 };
 
 pub struct PlaylistController {
@@ -11,9 +16,9 @@ pub struct PlaylistController {
     pub arrange_mode: bool,
 }
 
-impl Default for PlaylistController {
-    fn default() -> Self {
-        let mut playlist_coll = PlaylistCollection::default();
+impl PlaylistController {
+    pub fn new(msg_tx: Sender<Message>, unlocked_tick_rate: Arc<AtomicBool>) -> Self {
+        let mut playlist_coll = PlaylistCollection::new(msg_tx, unlocked_tick_rate);
         playlist_coll
             .load_playlists()
             .expect("Error loading existing playlists");
@@ -33,9 +38,6 @@ impl Default for PlaylistController {
             arrange_mode: false,
         }
     }
-}
-
-impl PlaylistController {
     pub fn next_playlist(&mut self) {
         self.selected_playlist = Some(
             (self.selected_playlist.unwrap_or(0) + 1)
@@ -97,11 +99,11 @@ impl PlaylistController {
         }
     }
 
-    pub fn get_all_playlist_names(&self) -> Vec<String> {
+    pub fn get_all_playlist_names(&self) -> Vec<&str> {
         self.playlist_coll
             .get_playlists()
             .iter()
-            .map(|p| p.get_name().unwrap_or("New Playlist".to_string()))
+            .map(|p| p.get_name().unwrap_or("New Playlist"))
             .collect()
     }
 

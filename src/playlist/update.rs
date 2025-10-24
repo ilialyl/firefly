@@ -1,16 +1,10 @@
-use std::sync::mpsc::Sender;
-
 use crate::{
     global::message::Message,
     model::Model,
     playlist::{cmd::*, message::PlaylistMessage},
 };
 
-pub fn update_playlist(
-    model: &mut Model,
-    msg: PlaylistMessage,
-    _msg_tx: &Sender<Message>,
-) -> Option<Message> {
+pub fn update_playlist(model: &mut Model, msg: PlaylistMessage) -> Option<Message> {
     match msg {
         PlaylistMessage::Create => create_playlist(&mut model.playlist_ctl),
         PlaylistMessage::AddTracks => add_tracks(&mut model.playlist_ctl),
@@ -33,5 +27,8 @@ pub fn update_playlist(
         ),
         PlaylistMessage::ScrollToStart => scroll_to_start(&mut model.playlist_ctl),
         PlaylistMessage::ScrollToEnd => scroll_to_end(&mut model.playlist_ctl),
+        PlaylistMessage::LoadedMetadata(index, mini_metadata) => {
+            append_metadata(index, mini_metadata, &mut model.playlist_ctl)
+        }
     }
 }

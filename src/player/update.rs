@@ -1,16 +1,10 @@
-use std::sync::mpsc::Sender;
-
 use crate::{
     global::message::Message,
     model::Model,
     player::{cmd::*, message::PlayerMessage},
 };
 
-pub fn update_player(
-    model: &mut Model,
-    msg: PlayerMessage,
-    _msg_tx: &Sender<Message>,
-) -> Option<Message> {
+pub fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Message> {
     match msg {
         PlayerMessage::LoadNow => load_now(model),
         PlayerMessage::TogglePlay => toggle_play(model),
