@@ -1,7 +1,7 @@
 # Firefly, Terminal Audio Player
 Written in Rust with audio playback handled by [Rodio](https://github.com/RustAudio/rodio) and UI built with [Ratatui](https://ratatui.rs/).
-![example_img](example_img/firefly_v0-7-0.gif)
-(Showcase as of v0.7.0, using [Kitty](https://sw.kovidgoyal.net/kitty/) with Atelier Dune Dark theme.)
+![example_img](example_img/firefly_v0-10-0.gif)
+(Showcase as of v0.10.0, using [Kitty](https://sw.kovidgoyal.net/kitty/) with Atelier Dune Dark theme.)
 ## Features (v0.10.0)
 - Play, Pause, Rewind, and Seek.
 - Persistent Playlists
@@ -12,7 +12,7 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Queue Arrangement, Shuffling, Clearing
 - Skip Forward or Backward
 - Metadata Display (Cover Art, Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
-- Basic Media Key Controls (Play and Pause)
+- [Linux] Basic Media Key Controls (Play and Pause)
 
 ### Formats Supported
 - FLAC ([Symphonia](https://github.com/pdeljanov/Symphonia))
@@ -29,14 +29,16 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 - [x] Album art display for supported terminals (v0.7.0)
 - [x] UI overhaul (v0.7.0)
 
-## Usage
-### Windows
-- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) (Extract first)
-#### Optional Dependencies
-- [FFmpeg](https://ffmpeg.org/) (If you want to play unsupported file types.)
+## Installation
+### x86-64 Windows
+- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
+### x86-64 Linux
+- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
+### Optional Dependencies
+- [FFmpeg](https://ffmpeg.org/) - if you want to play unsupported file types.
 
+## Build from source
 ### Fedora Linux
-Build from source.
 #### Dependencies
 - [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 - [wayland-devel](https://packages.fedoraproject.org/pkgs/wayland/wayland-devel/)
@@ -54,18 +56,42 @@ git clone https://github.com/ilialyl/firefly && cd firefly
 cargo run --release
 ```
 
-### CLI Examples
+## Usage
+### Windows
+- Launch the executable.
+### Linux
+```
+chmod +x firefly # allow the file to be executed
+./firefly
+```
+
+### CLI Examples (command line knowledge assumed)
+#### Windows
 ```
 # Launch with a single file or directory
-cargo run -r -- with example.mp3
-cargo run -r -- with music/
+.\firefly.exe with example.mp3
+.\firefly.exe with music/
 
 # Launch with multiple files or directories
-cargo run -r -- with example.mp3 music/
+.\firefly.exe with example.mp3 music/
 
 # Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.)
 shopt -s globstar # enable globstar
-cargo run -r -- with ./**/*.opus
+.\firefly.exe with ./**/*.opus
+```
+
+#### Linux
+```
+# Launch with a single file or directory
+./firefly with example.mp3
+./firefly with music/
+
+# Launch with multiple files or directories
+./firefly with example.mp3 music/
+
+# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.)
+shopt -s globstar # enable globstar
+./firefly with ./**/*.opus
 ```
 
 ## Known Issue
