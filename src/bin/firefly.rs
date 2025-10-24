@@ -49,6 +49,8 @@ async fn main() -> Result<()> {
     let mut model = Model::new(senders);
 
     let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
+
+    #[cfg(not(target_os = "windows"))]
     std::thread::spawn(move || {
         task::block_on(async {
             if let Err(e) = run_server(msg_async_tx).await {
