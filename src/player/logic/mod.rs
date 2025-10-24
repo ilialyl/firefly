@@ -147,6 +147,9 @@ impl Player {
         };
 
         if let Some(current) = self.current.as_mut() {
+            if queue.is_empty() {
+                queue.selected_index = Some(0);
+            }
             queue.prepend_track(&current.real_path);
         }
 
