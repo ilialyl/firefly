@@ -62,7 +62,8 @@ cargo run -r -- with music/
 # Launch with multiple files or directories
 cargo run -r -- with example.mp3 music/
 
-# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/)
+# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.)
+shopt -s globstar # enable globstar
 cargo run -r -- with ./**/*.opus
 ```
 
