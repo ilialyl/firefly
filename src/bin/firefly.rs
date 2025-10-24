@@ -5,8 +5,10 @@ use std::{
     sync::mpsc::{self},
 };
 
+use async_std::task;
 use color_eyre::eyre::{Result, eyre};
 
+use firefly::global::logic::mpris::run_server;
 use firefly::{
     global::{
         logic::{
@@ -27,7 +29,8 @@ use firefly::{
     queue::message::QueueMessage,
 };
 
-fn main() -> Result<()> {
+#[async_std::main]
+async fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
     setup_logger()?;
@@ -39,7 +42,16 @@ fn main() -> Result<()> {
 
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
+    let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
     let mut model = Model::new(msg_tx.clone());
+
+    std::thread::spawn(move || {
+        task::block_on(async {
+            if let Err(e) = run_server(msg_async_tx).await {
+                eprintln!("Server error: {e}");
+            }
+        });
+    });
 
     // Clap stuff
     let cli_command = cli().get_matches();
@@ -96,6 +108,11 @@ fn main() -> Result<()> {
 
         // Receive message from other threads
         while let Ok(msg) = msg_rx.try_recv() {
+            msg_queue.push_back(msg);
+        }
+
+        // Receive message from other threads
+        while let Ok(msg) = msg_async_rx.try_recv() {
             msg_queue.push_back(msg);
         }
 
