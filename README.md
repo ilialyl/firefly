@@ -12,6 +12,7 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Queue Arrangement, Shuffling, Clearing
 - Skip Forward or Backward
 - Metadata Display (Cover Art, Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
+- Basic Media Key Controls (Play and Pause)
 
 ### Formats Supported
 - FLAC ([Symphonia](https://github.com/pdeljanov/Symphonia))
