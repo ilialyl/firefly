@@ -6,7 +6,7 @@ use std::{
 };
 
 use async_std::task;
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::Result;
 
 use firefly::global::logic::{mpris::run_server, senders::Senders};
 use firefly::{
@@ -82,7 +82,8 @@ async fn main() -> Result<()> {
                 let valid_paths: Vec<PathBuf> =
                     paths.into_iter().filter(|path| path.exists()).collect();
                 if valid_paths.is_empty() {
-                    return Err(eyre!("No path is valid."));
+                    eprintln!("No path is valid.");
+                    return Ok(());
                 }
                 model
                     .senders
