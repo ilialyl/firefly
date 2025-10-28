@@ -63,7 +63,9 @@ pub fn rewind(model: &mut Model) -> Option<Message> {
 
     let status = model.player.status;
 
-    model.player.rewind(rewind_dur).expect("Error rewinding.");
+    if let Err(e) = model.player.rewind(rewind_dur) {
+        log::error!("Error rewinding: {e}");
+    };
 
     if matches!(status, PlaybackStatus::Paused) {
         model.player.sink.pause();
@@ -96,10 +98,12 @@ pub fn seek(model: &mut Model) -> Option<Message> {
 
     if let Some(current_track) = &model.player.current {
         let duration = current_track.duration;
-        model
+        if let Err(e) = model
             .player
             .seek(&duration.unwrap_or(Duration::from_secs(0)), seek_dur)
-            .expect("Error seeking.");
+        {
+            log::error!("Error seeking: {e}");
+        };
     }
 
     None
@@ -117,18 +121,19 @@ pub fn skip(model: &mut Model) -> Option<Message> {
 
     model.session.state = RunningState::Running;
 
-    log::info!("Trying to load {:?}.", model.queue.front_path());
+    log::info!("Loading track {:?}.", model.queue.front_path());
     model.player.sink.clear();
-    model
-        .player
-        .load_next_track(&mut model.queue)
-        .expect("Error loading next track.");
+    if let Err(e) = model.player.load_next_track(&mut model.queue) {
+        log::error!("Error loading next track: {e}");
+    };
 
     if let Some(current_track) = model.player.current.as_mut()
         && (current_track.conversion_status == FormatConversion::Unnecessary
             || current_track.conversion_status == FormatConversion::Done)
     {
-        model.player.reload().expect("Error reloading track.");
+        if let Err(e) = model.player.reload() {
+            log::error!("Error reloading track in skip(): {e}");
+        }
     }
 
     None
@@ -172,17 +177,18 @@ pub fn previous_track(model: &mut Model) -> Option<Message> {
 
     model.session.state = RunningState::Running;
 
-    log::info!("Trying to load previous track.");
+    log::info!("Loading previous track...");
     model.player.sink.clear();
-    model
-        .player
-        .load_prev_track(&mut model.queue)
-        .expect("Error loading previous track.");
+    if let Err(e) = model.player.load_prev_track(&mut model.queue) {
+        log::error!("Error loading previous track: {e}");
+    };
 
     if let Some(current_track) = model.player.current.as_mut()
         && current_track.conversion_status != FormatConversion::Running
     {
-        model.player.reload().expect("Error reloading track.");
+        if let Err(e) = model.player.reload() {
+            log::error!("Error reloading track after prepending previous track in queue: {e}");
+        };
     }
 
     None

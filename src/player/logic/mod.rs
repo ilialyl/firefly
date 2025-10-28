@@ -28,17 +28,11 @@ pub struct Player {
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
 }
 
-impl Default for Player {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Player {
     // Sender is needed because it deals with threads.
-    pub fn new() -> Player {
-        let (stream, sink) = Self::get_sink();
-        Player {
+    pub fn new() -> Result<Player> {
+        let (stream, sink) = Self::get_sink()?;
+        Ok(Player {
             current: None,
             previous: Vec::<PathBuf>::new(),
             looping: false,
@@ -46,7 +40,7 @@ impl Player {
             stream,
             sink,
             ffmpeg_handle: None,
-        }
+        })
     }
 
     pub fn new_track(&mut self, path: &Path) -> Result<()> {
@@ -55,14 +49,13 @@ impl Player {
         Ok(())
     }
 
-    pub fn get_sink() -> (OutputStream, Sink) {
-        let mut stream_handle =
-            rodio::OutputStreamBuilder::open_default_stream().expect("Error obtaining stream");
+    pub fn get_sink() -> Result<(OutputStream, Sink)> {
+        let mut stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
         let sink = rodio::Sink::connect_new(stream_handle.mixer());
 
         stream_handle.log_on_drop(false);
 
-        (stream_handle, sink)
+        Ok((stream_handle, sink))
     }
 
     pub fn increase_volume(&mut self, amount: f32) {
@@ -80,15 +73,15 @@ impl Player {
     pub fn seek(&mut self, track_dur: &Duration, seek_dur: Duration) -> Result<()> {
         let current_pos = self.sink.get_pos();
         if current_pos.add(seek_dur) < *track_dur {
-            self.sink
-                .try_seek(current_pos.add(seek_dur))
-                .expect("Error seeking");
+            if let Err(e) = self.sink.try_seek(current_pos.add(seek_dur)) {
+                return Err(eyre!("{e}"));
+            };
         } else if track_dur.sub(current_pos) < seek_dur
             && track_dur.sub(current_pos) > Duration::from_secs(1)
         {
-            self.sink
-                .try_seek(track_dur.sub(Duration::from_secs(1)))
-                .expect("Error seeking");
+            if let Err(e) = self.sink.try_seek(track_dur.sub(Duration::from_secs(1))) {
+                return Err(eyre!("{e}"));
+            };
         }
 
         Ok(())
@@ -106,7 +99,9 @@ impl Player {
             let source = current.get_source()?;
             self.sink.append(source);
 
-            self.sink.try_seek(rewinded_pos).expect("Error rewinding");
+            if let Err(e) = self.sink.try_seek(rewinded_pos) {
+                return Err(eyre!("{e}"));
+            };
 
             self.sink.play();
         }

@@ -28,10 +28,10 @@ pub struct PlaylistCollection {
 
 impl PlaylistCollection {
     pub fn new(msg_tx: Sender<Message>, unlocked_tick_rate: Arc<AtomicBool>) -> Self {
+        log::info!("Initializing Playlist Collection...");
         let (tx, rx) = mpsc::channel::<(Index, Vec<PathBuf>)>();
         Self::start_metadata_loader(msg_tx, rx, unlocked_tick_rate);
 
-        log::debug!("Initialized PlaylistCollection");
         PlaylistCollection {
             playlists: Vec::<Playlist>::new(),
             metadata_loader_tx: tx,
@@ -55,7 +55,7 @@ impl PlaylistCollection {
     }
 
     pub fn load_playlists(&mut self) -> Result<()> {
-        log::debug!("Loading Playlists");
+        log::info!("Loading Playlists from files...");
         let paths = Self::get_playlist_files()?;
         let mut playlists = paths
             .iter()
@@ -67,7 +67,11 @@ impl PlaylistCollection {
 
         self.playlists.iter().enumerate().for_each(|(i, p)| {
             if let Err(e) = self.metadata_loader_tx.send((i, p.get_pathbuf_vec())) {
-                log::error!("Error sending track paths to metadata loading thread: {e}");
+                log::error!(
+                    "Error sending track paths to metadata loading thread for playlist {:?}: {}",
+                    p.get_name(),
+                    e
+                );
             }
         });
 
@@ -75,7 +79,7 @@ impl PlaylistCollection {
     }
 
     pub fn get_playlist_files() -> Result<Vec<PathBuf>> {
-        let playlists_path = get_playlists_path();
+        let playlists_path = get_playlists_path()?;
         log::info!("Playlist Directory: {:?}", playlists_path.to_str());
         let entries = fs::read_dir(playlists_path)?;
 
@@ -127,12 +131,10 @@ impl PlaylistCollection {
     ) {
         thread::spawn(move || {
             while let Ok((index, path_vec)) = rx.recv() {
-                log::debug!("Unlocked tick rate");
                 unlocked_tick_rate.store(true, Ordering::Relaxed);
+                log::info!("Loading metadata for playlist {index}");
                 path_vec.iter().for_each(|p| {
-                    log::debug!("[Metadata Loader] creating MiniMetadata from {:p}...", p);
                     let metadata = MiniMetadata::from(p);
-                    log::debug!("[Metadata Loader] sending to main thread...");
                     if let Err(e) = msg_tx.send(Message::Playlist(PlaylistMessage::LoadedMetadata(
                         index, metadata,
                     ))) {
@@ -140,7 +142,6 @@ impl PlaylistCollection {
                     };
                 });
                 unlocked_tick_rate.store(false, Ordering::Relaxed);
-                log::debug!("Limited tick rate");
             }
         });
     }

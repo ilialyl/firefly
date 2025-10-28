@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use color_eyre::eyre::Result;
 use ratatui_image::picker::Picker;
 
 use crate::{
@@ -29,17 +30,17 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(senders: Senders) -> Self {
-        log::debug!("Initialized Model");
+    pub fn new(senders: Senders) -> Result<Model> {
+        log::info!("Initializing App State...");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         let session = Session::default();
-        Self {
-            player: Player::default(),
+        Ok(Self {
+            player: Player::new()?,
             queue: TrackQueue::new(senders.msg.clone(), session.unlocked_tick_rate.clone()),
             playlist_ctl: PlaylistController::new(
                 senders.msg.clone(),
                 session.unlocked_tick_rate.clone(),
-            ),
+            )?,
             info_msg: String::new(),
             focused_view_area: FocusedArea::default(),
             input_mode: InputMode::default(),
@@ -49,6 +50,6 @@ impl Model {
             picker: Arc::new(picker),
             session,
             senders,
-        }
+        })
     }
 }

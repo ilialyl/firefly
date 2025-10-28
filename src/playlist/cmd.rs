@@ -62,7 +62,9 @@ pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
         && let Some(playlist) = model.playlist_ctl.playlist_coll.get_playlist(index)
         && !current_playlist_names.contains(&name)
     {
-        playlist.rename(&name);
+        if let Err(e) = playlist.rename(&name) {
+            log::error!("Error renaming playlist {e}");
+        }
         return Some(Message::UserInput(UserInputMessage::Exit));
     }
 
@@ -131,8 +133,13 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                     .iter()
                     .for_each(|m| model.queue.enqueue_mini_track_ref(m.clone()));
 
+                log::info!(
+                    "Sent playlist \"{}\" to queue.",
+                    selected.get_name().unwrap_or_default()
+                );
+
                 Some(Message::DisplayInfoMsg(
-                    "Sent Playlist to Player".to_string(),
+                    "Sent Playlist to Queue".to_string(),
                 ))
             } else {
                 None
@@ -242,7 +249,9 @@ pub fn delete_playlist(
         if let Some(confirm) = confirmation.take() {
             match confirm {
                 Response::Yes => {
-                    playlist_ctl.delete_selected_playlist();
+                    if let Err(e) = playlist_ctl.delete_selected_playlist() {
+                        log::error!("Error deleting selected playlist: {e}")
+                    }
                 }
                 Response::No => {}
             }
@@ -267,19 +276,11 @@ pub fn rename_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message>
 }
 
 pub fn save_selected_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    playlist_ctl
-        .save_selected_to_file()
-        .expect("Error saving selected playlist to file");
+    if let Err(e) = playlist_ctl.save_selected_to_file() {
+        log::error!("Error saving selected playlist to file: {e}");
+    };
 
     Some(Message::DisplayInfoMsg("Saved successfully".to_string()))
-}
-
-pub fn load_playlists(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    playlist_ctl
-        .load_playlists()
-        .expect("Error loading playlists from files.");
-
-    None
 }
 
 pub fn toggle_arrange(playlist_ctl: &mut PlaylistController) -> Option<Message> {
@@ -299,16 +300,16 @@ pub fn ask_to_save(
         if let Some(confirm) = confirmation.take() {
             match confirm {
                 Response::Yes => {
-                    playlist_ctl
-                        .save_selected_to_file()
-                        .expect("Error saving current playlist to file.");
+                    if let Err(e) = playlist_ctl.save_selected_to_file() {
+                        log::error!("Error saving playlist: {e}");
+                    }
 
                     return then_call;
                 }
                 Response::No => {
-                    current_playlist
-                        .reload_from_file()
-                        .expect("Error restoring file to the state before modification.");
+                    if let Err(e) = current_playlist.reload_from_file() {
+                        log::error!("Error reloading playlist: {e}");
+                    }
                     return then_call;
                 }
             }
@@ -371,7 +372,7 @@ pub fn append_metadata(
     if let Some(playlist) = playlist_ctl.playlist_coll.get_playlist(index) {
         for track in playlist.mini_tracks.iter_mut() {
             if track.borrow().metadata.is_none() {
-                log::debug!("Appending metadata...");
+                log::debug!("Appending metadata for {}.", track.borrow().path.display());
                 track.borrow_mut().metadata = Some(mini_metadata);
                 return None;
             }

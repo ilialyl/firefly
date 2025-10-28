@@ -1,14 +1,11 @@
-use std::{fs::create_dir_all, path::PathBuf, time::SystemTime};
+use std::{path::PathBuf, time::SystemTime};
 
 use color_eyre::eyre::Result;
 
 use crate::global::logic::data::get_data_dir;
 
 pub fn setup_logger() -> Result<()> {
-    let data_dir = get_data_dir();
-    if !data_dir.exists() {
-        create_dir_all(&data_dir).expect("Failed to create data path.");
-    }
+    let data_dir = get_data_dir()?;
     let log_path = data_dir.join("firefly.log");
 
     fern::Dispatch::new()
@@ -21,12 +18,13 @@ pub fn setup_logger() -> Result<()> {
                 message
             ))
         })
-        .level(log::LevelFilter::Debug)
+        .level(log::LevelFilter::Info)
+        .level_for("lofty", log::LevelFilter::Error)
         .chain(fern::log_file(log_path)?)
         .apply()?;
     Ok(())
 }
 
-pub fn get_log_path() -> PathBuf {
-    get_data_dir().join("firefly.log")
+pub fn get_log_path() -> Result<PathBuf> {
+    Ok(get_data_dir()?.join("firefly.log"))
 }

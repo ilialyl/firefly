@@ -19,7 +19,6 @@ pub fn update_playlist(model: &mut Model, msg: PlaylistMessage) -> Option<Messag
         PlaylistMessage::Rename => rename_playlist(&mut model.playlist_ctl),
         PlaylistMessage::SaveSelected => save_selected_playlist(&mut model.playlist_ctl),
         PlaylistMessage::ToggleArrangeTracks => toggle_arrange(&mut model.playlist_ctl),
-        PlaylistMessage::LoadPlaylists => load_playlists(&mut model.playlist_ctl),
         PlaylistMessage::AskToSave(then_call) => ask_to_save(
             &mut model.user_confirmation.response,
             *then_call,

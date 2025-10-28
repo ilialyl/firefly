@@ -42,7 +42,7 @@ impl Playlist {
 
         let json_data = serde_json::to_string(&self.get_pathbuf_vec())?;
         if let Some(name) = &self.name {
-            let path = Self::get_path_from_name(name);
+            let path = Self::get_path_from_name(name)?;
 
             let mut file = File::create(&path)?;
             file.write_all(json_data.as_bytes())?;
@@ -55,40 +55,40 @@ impl Playlist {
         }
     }
 
-    pub fn trash_save_file(&self) {
+    pub fn trash_save_file(&self) -> Result<()> {
         if let Some(name) = self.get_name() {
-            let path = Self::get_path_from_name(name);
-            let trash_dir = get_playlists_path().join("deleted");
+            let path = Self::get_path_from_name(name)?;
+            let trash_dir = get_playlists_path()?.join("deleted");
             let trash_path = trash_dir.join(Self::get_filename(name));
 
             if path.exists() {
                 if !trash_dir.exists() {
-                    fs::create_dir_all(&trash_dir)
-                        .expect("Failed to create playlist trash directory.");
+                    fs::create_dir_all(&trash_dir)?
                 }
 
                 if trash_path.exists() {
-                    fs::remove_file(&trash_path).expect("Error removing existing trashed file");
+                    fs::remove_file(&trash_path)?
                 }
 
                 match fs::rename(&path, &trash_path) {
                     Ok(_) => (),
                     Err(_) => {
-                        fs::copy(&path, &trash_path).expect("Error copying file to trash");
-                        fs::remove_file(&path).expect("Error removing file");
+                        fs::copy(&path, &trash_path)?;
+                        fs::remove_file(&path)?;
                     }
                 }
             }
         }
+        Ok(())
     }
 
     pub fn get_filename(playlist_name: &str) -> String {
         format!("{}.json", playlist_name)
     }
 
-    pub fn get_path_from_name(playlist_name: &str) -> PathBuf {
+    pub fn get_path_from_name(playlist_name: &str) -> Result<PathBuf> {
         let playlists_path = get_playlists_path();
-        playlists_path.join(Self::get_filename(playlist_name))
+        Ok(playlists_path?.join(Self::get_filename(playlist_name)))
     }
 
     pub fn select_next_track(&mut self, is_arrange: bool) {
@@ -193,9 +193,9 @@ impl Playlist {
         self.name.as_deref()
     }
 
-    pub fn rename(&mut self, name: &str) {
+    pub fn rename(&mut self, name: &str) -> Result<()> {
         if let Some(current_name) = self.get_name() {
-            let path = Self::get_path_from_name(current_name);
+            let path = Self::get_path_from_name(current_name)?;
             if path.exists() {
                 std::fs::remove_file(&path).unwrap();
             }
@@ -203,7 +203,9 @@ impl Playlist {
 
         self.name = Some(name.to_string());
 
-        self.save_to_file().expect("Error saving after rename.");
+        self.save_to_file()?;
+
+        Ok(())
     }
 
     pub fn add_track_path(&mut self, track: &Path) {

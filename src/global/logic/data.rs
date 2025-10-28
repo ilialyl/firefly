@@ -1,6 +1,6 @@
 use std::{
     fs::{self},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use color_eyre::eyre::Result;
@@ -11,23 +11,34 @@ use platform_dirs::AppDirs;
 pub const TEMP_FILE_PREFIX: &str = "firefly";
 pub const APP_NAME: &str = "firefly_music";
 
-pub fn get_data_dir() -> PathBuf {
+pub fn get_data_dir() -> Result<PathBuf> {
     if let Some(app_dirs) = AppDirs::new(Some(APP_NAME), false) {
-        app_dirs.data_dir
+        let data_dir = app_dirs.data_dir;
+        if !data_dir.exists() {
+            fs::create_dir_all(&data_dir)?;
+        }
+
+        Ok(data_dir)
     } else {
-        PathBuf::new()
+        Ok(PathBuf::from("."))
     }
 }
 
-pub fn get_cache_dir() -> PathBuf {
+pub fn get_cache_dir() -> Result<PathBuf> {
     if let Some(app_dirs) = AppDirs::new(Some(APP_NAME), false) {
-        app_dirs.cache_dir
+        let cache_dir = app_dirs.cache_dir;
+        if !cache_dir.exists() {
+            fs::create_dir_all(&cache_dir)?;
+        }
+
+        Ok(cache_dir)
     } else {
-        PathBuf::new()
+        Ok(PathBuf::from("."))
     }
 }
 
-pub fn clear_cache(dir: &Path) -> Result<()> {
+pub fn clear_cache() -> Result<()> {
+    let dir = get_cache_dir()?;
     if let Some(dir_str) = dir.as_os_str().to_str() {
         let temp_pattern = glob(format!("{}/{}*", dir_str, TEMP_FILE_PREFIX).as_str());
         for path in temp_pattern? {

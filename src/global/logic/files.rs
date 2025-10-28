@@ -116,14 +116,14 @@ pub fn ffmpeg_available() -> bool {
     }
 }
 
-pub fn get_playlists_path() -> PathBuf {
-    let playlists_path = get_data_dir().join("playlists");
+pub fn get_playlists_path() -> Result<PathBuf> {
+    let playlists_path = get_data_dir()?.join("playlists");
     if !playlists_path.exists() {
         log::info!("Attempting to create directory {:?}", playlists_path);
-        create_dir_all(&playlists_path).expect("Failed to create playlist data directory.");
+        create_dir_all(&playlists_path)?;
     }
 
-    playlists_path
+    Ok(playlists_path)
 }
 
 pub fn audio_paths_from_dir(dir: &Path) -> Vec<PathBuf> {

@@ -35,18 +35,13 @@ async fn main() -> Result<()> {
     color_eyre::install()?;
     setup_logger()?;
 
-    let cache_dir = get_cache_dir();
-    if !cache_dir.exists() {
-        fs::create_dir(&cache_dir)?;
-    }
-
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
     let senders = Senders {
         msg: msg_tx,
         info: info_tx,
     };
-    let mut model = Model::new(senders);
+    let mut model = Model::new(senders)?;
 
     let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
 
@@ -64,16 +59,15 @@ async fn main() -> Result<()> {
 
     match cli_command.subcommand() {
         Some(("clean", _)) => {
-            clear_cache(&cache_dir)?;
-            println!("Success");
+            clear_cache()?;
             return Ok(());
         }
         Some(("log", _)) => {
-            println!("{}", get_log_path().display());
+            println!("{}", get_log_path()?.display());
             return Ok(());
         }
         Some(("playlist", _)) => {
-            println!("{}", get_playlists_path().display());
+            println!("{}", get_playlists_path()?.display());
             return Ok(());
         }
         Some(("with", args)) => {
@@ -144,7 +138,7 @@ async fn main() -> Result<()> {
     restore_terminal()?;
 
     // Tell user they can clean up if they need to
-    if fs::read_dir(&cache_dir)?.count() != 0 {
+    if fs::read_dir(get_cache_dir()?)?.count() != 0 {
         println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");
     }
 

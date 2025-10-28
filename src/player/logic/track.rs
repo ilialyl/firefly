@@ -56,7 +56,7 @@ impl Track {
         log::debug!("Creating a new track from path: {:?}", path);
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
-        let temp_path = Self::get_temp_file(path);
+        let temp_path = Self::get_temp_file(path)?;
         let mut tagged_file = Probe::open(path)?.read().ok();
         if tagged_file.is_none() && temp_path.exists() {
             tagged_file = Probe::open(&temp_path)?.read().ok();
@@ -121,19 +121,19 @@ impl Track {
         }
     }
 
-    pub fn get_temp_file(path: &Path) -> PathBuf {
+    pub fn get_temp_file(path: &Path) -> Result<PathBuf> {
         let file_name = path
             .file_stem()
-            .expect("Original path has no file name")
+            .unwrap_or_default()
             .to_str()
-            .expect("File name is not valid UTF-8");
+            .unwrap_or_default();
 
-        PathBuf::from(format!(
+        Ok(PathBuf::from(format!(
             "{}/{}_{}.flac",
-            get_cache_dir().to_str().unwrap(),
+            get_cache_dir()?.to_str().unwrap(),
             TEMP_FILE_PREFIX,
             file_name
-        ))
+        )))
     }
 
     pub fn read_duration_from_tag(tagged_file: &TaggedFile) -> Duration {
@@ -217,7 +217,9 @@ impl Track {
                         log::error!("Error sending info message: {e}");
                     }
                     if temp_path.is_file() {
-                        fs::remove_file(&temp_path).expect("Error deleting half-converted file.");
+                        if let Err(e) = fs::remove_file(&temp_path) {
+                            log::error!("Error deleting half-converted file: {e}");
+                        }
                         log::info!("Deleted {:?}", temp_path);
                     }
                     log::info!("Conversion killed.");

@@ -4,7 +4,6 @@ use crate::{
 };
 
 pub enum PlaylistMessage {
-    LoadPlaylists,
     MoveCursor(CursorMovementDirection),
     Create,
     Rename,
