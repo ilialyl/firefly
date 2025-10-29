@@ -1205,7 +1205,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52051878f80a721bb68ebfbc930e07b65ba72f2da88968ea5c06fd6ca3d3a127"
 
 [[package]]
-name = "firefly"
+name = "firefly_music"
 version = "0.10.0"
 dependencies = [
  "async-std",
@@ -1234,7 +1234,7 @@ dependencies = [
  "strum 0.27.2",
  "strum_macros 0.27.2",
  "tokio",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

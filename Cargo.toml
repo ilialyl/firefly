@@ -1,7 +1,16 @@
 [package]
-name = "firefly"
+name = "firefly_music"
 version = "0.10.0"
 edition = "2024"
+authors = ["lyns0"]
+description = "A Terminal Music Player"
+readme = "README.md"
+repository = "https://github.com/ilialyl/firefly"
+license = "MIT"
+keywords = ["music"]
+categories = ["command-line-utilities"]
+exclude = ["example_img/", ".github/", ".*", "test_assets/"]
+
 
 
 [dependencies]

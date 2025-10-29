@@ -8,8 +8,8 @@ use std::{
 use async_std::task;
 use color_eyre::eyre::Result;
 
-use firefly::global::logic::{mpris::run_server, senders::Senders};
-use firefly::{
+use firefly_music::global::logic::{mpris::run_server, senders::Senders};
+use firefly_music::{
     global::{
         logic::{
             cli::cli,
