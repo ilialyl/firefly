@@ -18,7 +18,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
             center_vertical(area, (metadata.len() + 1) as u16),
         );
     } else {
-        let text = "Press Q to open file dialog to queue files.\n\nAlternatively, run \"firefly add <path>\" or \"cargo run -r -- add <path>\".\n\nPress H to view all keybinds.";
+        let text = "Press Q to open file dialog to queue files.\n\nAlternatively, run \"firefly with <path>\" or \"cargo run -r -- with <path>\".\n\nPress H to view all keybinds.";
         frame.render_widget(
             Paragraph::new(text),
             center_vertical(area, text.lines().count() as u16),
