@@ -61,7 +61,7 @@ git clone https://github.com/ilialyl/firefly && cd firefly
 cargo run --release
 ```
 
-### CLI Examples
+## CLI Examples
 ```
 # Launch with a single file or directory
 firefly with example.mp3
