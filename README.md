@@ -22,7 +22,7 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 
 It can still play other formats by converting formats not supported by Rodio to FLAC using [rust_ffmpeg](https://github.com/RustNSparks/ffmpeg-suite-rs).
 
-Temporary FLAC files stay on disk for reuse, which can be cleared by running `cargo run --release -- clean` or `firefly clean`
+Temporary FLAC files stay on disk for reuse, which can be cleared by running `firefly clean`
 
 ### Roadmap - open to suggestions
 - [x] Playlists (v0.6.0)
@@ -30,10 +30,15 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `ca
 - [x] UI overhaul (v0.7.0)
 
 ## Installation
-### x86-64 Windows
-- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
-### x86-64 Linux
-- [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest)
+### Windows and Linux
+Download a [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) or use [cargo binstall](https://crates.io/crates/cargo-binstall) to automatically install it for you:
+```
+# Install cargo-binstall if not already
+cargo install cargo-binstall
+
+# Install firefly
+cargo binstall firefly_music
+```
 ### Optional Dependencies
 - [FFmpeg](https://ffmpeg.org/) - if you want to play unsupported file types.
 
@@ -56,42 +61,18 @@ git clone https://github.com/ilialyl/firefly && cd firefly
 cargo run --release
 ```
 
-## Usage
-### Windows
-- Launch the executable.
-### Linux
-```
-chmod +x firefly # allow the file to be executed
-./firefly
-```
-
-### CLI Examples (command line knowledge assumed)
-#### Windows
+### CLI Examples
 ```
 # Launch with a single file or directory
-.\firefly.exe with example.mp3
-.\firefly.exe with music/
+firefly with example.mp3
+firefly with music/
 
 # Launch with multiple files or directories
-.\firefly.exe with example.mp3 music/
+firefly with example.mp3 music/
 
-# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.)
+# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.) (Only on Bash and Z shell)
 shopt -s globstar # enable globstar
-.\firefly.exe with ./**/*.opus
-```
-
-#### Linux
-```
-# Launch with a single file or directory
-./firefly with example.mp3
-./firefly with music/
-
-# Launch with multiple files or directories
-./firefly with example.mp3 music/
-
-# Launch with multiple files using [wildcards](https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/.)
-shopt -s globstar # enable globstar
-./firefly with ./**/*.opus
+firefly with ./**/*.opus
 ```
 
 ## Known Issue
