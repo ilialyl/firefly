@@ -4,11 +4,13 @@ use async_std::{channel::Sender, task};
 use mpris_server::{
     LocalPlayerInterface, LocalPlaylistsInterface, LocalRootInterface, LocalServer,
     LocalTrackListInterface, LoopStatus, Metadata, PlaybackRate, PlaybackStatus, Playlist,
-    PlaylistId, PlaylistOrdering, Property, Signal, Time, TrackId, Uri, Volume,
+    PlaylistId, PlaylistOrdering, Time, TrackId, Uri, Volume,
     zbus::{Result, fdo},
 };
 
-use crate::{global::message::Message, player::message::PlayerMessage};
+use crate::{
+    global::message::Message, player::message::PlayerMessage, queue::message::QueueMessage,
+};
 
 pub struct MprisPlayer {
     pub tx: Sender<Message>,
@@ -138,6 +140,10 @@ impl LocalPlayerInterface for MprisPlayer {
     }
 
     async fn set_loop_status(&self, _loop_status: LoopStatus) -> Result<()> {
+        self.tx
+            .send(Message::Player(PlayerMessage::ToggleLoop))
+            .await
+            .unwrap();
         Ok(())
     }
 
@@ -154,6 +160,10 @@ impl LocalPlayerInterface for MprisPlayer {
     }
 
     async fn set_shuffle(&self, _shuffle: bool) -> Result<()> {
+        self.tx
+            .send(Message::Queue(QueueMessage::Shuffle))
+            .await
+            .unwrap();
         Ok(())
     }
 
@@ -182,11 +192,11 @@ impl LocalPlayerInterface for MprisPlayer {
     }
 
     async fn can_go_next(&self) -> fdo::Result<bool> {
-        Ok(false)
+        Ok(true)
     }
 
     async fn can_go_previous(&self) -> fdo::Result<bool> {
-        Ok(false)
+        Ok(true)
     }
 
     async fn can_play(&self) -> fdo::Result<bool> {
@@ -274,19 +284,6 @@ impl LocalPlaylistsInterface for MprisPlayer {
 pub async fn run_server(tx: Sender<Message>) -> Result<()> {
     let server = LocalServer::new_with_all("Firefly", MprisPlayer { tx }).await?;
     task::spawn_local(server.run());
-
-    server
-        .properties_changed([
-            Property::CanSeek(false),
-            Property::Metadata(Metadata::new()),
-        ])
-        .await?;
-
-    server
-        .emit(Signal::Seeked {
-            position: Time::from_micros(124),
-        })
-        .await?;
 
     future::pending::<()>().await;
 
