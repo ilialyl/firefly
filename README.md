@@ -28,6 +28,7 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `fi
 - [x] Playlists (v0.6.0)
 - [x] Album art display for supported terminals (v0.7.0)
 - [x] UI overhaul (v0.7.0)
+- [ ] Proper MPRIS control
 
 ## Installation
 ### Windows and Linux
