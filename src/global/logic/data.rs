@@ -37,7 +37,7 @@ pub fn get_cache_dir() -> Result<PathBuf> {
     }
 }
 
-pub fn clear_cache() -> Result<()> {
+pub fn clear_all_cache() -> Result<()> {
     let dir = get_cache_dir()?;
     if let Some(dir_str) = dir.as_os_str().to_str() {
         let temp_pattern = glob(format!("{}/{}*", dir_str, TEMP_FILE_PREFIX).as_str());
@@ -52,6 +52,28 @@ pub fn clear_cache() -> Result<()> {
                 }
                 Err(e) => {
                     println!("Error: {:?}", e);
+                    info!("Error: {:?}", e);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub fn clear_image_cache() -> Result<()> {
+    let dir = get_cache_dir()?;
+    if let Some(dir_str) = dir.as_os_str().to_str() {
+        let temp_pattern = glob(format!("{}/*.jpg", dir_str).as_str());
+        for path in temp_pattern? {
+            match path {
+                Ok(path) => {
+                    if path.is_file() {
+                        fs::remove_file(&path)?;
+                        info!("Deleted {:?}", path);
+                    }
+                }
+                Err(e) => {
                     info!("Error: {:?}", e);
                 }
             }

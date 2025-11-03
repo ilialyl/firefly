@@ -197,7 +197,12 @@ impl Track {
             metadata.set_album(primary_tag.album());
             metadata.set_artist(primary_tag.artist().map(|s| vec![s.to_string()]));
             if let Some(pic) = picture {
-                let image_path = std::env::current_dir()?.join("image.jpg");
+                let image_path = get_cache_dir()?.join(format!(
+                    "{}.jpg",
+                    path.file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                ));
                 let mut file = File::create(&image_path)?;
                 file.write_all(pic.data())?;
 
