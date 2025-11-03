@@ -136,7 +136,9 @@ pub fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
     if let Some(current_track) = model.player.current.as_mut() {
         current_track.conversion_status = FormatConversion::Done;
-        current_track.reload_after_conversion();
+        if let Err(e) = current_track.reload_after_conversion() {
+            log::error!("Error reloading metadata after conversion: {e}")
+        };
         if let Err(e) = model.player.reload() {
             log::error!("Error reloading track after conversion: {e}");
         };

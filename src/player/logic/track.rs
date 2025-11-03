@@ -1,5 +1,6 @@
 use std::{
     fs::{self, File},
+    io::Write,
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
@@ -92,10 +93,10 @@ impl Track {
         };
 
         let metadata = if temp_path.exists() {
-            Self::metadata_from_path(&temp_path)
+            Self::metadata_from_path(&temp_path, &picture)
         } else {
-            Self::metadata_from_path(path)
-        };
+            Self::metadata_from_path(path, &picture)
+        }?;
 
         let track = Track {
             id,
@@ -115,7 +116,7 @@ impl Track {
         Ok(track)
     }
 
-    pub fn reload_after_conversion(&mut self) {
+    pub fn reload_after_conversion(&mut self) -> Result<()> {
         if let Ok(probe) = Probe::open(&self.temp_path)
             && let Ok(tagged_file) = probe.read()
         {
@@ -130,11 +131,13 @@ impl Track {
             self.tagged_file = Some(tagged_file);
 
             self.metadata = if self.temp_path.exists() {
-                Self::metadata_from_path(&self.temp_path)
+                Self::metadata_from_path(&self.temp_path, &self.picture)?
             } else {
-                Self::metadata_from_path(&self.real_path)
+                Self::metadata_from_path(&self.real_path, &self.picture)?
             };
         }
+
+        Ok(())
     }
 
     pub fn get_temp_file(path: &Path) -> Result<PathBuf> {
@@ -182,7 +185,7 @@ impl Track {
         self.pos = sink.get_pos();
     }
 
-    pub fn metadata_from_path(path: &Path) -> Metadata {
+    pub fn metadata_from_path(path: &Path, picture: &Option<Picture>) -> Result<Metadata> {
         if let Ok(probe) = Probe::open(path)
             && let Ok(tagged_file) = probe
                 .options(ParseOptions::new().read_cover_art(false))
@@ -191,12 +194,19 @@ impl Track {
         {
             let mut metadata = Metadata::new();
             metadata.set_title(primary_tag.title());
+            metadata.set_album(primary_tag.album());
             metadata.set_artist(primary_tag.artist().map(|s| vec![s.to_string()]));
+            if let Some(pic) = picture {
+                let image_path = std::env::current_dir()?.join("image.jpg");
+                let mut file = File::create(&image_path)?;
+                file.write_all(pic.data())?;
 
-            return metadata;
+                metadata.set_art_url(Some(format!("file://{}", image_path.display())));
+            }
+            return Ok(metadata);
         }
 
-        Metadata::new()
+        Ok(Metadata::new())
     }
 
     pub fn convert_format(
