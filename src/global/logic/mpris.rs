@@ -1,12 +1,10 @@
-use std::future;
-
-use async_std::{channel::Sender, task};
 use mpris_server::{
-    LocalPlayerInterface, LocalPlaylistsInterface, LocalRootInterface, LocalServer,
-    LocalTrackListInterface, LoopStatus, Metadata, PlaybackRate, PlaybackStatus, Playlist,
-    PlaylistId, PlaylistOrdering, Time, TrackId, Uri, Volume,
+    LoopStatus, Metadata, PlaybackRate, PlaybackStatus, PlayerInterface, Playlist, PlaylistId,
+    PlaylistOrdering, PlaylistsInterface, RootInterface, Time, TrackId, TrackListInterface, Uri,
+    Volume,
     zbus::{Result, fdo},
 };
+use tokio::sync::mpsc::Sender;
 
 use crate::{
     global::message::Message, player::message::PlayerMessage, queue::message::QueueMessage,
@@ -16,7 +14,7 @@ pub struct MprisPlayer {
     pub tx: Sender<Message>,
 }
 
-impl LocalRootInterface for MprisPlayer {
+impl RootInterface for MprisPlayer {
     async fn raise(&self) -> fdo::Result<()> {
         Ok(())
     }
@@ -66,7 +64,7 @@ impl LocalRootInterface for MprisPlayer {
     }
 }
 
-impl LocalPlayerInterface for MprisPlayer {
+impl PlayerInterface for MprisPlayer {
     async fn next(&self) -> fdo::Result<()> {
         self.tx
             .send(Message::Player(PlayerMessage::Skip))
@@ -216,7 +214,7 @@ impl LocalPlayerInterface for MprisPlayer {
     }
 }
 
-impl LocalTrackListInterface for MprisPlayer {
+impl TrackListInterface for MprisPlayer {
     async fn get_tracks_metadata(&self, track_ids: Vec<TrackId>) -> fdo::Result<Vec<Metadata>> {
         println!("GetTracksMetadata({track_ids:?})");
         Ok(vec![])
@@ -253,7 +251,7 @@ impl LocalTrackListInterface for MprisPlayer {
     }
 }
 
-impl LocalPlaylistsInterface for MprisPlayer {
+impl PlaylistsInterface for MprisPlayer {
     async fn activate_playlist(&self, _playlist_id: PlaylistId) -> fdo::Result<()> {
         Ok(())
     }
@@ -279,13 +277,4 @@ impl LocalPlaylistsInterface for MprisPlayer {
     async fn active_playlist(&self) -> fdo::Result<Option<Playlist>> {
         Ok(None)
     }
-}
-
-pub async fn run_server(tx: Sender<Message>) -> Result<()> {
-    let server = LocalServer::new_with_all("Firefly", MprisPlayer { tx }).await?;
-    task::spawn_local(server.run());
-
-    future::pending::<()>().await;
-
-    Ok(())
 }
