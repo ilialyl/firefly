@@ -137,16 +137,12 @@ impl Player {
 
         self.new_track(&path)?;
 
-        if let Some(current) = self.current.as_ref() {
-            self.mpris_server
-                .properties_changed([Property::Metadata(current.metadata.clone())])
-                .await?;
-        }
+        Self::update_metadata(self).await?;
 
         Ok(())
     }
 
-    pub fn load_prev_track(&mut self, queue: &mut TrackQueue) -> Result<()> {
+    pub async fn load_prev_track(&mut self, queue: &mut TrackQueue) -> Result<()> {
         let prev = match self.previous.pop() {
             Some(path) => path,
             None => return Err(eyre!("There are no previous tracks.")),
@@ -160,6 +156,18 @@ impl Player {
         }
 
         self.new_track(&prev)?;
+
+        Self::update_metadata(self).await?;
+
+        Ok(())
+    }
+
+    pub async fn update_metadata(&mut self) -> Result<()> {
+        if let Some(current) = self.current.as_ref() {
+            self.mpris_server
+                .properties_changed([Property::Metadata(current.metadata.clone())])
+                .await?;
+        }
 
         Ok(())
     }

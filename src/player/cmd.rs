@@ -165,7 +165,7 @@ pub fn increase_volume(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn previous_track(model: &mut Model) -> Option<Message> {
+pub async fn previous_track(model: &mut Model) -> Option<Message> {
     if model.player.previous.is_empty() {
         return None;
     }
@@ -179,7 +179,7 @@ pub fn previous_track(model: &mut Model) -> Option<Message> {
 
     log::info!("Loading previous track...");
     model.player.sink.clear();
-    if let Err(e) = model.player.load_prev_track(&mut model.queue) {
+    if let Err(e) = model.player.load_prev_track(&mut model.queue).await {
         log::error!("Error loading previous track: {e}");
     };
 
