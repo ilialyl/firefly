@@ -1,11 +1,15 @@
 use std::sync::Arc;
 
 use color_eyre::eyre::Result;
+use mpris_server::Server;
 use ratatui_image::picker::Picker;
 
 use crate::{
     global::{
-        logic::{confirmation::Confirmation, senders::Senders, session_state::Session},
+        logic::{
+            confirmation::Confirmation, mpris::MprisPlayer, senders::Senders,
+            session_state::Session,
+        },
         view_logic::focused_area::FocusedArea,
     },
     player::logic::Player,
@@ -27,16 +31,25 @@ pub struct Model {
     pub show_help: bool,
     pub picker: Arc<Picker>,
     pub senders: Senders,
+    pub mpris_server: Server<MprisPlayer>,
 }
 
 impl Model {
-    pub fn new(senders: Senders) -> Result<Model> {
+    pub async fn new(senders: Senders) -> Result<Model> {
         log::info!("Initializing App State...");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         let session = Session::default();
         Ok(Self {
             player: Player::new()?,
             queue: TrackQueue::new(senders.msg.clone(), session.unlocked_tick_rate.clone()),
+            mpris_server: Server::new_with_all(
+                "Firefly",
+                MprisPlayer {
+                    tx: senders.async_msg.clone(),
+                },
+            )
+            .await?,
+
             playlist_ctl: PlaylistController::new(
                 senders.msg.clone(),
                 session.unlocked_tick_rate.clone(),

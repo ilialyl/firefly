@@ -5,10 +5,9 @@ use std::{
     sync::mpsc::{self},
 };
 
-use async_std::task;
 use color_eyre::eyre::Result;
 
-use firefly_music::global::logic::{mpris::run_server, senders::Senders};
+use firefly_music::global::logic::senders::Senders;
 use firefly_music::{
     global::{
         logic::{
@@ -29,7 +28,7 @@ use firefly_music::{
     queue::message::QueueMessage,
 };
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
@@ -37,22 +36,13 @@ async fn main() -> Result<()> {
 
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
+    let (msg_async_tx, mut msg_async_rx) = tokio::sync::mpsc::channel(10);
     let senders = Senders {
         msg: msg_tx,
         info: info_tx,
+        async_msg: msg_async_tx,
     };
-    let mut model = Model::new(senders)?;
-
-    let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
-
-    #[cfg(not(target_os = "windows"))]
-    std::thread::spawn(move || {
-        task::block_on(async {
-            if let Err(e) = run_server(msg_async_tx).await {
-                eprintln!("Server error: {e}");
-            }
-        });
-    });
+    let mut model = Model::new(senders).await?;
 
     // Clap stuff
     let cli_command = cli().get_matches();
