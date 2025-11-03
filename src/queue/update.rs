@@ -4,7 +4,7 @@ use crate::{
     queue::{cmd::*, message::QueueMessage},
 };
 
-pub fn update_queue(model: &mut Model, msg: QueueMessage) -> Option<Message> {
+pub async fn update_queue(model: &mut Model, msg: QueueMessage) -> Option<Message> {
     match msg {
         QueueMessage::Clear => clear(&mut model.queue),
         QueueMessage::MoveDown => move_queue_down(&mut model.queue),
@@ -22,6 +22,6 @@ pub fn update_queue(model: &mut Model, msg: QueueMessage) -> Option<Message> {
         QueueMessage::CreatedMiniTrack(mini_track) => {
             queue_mini_track(mini_track, &mut model.queue)
         }
-        QueueMessage::SkipToSelected => skip_to_selected(model),
+        QueueMessage::SkipToSelected => skip_to_selected(model).await,
     }
 }

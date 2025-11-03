@@ -3,7 +3,7 @@ pub mod playback_status;
 pub mod track;
 
 use color_eyre::eyre::{Result, eyre};
-use mpris_server::Server;
+use mpris_server::{Property, Server};
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
@@ -125,7 +125,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn load_next_track(&mut self, queue: &mut TrackQueue) -> Result<()> {
+    pub async fn load_next_track(&mut self, queue: &mut TrackQueue) -> Result<()> {
         let path = match queue.dequeue() {
             Some(path) => path,
             None => return Err(eyre!("Queue is empty.")),
@@ -136,6 +136,12 @@ impl Player {
         }
 
         self.new_track(&path)?;
+
+        if let Some(current) = self.current.as_ref() {
+            self.mpris_server
+                .properties_changed([Property::Metadata(current.metadata.clone())])
+                .await?;
+        }
 
         Ok(())
     }

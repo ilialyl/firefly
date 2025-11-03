@@ -12,11 +12,13 @@ use std::{
 
 use color_eyre::eyre::Result;
 use lofty::{
+    config::ParseOptions,
     file::{AudioFile, TaggedFile, TaggedFileExt},
     picture::Picture,
     probe::Probe,
     tag::Accessor,
 };
+use mpris_server::Metadata;
 use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
@@ -49,6 +51,7 @@ pub struct Track {
     pub has_title: bool,
     pub started_decoding: bool,
     pub conversion_status: FormatConversion,
+    pub metadata: Metadata,
 }
 
 impl Track {
@@ -88,6 +91,12 @@ impl Track {
             }
         };
 
+        let metadata = if temp_path.exists() {
+            Self::metadata_from_path(&temp_path)
+        } else {
+            Self::metadata_from_path(path)
+        };
+
         let track = Track {
             id,
             real_path: path.to_path_buf(),
@@ -100,6 +109,7 @@ impl Track {
             has_title,
             started_decoding: false,
             conversion_status,
+            metadata,
         };
 
         Ok(track)
@@ -118,6 +128,12 @@ impl Track {
             }
 
             self.tagged_file = Some(tagged_file);
+
+            self.metadata = if self.temp_path.exists() {
+                Self::metadata_from_path(&self.temp_path)
+            } else {
+                Self::metadata_from_path(&self.real_path)
+            };
         }
     }
 
@@ -164,6 +180,23 @@ impl Track {
 
     pub fn sync_pos_from_sink(&mut self, sink: &Sink) {
         self.pos = sink.get_pos();
+    }
+
+    pub fn metadata_from_path(path: &Path) -> Metadata {
+        if let Ok(probe) = Probe::open(path)
+            && let Ok(tagged_file) = probe
+                .options(ParseOptions::new().read_cover_art(false))
+                .read()
+            && let Some(primary_tag) = tagged_file.primary_tag()
+        {
+            let mut metadata = Metadata::new();
+            metadata.set_title(primary_tag.title());
+            metadata.set_artist(primary_tag.artist().map(|s| vec![s.to_string()]));
+
+            return metadata;
+        }
+
+        Metadata::new()
     }
 
     pub fn convert_format(

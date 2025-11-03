@@ -27,7 +27,7 @@ use crate::{
     user_input::logic::InputMode,
 };
 
-pub fn tick(model: &mut Model) -> Option<Message> {
+pub async fn tick(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
@@ -96,13 +96,13 @@ pub fn tick(model: &mut Model) -> Option<Message> {
             && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
             debug!("Load the next track after current track ends.");
-            player::cmd::skip(model);
+            player::cmd::skip(model).await;
         }
 
         // Load first track if no current track and there is something in the queue.
     } else if model.player.current.is_none() && !model.queue.is_empty() {
         debug!("Load first track (player.current is None)");
-        player::cmd::skip(model);
+        player::cmd::skip(model).await;
     }
 
     None

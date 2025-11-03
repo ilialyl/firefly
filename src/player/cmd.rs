@@ -109,7 +109,7 @@ pub fn seek(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn skip(model: &mut Model) -> Option<Message> {
+pub async fn skip(model: &mut Model) -> Option<Message> {
     if model.queue.is_empty() {
         return None;
     }
@@ -123,7 +123,7 @@ pub fn skip(model: &mut Model) -> Option<Message> {
 
     log::info!("Loading track {:?}.", model.queue.front_path());
     model.player.sink.clear();
-    if let Err(e) = model.player.load_next_track(&mut model.queue) {
+    if let Err(e) = model.player.load_next_track(&mut model.queue).await {
         log::error!("Error loading next track: {e}");
     };
 

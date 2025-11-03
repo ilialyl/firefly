@@ -87,7 +87,7 @@ async fn main() -> Result<()> {
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated
-        if let Some(msg) = update_global(&mut model, Message::Tick) {
+        if let Some(msg) = update_global(&mut model, Message::Tick).await {
             msg_queue.push_back(msg);
         }
 
@@ -111,14 +111,14 @@ async fn main() -> Result<()> {
 
         // Display info sent from other threads
         if let Ok(info) = info_rx.try_recv() {
-            update_global(&mut model, Message::UpdateInfoMsg(info));
+            update_global(&mut model, Message::UpdateInfoMsg(info)).await;
         }
 
         // Consume messages
         while !msg_queue.is_empty()
             && let Some(msg) = msg_queue.pop_front()
         {
-            if let Some(msg) = update_global(&mut model, msg) {
+            if let Some(msg) = update_global(&mut model, msg).await {
                 msg_queue.push_back(msg);
             }
         }
