@@ -3,6 +3,7 @@ pub mod playback_status;
 pub mod track;
 
 use color_eyre::eyre::{Result, eyre};
+use mpris_server::Server;
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
@@ -11,8 +12,10 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
+use tokio::sync::mpsc::Sender;
 
 use crate::{
+    global::{logic::mpris::MprisPlayer, message::Message},
     player::logic::{playback_status::PlaybackStatus, track::Track},
     queue::logic::TrackQueue,
 };
@@ -26,11 +29,12 @@ pub struct Player {
     pub stream: OutputStream,
     pub sink: Sink,
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
+    pub mpris_server: Server<MprisPlayer>,
 }
 
 impl Player {
     // Sender is needed because it deals with threads.
-    pub fn new() -> Result<Player> {
+    pub async fn new(async_msg_tx: Sender<Message>) -> Result<Player> {
         let (stream, sink) = Self::get_sink()?;
         Ok(Player {
             current: None,
@@ -40,6 +44,7 @@ impl Player {
             stream,
             sink,
             ffmpeg_handle: None,
+            mpris_server: Server::new_with_all("Firefly", MprisPlayer { tx: async_msg_tx }).await?,
         })
     }
 
