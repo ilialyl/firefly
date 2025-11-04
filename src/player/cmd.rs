@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use mpris_server::Property;
 use rust_ffmpeg::FFmpegProcess;
 use tokio::sync::Mutex;
 
@@ -24,7 +25,7 @@ pub fn load_now(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn toggle_play(model: &mut Model) -> Option<Message> {
+pub async fn toggle_play(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
@@ -33,6 +34,17 @@ pub fn toggle_play(model: &mut Model) -> Option<Message> {
         model.player.sink.pause();
     } else {
         model.player.sink.play();
+    }
+
+    if let Some(mpris_server) = model.player.mpris_server.as_mut() {
+        if let Err(e) = mpris_server
+            .properties_changed(vec![Property::PlaybackStatus(
+                model.player.status.as_mpris_playback_status(),
+            )])
+            .await
+        {
+            log::error!("Error updating mpris server property: {e}");
+        };
     }
 
     None

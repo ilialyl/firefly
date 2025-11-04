@@ -7,7 +7,7 @@ use crate::{
 pub async fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Message> {
     match msg {
         PlayerMessage::LoadNow => load_now(model),
-        PlayerMessage::TogglePlay => toggle_play(model),
+        PlayerMessage::TogglePlay => toggle_play(model).await,
         PlayerMessage::Rewind => rewind(model),
         PlayerMessage::Seek => seek(model),
         PlayerMessage::Skip => skip(model).await,
