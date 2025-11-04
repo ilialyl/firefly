@@ -18,7 +18,7 @@ use lofty::{
     probe::Probe,
     tag::Accessor,
 };
-use mpris_server::Metadata;
+use mpris_server::{Metadata, Time};
 use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
@@ -81,7 +81,7 @@ impl Track {
         let mut picture = None;
 
         if let Some(tagged) = tagged_file.as_mut() {
-            duration = Some(Self::read_duration_from_tag(tagged));
+            duration = Some(tagged.properties().duration());
             if let Some(tag) = tagged.primary_tag() {
                 has_title = tag.title().is_some();
 
@@ -119,7 +119,7 @@ impl Track {
         if let Ok(probe) = Probe::open(&self.temp_path)
             && let Ok(tagged_file) = probe.read()
         {
-            self.duration = Some(Self::read_duration_from_tag(&tagged_file));
+            self.duration = Some(tagged_file.properties().duration());
             if let Some(tag) = tagged_file.primary_tag() {
                 self.has_title = tag.title().is_some();
                 if let Some(pic) = tag.pictures().first() {
@@ -151,11 +151,6 @@ impl Track {
             get_cache_dir()?.to_str().unwrap(),
             file_name
         )))
-    }
-
-    pub fn read_duration_from_tag(tagged_file: &TaggedFile) -> Duration {
-        log::debug!("Reading duration from tag...");
-        tagged_file.properties().duration()
     }
 
     pub fn get_source(&self) -> Result<Box<dyn Source<Item = f32> + Send>> {
@@ -194,6 +189,11 @@ impl Track {
             metadata.set_title(primary_tag.title());
             metadata.set_album(primary_tag.album());
             metadata.set_artist(primary_tag.artist().map(|s| vec![s.to_string()]));
+            metadata.set_length(Some(Time::from_millis(
+                tagged_file.properties().duration().as_secs() as i64,
+            )));
+            metadata.set_track_number(primary_tag.track().map(|n| n as i32));
+            metadata.set_genre(primary_tag.genre().map(|s| vec![s.to_string()]));
             if let Some(pic) = picture {
                 let image_path = get_cache_dir()?.join(format!(
                     "{}.jpg",
