@@ -1,6 +1,6 @@
 use std::{
     io::Cursor,
-    sync::{Arc, Mutex, mpsc::Sender},
+    sync::{Arc, mpsc::Sender},
     thread,
     time::Duration,
 };
@@ -10,6 +10,7 @@ use lofty::picture::Picture;
 use log::debug;
 use ratatui_image::{picker::Picker, protocol::StatefulProtocol};
 use rust_ffmpeg::FFmpegProcess;
+use tokio::sync::Mutex;
 
 use crate::{
     global::{
@@ -69,7 +70,7 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
             Track::convert_format(
                 &current_track.real_path,
                 &current_track.temp_path,
-                &model.senders.msg,
+                &model.senders.async_msg,
                 &model.senders.info,
             )
             .await;

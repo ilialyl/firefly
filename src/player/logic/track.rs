@@ -1,9 +1,9 @@
 use std::{
-    fs::{self, File},
+    fs::File,
     io::Write,
     path::{Path, PathBuf},
     sync::{
-        Arc, Mutex,
+        Arc,
         atomic::{AtomicU32, Ordering},
         mpsc::Sender,
     },
@@ -22,6 +22,7 @@ use mpris_server::Metadata;
 use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
+use tokio::sync::Mutex;
 
 use crate::{
     global::{
@@ -215,12 +216,12 @@ impl Track {
     pub async fn convert_format(
         real_path: &Path,
         temp_path: &Path,
-        msg_tx: &Sender<Message>,
+        async_msg_tx: &tokio::sync::mpsc::Sender<Message>,
         info_tx: &Sender<String>,
     ) {
         let real_path = real_path.to_path_buf();
         let temp_path = temp_path.to_path_buf();
-        let msg_tx = msg_tx.clone();
+        let msg_tx = async_msg_tx.clone();
         let info_tx = info_tx.clone();
 
         log::info!("Converting file...");
@@ -235,25 +236,23 @@ impl Track {
                     .await
                     .unwrap(),
             ));
-            if let Err(e) = msg_tx.send(Message::ConversionStarted(ffmpeg_handle.clone())) {
+            if let Err(e) = msg_tx
+                .send(Message::ConversionStarted(ffmpeg_handle.clone()))
+                .await
+            {
                 log::error!("Error sending FFmpegProcess back to main thread: {e}");
             }
 
             loop {
-                if ffmpeg_handle.lock().unwrap().try_wait().unwrap().is_some() {
-                    if ffmpeg_handle
-                        .lock()
-                        .unwrap()
-                        .try_wait()
-                        .unwrap()
-                        .unwrap()
-                        .success()
-                    {
+                if let Ok(exit) = ffmpeg_handle.lock().await.try_wait()
+                    && let Some(exit_status) = exit
+                {
+                    if exit_status.success() {
                         if let Err(e) = info_tx.send("".to_string()) {
                             log::error!("Error sending info message: {e}");
                         }
                         log::info!("Conversion Complete.");
-                        if let Err(e) = msg_tx.send(Message::ConversionEnded) {
+                        if let Err(e) = msg_tx.send(Message::ConversionEnded).await {
                             log::error!("Error sending ConversionEnded Message: {e}");
                         }
                         break;
@@ -262,7 +261,7 @@ impl Track {
                         log::error!("Error sending info message: {e}");
                     }
                     if temp_path.is_file() {
-                        if let Err(e) = fs::remove_file(&temp_path) {
+                        if let Err(e) = tokio::fs::remove_file(&temp_path).await {
                             log::error!("Error deleting half-converted file: {e}");
                         }
                         log::info!("Deleted {:?}", temp_path);

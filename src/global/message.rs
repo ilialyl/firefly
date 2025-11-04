@@ -1,7 +1,8 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use ratatui_image::protocol::StatefulProtocol;
 use rust_ffmpeg::FFmpegProcess;
+use tokio::sync::Mutex;
 
 use crate::{
     global::logic::confirmation::Response, player::message::PlayerMessage,

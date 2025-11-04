@@ -9,10 +9,10 @@ use rust_ffmpeg::FFmpegProcess;
 use std::{
     ops::{Add, Sub},
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::Arc,
     time::Duration,
 };
-use tokio::sync::mpsc::Sender;
+use tokio::sync::{Mutex, mpsc::Sender};
 
 use crate::{
     global::{logic::mpris::MprisPlayer, message::Message},

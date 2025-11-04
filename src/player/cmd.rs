@@ -114,7 +114,7 @@ pub async fn skip(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(handle) = model.player.ffmpeg_handle.take() {
-        if let Err(e) = handle.lock().unwrap().kill().await {
+        if let Err(e) = handle.lock().await.kill().await {
             log::error!("Error killing FFmpeg process: {e}");
         };
     }
@@ -171,7 +171,7 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(handle) = model.player.ffmpeg_handle.take() {
-        if let Err(e) = handle.lock().unwrap().kill().await {
+        if let Err(e) = handle.lock().await.kill().await {
             log::error!("Error killing FFmpeg process: {e}");
         };
     }
