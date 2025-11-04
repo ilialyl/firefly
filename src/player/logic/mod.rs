@@ -70,16 +70,12 @@ impl Player {
         Ok((stream_handle, sink))
     }
 
-    pub fn increase_volume(&mut self, amount: f32) {
-        let current_vol = self.sink.volume();
-        let increased_vol = f32::min(current_vol + amount, MAX_VOLUME);
-        self.sink.set_volume(increased_vol);
+    pub fn volume(&self) -> f32 {
+        self.sink.volume()
     }
 
-    pub fn decrease_volume(&mut self, amount: f32) {
-        let current_vol = self.sink.volume();
-        let decreased_vol = f32::max(current_vol - amount, MIN_VOLUME);
-        self.sink.set_volume(decreased_vol);
+    pub fn set_volume(&mut self, amount: f32) {
+        self.sink.set_volume(amount.clamp(MIN_VOLUME, MAX_VOLUME));
     }
 
     pub fn seek(&mut self, track_dur: &Duration, seek_dur: Duration) -> Result<()> {
@@ -142,7 +138,7 @@ impl Player {
 
         self.new_track(&path)?;
 
-        self.update_metadata().await?;
+        self.update_mpris_metadata().await?;
 
         Ok(())
     }
@@ -162,13 +158,13 @@ impl Player {
 
         self.new_track(&prev)?;
 
-        self.update_metadata().await?;
+        self.update_mpris_metadata().await?;
 
         Ok(())
     }
 
-    pub async fn update_metadata(&mut self) -> Result<()> {
-        if let Some(mpris_server) = self.mpris_server.as_mut()
+    pub async fn update_mpris_metadata(&mut self) -> Result<()> {
+        if let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(current) = self.current.as_ref()
         {
             mpris_server

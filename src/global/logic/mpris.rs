@@ -170,7 +170,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn volume(&self) -> fdo::Result<Volume> {
-        Ok(Volume::default())
+        Ok(1.0 as Volume)
     }
 
     async fn set_volume(&self, _volume: Volume) -> Result<()> {

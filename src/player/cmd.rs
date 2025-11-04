@@ -1,3 +1,4 @@
+use std::ops::{Add, Sub};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -36,7 +37,7 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
         model.player.sink.play();
     }
 
-    if let Some(mpris_server) = model.player.mpris_server.as_mut() {
+    if let Some(mpris_server) = model.player.mpris_server.as_ref() {
         if let Err(e) = mpris_server
             .properties_changed(vec![Property::PlaybackStatus(
                 model.player.status.as_mpris_playback_status(),
@@ -161,22 +162,20 @@ pub fn toggle_loop(player: &mut Player) -> Option<Message> {
     None
 }
 
-pub fn decrease_volume(decrement: f32, model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
-        return None;
-    }
-
-    model.player.decrease_volume(decrement);
+pub async fn decrease_volume(amount: f32, model: &mut Model) -> Option<Message> {
+    model.player.set_volume(model.player.volume().sub(amount));
 
     None
 }
 
-pub fn increase_volume(increment: f32, model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
-        return None;
-    }
+pub async fn increase_volume(amount: f32, model: &mut Model) -> Option<Message> {
+    model.player.set_volume(model.player.volume().add(amount));
 
-    model.player.increase_volume(increment);
+    None
+}
+
+pub async fn set_volume(amount: f32, model: &mut Model) -> Option<Message> {
+    model.player.set_volume(amount);
 
     None
 }
@@ -225,7 +224,7 @@ pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
         if let Err(e) = current_track.reload_after_conversion() {
             log::error!("Error reloading metadata after conversion: {e}")
         } else {
-            if let Err(e) = model.player.update_metadata().await {
+            if let Err(e) = model.player.update_mpris_metadata().await {
                 log::error!("Error updating metadata for mpris server: {e}");
             }
         };

@@ -10,6 +10,7 @@ pub enum PlayerMessage {
     PreviousTrack,
     IncreaseVolume(f32),
     DecreaseVolume(f32),
+    SetVolume(f32),
     Seek,
     Rewind,
     ToggleLoop,
