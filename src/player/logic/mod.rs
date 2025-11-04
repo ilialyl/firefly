@@ -20,6 +20,11 @@ use crate::{
     queue::logic::TrackQueue,
 };
 
+const MIN_VOLUME: f32 = 0.0;
+const MAX_VOLUME: f32 = 2.0;
+pub const DEFAULT_VOLUME_CHANGE_AMOUNT: f32 = 0.05;
+
+/// Deals with stuff like current track, previous tracks, looping bool, sink, and MPRIS server.
 pub struct Player {
     pub current: Option<Track>,
     // Previous is Vec instead of VecDeque because it's a stack, not queue.
@@ -65,13 +70,13 @@ impl Player {
 
     pub fn increase_volume(&mut self, amount: f32) {
         let current_vol = self.sink.volume();
-        let increased_vol = f32::min(current_vol + amount, 2.0);
+        let increased_vol = f32::min(current_vol + amount, MAX_VOLUME);
         self.sink.set_volume(increased_vol);
     }
 
     pub fn decrease_volume(&mut self, amount: f32) {
         let current_vol = self.sink.volume();
-        let decreased_vol = f32::max(current_vol - amount, 0.0);
+        let decreased_vol = f32::max(current_vol - amount, MIN_VOLUME);
         self.sink.set_volume(decreased_vol);
     }
 
@@ -93,16 +98,14 @@ impl Player {
     }
 
     pub fn rewind(&mut self, rewind_dur: Duration) -> Result<()> {
-        if let Some(current) = self.current.as_mut() {
+        if self.current.is_some() {
             let current_pos = self.sink.get_pos();
             let rewinded_pos = match current_pos.checked_sub(rewind_dur) {
                 Some(dur) => dur,
-                None => return Self::reload(self),
+                None => return self.reload(),
             };
 
-            self.sink.clear();
-            let source = current.get_source()?;
-            self.sink.append(source);
+            self.reload()?;
 
             if let Err(e) = self.sink.try_seek(rewinded_pos) {
                 return Err(eyre!("{e}"));
@@ -137,7 +140,7 @@ impl Player {
 
         self.new_track(&path)?;
 
-        Self::update_metadata(self).await?;
+        self.update_metadata().await?;
 
         Ok(())
     }
@@ -157,7 +160,7 @@ impl Player {
 
         self.new_track(&prev)?;
 
-        Self::update_metadata(self).await?;
+        self.update_metadata().await?;
 
         Ok(())
     }

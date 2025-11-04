@@ -7,7 +7,7 @@ use crate::{
         view_logic::{focused_area::FocusedArea, terminal::CursorMovementDirection},
     },
     model::Model,
-    player::message::PlayerMessage,
+    player::{logic::DEFAULT_VOLUME_CHANGE_AMOUNT, message::PlayerMessage},
     playlist::message::PlaylistMessage,
     queue::message::QueueMessage,
     user_input::{logic::InputMode, message::UserInputMessage},
@@ -54,8 +54,12 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Esc => Some(Message::Quit),
                 KeyCode::Char('n') => Some(Message::Player(PlayerMessage::LoadNow)),
                 KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
-                KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume)),
-                KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume)),
+                KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume(
+                    DEFAULT_VOLUME_CHANGE_AMOUNT,
+                ))),
+                KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume(
+                    DEFAULT_VOLUME_CHANGE_AMOUNT,
+                ))),
                 KeyCode::Right => Some(Message::Player(PlayerMessage::Seek)),
                 KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind)),
                 KeyCode::Char('l') => Some(Message::Player(PlayerMessage::ToggleLoop)),

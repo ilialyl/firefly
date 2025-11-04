@@ -1,5 +1,4 @@
 use std::time::Duration;
-use tokio::runtime::Runtime;
 
 use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::message::PlayerMessage;
@@ -115,8 +114,9 @@ pub async fn skip(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(handle) = model.player.ffmpeg_handle.take() {
-        let runtime = Runtime::new().unwrap();
-        runtime.block_on(handle.lock().unwrap().kill()).unwrap();
+        if let Err(e) = handle.lock().unwrap().kill().await {
+            log::error!("Error killing FFmpeg process: {e}");
+        };
     }
 
     model.session.state = RunningState::Running;
@@ -145,22 +145,22 @@ pub fn toggle_loop(player: &mut Player) -> Option<Message> {
     None
 }
 
-pub fn decrease_volume(model: &mut Model) -> Option<Message> {
+pub fn decrease_volume(decrement: f32, model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
-    model.player.decrease_volume(0.05);
+    model.player.decrease_volume(decrement);
 
     None
 }
 
-pub fn increase_volume(model: &mut Model) -> Option<Message> {
+pub fn increase_volume(increment: f32, model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
-    model.player.increase_volume(0.05);
+    model.player.increase_volume(increment);
 
     None
 }
@@ -171,8 +171,9 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(handle) = model.player.ffmpeg_handle.take() {
-        let runtime = Runtime::new().unwrap();
-        runtime.block_on(handle.lock().unwrap().kill()).unwrap();
+        if let Err(e) = handle.lock().unwrap().kill().await {
+            log::error!("Error killing FFmpeg process: {e}");
+        };
     }
 
     model.session.state = RunningState::Running;
