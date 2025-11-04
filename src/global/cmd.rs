@@ -71,7 +71,8 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
                 &current_track.temp_path,
                 &model.senders.msg,
                 &model.senders.info,
-            );
+            )
+            .await;
         }
 
         // Reload track when track ends if looped

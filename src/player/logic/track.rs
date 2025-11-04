@@ -7,7 +7,6 @@ use std::{
         atomic::{AtomicU32, Ordering},
         mpsc::Sender,
     },
-    thread,
     time::Duration,
 };
 
@@ -23,7 +22,6 @@ use mpris_server::Metadata;
 use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Sink, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
-use tokio::runtime::Runtime;
 
 use crate::{
     global::{
@@ -214,7 +212,7 @@ impl Track {
         Ok(Metadata::new())
     }
 
-    pub fn convert_format(
+    pub async fn convert_format(
         real_path: &Path,
         temp_path: &Path,
         msg_tx: &Sender<Message>,
@@ -229,15 +227,14 @@ impl Track {
         if let Err(e) = info_tx.send("Converting format and normalizing volume...".to_string()) {
             log::error!("Error sending info message: {e}");
         }
-        thread::spawn(move || {
-            let runtime = Runtime::new().unwrap();
-            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(async {
+        tokio::spawn(async move {
+            let ffmpeg_handle = Arc::new(Mutex::new(
                 FFmpegBuilder::convert(real_path.to_path_buf(), temp_path.to_path_buf())
                     .audio_filter(AudioFilter::loudnorm())
                     .spawn()
                     .await
-                    .unwrap()
-            })));
+                    .unwrap(),
+            ));
             if let Err(e) = msg_tx.send(Message::ConversionStarted(ffmpeg_handle.clone())) {
                 log::error!("Error sending FFmpegProcess back to main thread: {e}");
             }
@@ -273,6 +270,7 @@ impl Track {
                     log::info!("Conversion killed.");
                     break;
                 }
+                tokio::time::sleep(Duration::from_millis(500)).await;
             }
         });
     }
