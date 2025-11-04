@@ -206,12 +206,16 @@ pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) 
     None
 }
 
-pub fn conversion_ended(model: &mut Model) -> Option<Message> {
+pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
     model.session.state = RunningState::Running;
     if let Some(current_track) = model.player.current.as_mut() {
         current_track.conversion_status = FormatConversion::Done;
         if let Err(e) = current_track.reload_after_conversion() {
             log::error!("Error reloading metadata after conversion: {e}")
+        } else {
+            if let Err(e) = model.player.update_metadata().await {
+                log::error!("Error updating metadata for mpris server: {e}");
+            }
         };
         if let Err(e) = model.player.reload() {
             log::error!("Error reloading track after conversion: {e}");
