@@ -34,7 +34,7 @@ pub struct Player {
     pub stream: OutputStream,
     pub sink: Sink,
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
-    pub mpris_server: Server<MprisPlayer>,
+    pub mpris_server: Option<Server<MprisPlayer>>,
 }
 
 impl Player {
@@ -49,7 +49,9 @@ impl Player {
             stream,
             sink,
             ffmpeg_handle: None,
-            mpris_server: Server::new_with_all("Firefly", MprisPlayer { tx: async_msg_tx }).await?,
+            mpris_server: Server::new_with_all("Firefly", MprisPlayer { tx: async_msg_tx })
+                .await
+                .ok(),
         })
     }
 
@@ -166,8 +168,10 @@ impl Player {
     }
 
     pub async fn update_metadata(&mut self) -> Result<()> {
-        if let Some(current) = self.current.as_ref() {
-            self.mpris_server
+        if let Some(mpris_server) = self.mpris_server.as_mut()
+            && let Some(current) = self.current.as_ref()
+        {
+            mpris_server
                 .properties_changed([Property::Metadata(current.metadata.clone())])
                 .await?;
         }
