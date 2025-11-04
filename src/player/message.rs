@@ -1,3 +1,8 @@
+use std::sync::Arc;
+
+use rust_ffmpeg::FFmpegProcess;
+use tokio::sync::Mutex;
+
 pub enum PlayerMessage {
     LoadNow,
     TogglePlay,
@@ -8,4 +13,6 @@ pub enum PlayerMessage {
     Seek,
     Rewind,
     ToggleLoop,
+    ConversionStarted(Arc<Mutex<FFmpegProcess>>),
+    ConversionEnded,
 }

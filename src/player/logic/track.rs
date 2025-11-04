@@ -33,7 +33,7 @@ use crate::{
         },
         message::Message,
     },
-    player::logic::format_conversion::FormatConversion,
+    player::{logic::format_conversion::FormatConversion, message::PlayerMessage},
 };
 
 // So that the program can identify whose cover art is whose after decoding in background.
@@ -237,7 +237,9 @@ impl Track {
                     .unwrap(),
             ));
             if let Err(e) = msg_tx
-                .send(Message::ConversionStarted(ffmpeg_handle.clone()))
+                .send(Message::Player(PlayerMessage::ConversionStarted(
+                    ffmpeg_handle.clone(),
+                )))
                 .await
             {
                 log::error!("Error sending FFmpegProcess back to main thread: {e}");
@@ -252,7 +254,10 @@ impl Track {
                             log::error!("Error sending info message: {e}");
                         }
                         log::info!("Conversion Complete.");
-                        if let Err(e) = msg_tx.send(Message::ConversionEnded).await {
+                        if let Err(e) = msg_tx
+                            .send(Message::Player(PlayerMessage::ConversionEnded))
+                            .await
+                        {
                             log::error!("Error sending ConversionEnded Message: {e}");
                         }
                         break;

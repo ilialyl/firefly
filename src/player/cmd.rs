@@ -1,4 +1,8 @@
+use std::sync::Arc;
 use std::time::Duration;
+
+use rust_ffmpeg::FFmpegProcess;
+use tokio::sync::Mutex;
 
 use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::message::PlayerMessage;
@@ -189,6 +193,28 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
     {
         if let Err(e) = model.player.reload() {
             log::error!("Error reloading track after prepending previous track in queue: {e}");
+        };
+    }
+
+    None
+}
+
+pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
+    model.player.ffmpeg_handle = Some(handle);
+    model.session.state = RunningState::RunningFFmpeg;
+
+    None
+}
+
+pub fn conversion_ended(model: &mut Model) -> Option<Message> {
+    model.session.state = RunningState::Running;
+    if let Some(current_track) = model.player.current.as_mut() {
+        current_track.conversion_status = FormatConversion::Done;
+        if let Err(e) = current_track.reload_after_conversion() {
+            log::error!("Error reloading metadata after conversion: {e}")
+        };
+        if let Err(e) = model.player.reload() {
+            log::error!("Error reloading track after conversion: {e}");
         };
     }
 

@@ -16,8 +16,6 @@ pub async fn update_global(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Queue(queue_msg) => update_queue(model, queue_msg).await,
         Message::Playlist(playlist_msg) => update_playlist(model, playlist_msg),
         Message::UserInput(userinput_msg) => update_userinput(model, userinput_msg),
-        Message::ConversionStarted(handle) => conversion_started(handle, model),
-        Message::ConversionEnded => conversion_ended(model),
         Message::UpdateInfoMsg(info) => update_info_msg(info, model),
         Message::CycleTabs => cycle_tabs(model),
         Message::AcknowledgeInfo => acknowledge_info(model),
