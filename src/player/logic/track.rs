@@ -27,7 +27,7 @@ use tokio::sync::Mutex;
 use crate::{
     global::{
         logic::{
-            data::get_cache_dir,
+            data::{get_address_file_path, get_cache_dir, get_cover_art_cache_path},
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
         },
@@ -195,16 +195,13 @@ impl Track {
             metadata.set_track_number(primary_tag.track().map(|n| n as i32));
             metadata.set_genre(primary_tag.genre().map(|s| vec![s.to_string()]));
             if let Some(pic) = picture {
-                let image_path = get_cache_dir()?.join(format!(
-                    "{}.jpg",
-                    path.file_stem()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("unknown")
-                ));
+                let image_path = get_cover_art_cache_path()?;
                 let mut file = File::create(&image_path)?;
                 file.write_all(pic.data())?;
 
-                metadata.set_art_url(Some(format!("file://{}", image_path.display())));
+                let addr = std::fs::read_to_string(get_address_file_path()?)?;
+
+                metadata.set_art_url(Some(format!("http://{}/img", addr)));
             }
 
             if metadata.title().is_none() {
