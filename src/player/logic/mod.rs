@@ -108,8 +108,6 @@ impl Player {
             if let Err(e) = self.sink.try_seek(rewinded_pos) {
                 return Err(eyre!("{e}"));
             };
-
-            self.sink.play();
         }
 
         Ok(())
@@ -120,7 +118,8 @@ impl Player {
             self.sink.clear();
             let source = current.get_source()?;
             self.sink.append(source);
-            self.sink.play();
+
+            self.update_sink_playback_status()?;
         }
 
         Ok(())
@@ -170,6 +169,16 @@ impl Player {
             mpris_server
                 .properties_changed([Property::Metadata(current.metadata.clone())])
                 .await?;
+        }
+
+        Ok(())
+    }
+
+    pub fn update_sink_playback_status(&mut self) -> Result<()> {
+        match self.status {
+            PlaybackStatus::Idle => self.sink.play(),
+            PlaybackStatus::Paused => self.sink.pause(),
+            PlaybackStatus::Playing => self.sink.play(),
         }
 
         Ok(())
