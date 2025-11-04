@@ -27,7 +27,7 @@ use tokio::sync::Mutex;
 use crate::{
     global::{
         logic::{
-            data::{TEMP_FILE_PREFIX, get_cache_dir},
+            data::get_cache_dir,
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
         },
@@ -147,9 +147,8 @@ impl Track {
             .unwrap_or_default();
 
         Ok(PathBuf::from(format!(
-            "{}/{}_{}.flac",
+            "{}/{}.flac",
             get_cache_dir()?.to_str().unwrap(),
-            TEMP_FILE_PREFIX,
             file_name
         )))
     }
@@ -207,6 +206,15 @@ impl Track {
 
                 metadata.set_art_url(Some(format!("file://{}", image_path.display())));
             }
+
+            if metadata.title().is_none() {
+                metadata.set_title(Some(
+                    path.file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("No Title"),
+                ));
+            }
+
             return Ok(metadata);
         }
 

@@ -8,7 +8,6 @@ use glob::glob;
 use log::info;
 use platform_dirs::AppDirs;
 
-pub const TEMP_FILE_PREFIX: &str = "firefly";
 pub const APP_NAME: &str = "firefly_music";
 
 pub fn get_data_dir() -> Result<PathBuf> {
@@ -40,7 +39,7 @@ pub fn get_cache_dir() -> Result<PathBuf> {
 pub fn clear_all_cache() -> Result<()> {
     let dir = get_cache_dir()?;
     if let Some(dir_str) = dir.as_os_str().to_str() {
-        let temp_pattern = glob(format!("{}/{}*", dir_str, TEMP_FILE_PREFIX).as_str());
+        let temp_pattern = glob(format!("{}/*", dir_str).as_str());
         for path in temp_pattern? {
             match path {
                 Ok(path) => {
