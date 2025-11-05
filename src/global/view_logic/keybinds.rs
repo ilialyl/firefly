@@ -60,8 +60,8 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume(
                     DEFAULT_VOLUME_CHANGE_AMOUNT,
                 ))),
-                KeyCode::Right => Some(Message::Player(PlayerMessage::Seek)),
-                KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind)),
+                KeyCode::Right => Some(Message::Player(PlayerMessage::Seek(None))),
+                KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind(None))),
                 KeyCode::Char('l') => Some(Message::Player(PlayerMessage::ToggleLoop)),
                 KeyCode::Char('q') => Some(Message::Queue(QueueMessage::QueueFilesWithFileDialog)),
                 KeyCode::Char('Q') => Some(Message::Queue(QueueMessage::QueueDirsWithFileDialog)),

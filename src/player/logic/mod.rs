@@ -3,7 +3,7 @@ pub mod playback_status;
 pub mod track;
 
 use color_eyre::eyre::{Result, eyre};
-use mpris_server::{Property, Server};
+use mpris_server::{Property, Server, Signal, Time};
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
@@ -98,6 +98,10 @@ impl Player {
             };
         }
 
+        if let Some(current) = self.current.as_mut() {
+            current.pos = self.sink.get_pos();
+        }
+
         Ok(())
     }
 
@@ -114,6 +118,10 @@ impl Player {
             if let Err(e) = self.sink.try_seek(rewinded_pos) {
                 return Err(eyre!("{e}"));
             };
+        }
+
+        if let Some(current) = self.current.as_mut() {
+            current.pos = self.sink.get_pos();
         }
 
         Ok(())
@@ -185,6 +193,20 @@ impl Player {
             PlaybackStatus::Idle => self.sink.play(),
             PlaybackStatus::Paused => self.sink.pause(),
             PlaybackStatus::Playing => self.sink.play(),
+        }
+
+        Ok(())
+    }
+
+    pub async fn update_mpris_pos(&mut self) -> Result<()> {
+        if let Some(current_track) = self.current.as_ref()
+            && let Some(mpris_server) = self.mpris_server.as_ref()
+        {
+            mpris_server
+                .emit(Signal::Seeked {
+                    position: Time::from_millis(current_track.pos.as_millis() as i64),
+                })
+                .await?;
         }
 
         Ok(())

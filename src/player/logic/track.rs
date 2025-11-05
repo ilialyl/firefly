@@ -196,7 +196,7 @@ impl Track {
             metadata.set_title(primary_tag.title());
             metadata.set_album(primary_tag.album());
             metadata.set_artist(primary_tag.artist().map(|s| vec![s.to_string()]));
-            metadata.set_length(Some(Time::from_millis(
+            metadata.set_length(Some(Time::from_secs(
                 tagged_file.properties().duration().as_secs() as i64,
             )));
             metadata.set_track_number(primary_tag.track().map(|n| n as i32));

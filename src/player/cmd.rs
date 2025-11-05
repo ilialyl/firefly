@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 use std::sync::Arc;
 use std::time::Duration;
 
-use mpris_server::Property;
+use mpris_server::{Property, Time};
 use rust_ffmpeg::FFmpegProcess;
 use tokio::sync::Mutex;
 
@@ -51,7 +51,48 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn rewind(model: &mut Model) -> Option<Message> {
+pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
+    if let Some(current_track) = model.player.current.as_ref() {
+        if let Some(dur) = current_track.duration {
+            let pos_time = Time::from_millis(current_track.pos.as_millis() as i64);
+            if offset.is_positive() {
+                let new_pos = current_track
+                    .pos
+                    .saturating_add(Duration::from_millis(offset.as_millis() as u64));
+                if dur > new_pos {
+                    seek(Some(new_pos), model).await;
+                }
+            } else if offset.is_negative() {
+                let new_pos = Duration::from_millis(
+                    pos_time.as_millis().saturating_sub(offset.as_millis()) as u64,
+                );
+                if dur > new_pos {
+                    seek(Some(new_pos), model).await;
+                }
+            }
+        }
+    }
+
+    None
+}
+
+pub async fn set_position(position: Duration, model: &mut Model) -> Option<Message> {
+    if let Some(current_track) = model.player.current.as_ref() {
+        if let Some(dur) = current_track.duration {
+            if position < dur {
+                if position > current_track.pos {
+                    seek(Some(position.saturating_add(current_track.pos)), model).await;
+                } else if position < current_track.pos {
+                    rewind(Some(current_track.pos.saturating_sub(position)), model).await;
+                }
+            }
+        }
+    }
+
+    None
+}
+
+pub async fn rewind(duration: Option<Duration>, model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
@@ -63,7 +104,9 @@ pub fn rewind(model: &mut Model) -> Option<Message> {
     };
 
     // Rewind duration depends on the duration of the track.
-    let rewind_dur = if track_dur > Duration::from_secs(36000) {
+    let rewind_dur = if let Some(dur) = duration {
+        dur
+    } else if track_dur > Duration::from_secs(36000) {
         Duration::from_secs(1800)
     } else if track_dur > Duration::from_secs(18000) {
         Duration::from_secs(600)
@@ -81,7 +124,12 @@ pub fn rewind(model: &mut Model) -> Option<Message> {
 
     if let Err(e) = model.player.rewind(rewind_dur) {
         log::error!("Error rewinding: {e}");
+    } else {
     };
+
+    if let Err(e) = model.player.update_mpris_pos().await {
+        log::error!("Error updating mpris track position: {e}");
+    }
 
     if matches!(status, PlaybackStatus::Paused) {
         model.player.sink.pause();
@@ -90,7 +138,7 @@ pub fn rewind(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn seek(model: &mut Model) -> Option<Message> {
+pub async fn seek(duration: Option<Duration>, model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
@@ -102,7 +150,9 @@ pub fn seek(model: &mut Model) -> Option<Message> {
     };
 
     // Seek duration depends on the duration of the track.
-    let seek_dur = if track_dur > Duration::from_secs(3600) {
+    let seek_dur = if let Some(duration) = duration {
+        duration
+    } else if track_dur > Duration::from_secs(3600) {
         Duration::from_secs(20)
     } else if track_dur > Duration::from_secs(1800) {
         Duration::from_secs(15)
@@ -119,7 +169,11 @@ pub fn seek(model: &mut Model) -> Option<Message> {
             .seek(&duration.unwrap_or(Duration::from_secs(0)), seek_dur)
         {
             log::error!("Error seeking: {e}");
-        };
+        }
+    }
+
+    if let Err(e) = model.player.update_mpris_pos().await {
+        log::error!("Error updating mpris track position: {e}");
     }
 
     None

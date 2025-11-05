@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use mpris_server::{
     LoopStatus, Metadata, PlaybackRate, PlaybackStatus, PlayerInterface, Playlist, PlaylistId,
     PlaylistOrdering, PlaylistsInterface, RootInterface, Time, TrackId, TrackListInterface, Uri,
@@ -113,15 +115,22 @@ impl PlayerInterface for MprisPlayer {
         Ok(())
     }
 
-    async fn seek(&self, _offset: Time) -> fdo::Result<()> {
+    async fn seek(&self, offset: Time) -> fdo::Result<()> {
         self.tx
-            .send(Message::Player(PlayerMessage::Seek))
+            .send(Message::Player(PlayerMessage::SeekOffset(offset)))
             .await
             .unwrap();
         Ok(())
     }
 
-    async fn set_position(&self, _track_id: TrackId, _position: Time) -> fdo::Result<()> {
+    async fn set_position(&self, _track_id: TrackId, position: Time) -> fdo::Result<()> {
+        log::error!("{:?}", position);
+        self.tx
+            .send(Message::Player(PlayerMessage::SetPosition(
+                Duration::from_millis(position.as_millis() as u64),
+            )))
+            .await
+            .unwrap();
         Ok(())
     }
 
@@ -146,7 +155,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn rate(&self) -> fdo::Result<PlaybackRate> {
-        Ok(PlaybackRate::default())
+        Ok(1.0)
     }
 
     async fn set_rate(&self, _rate: PlaybackRate) -> Result<()> {
@@ -206,7 +215,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn can_seek(&self) -> fdo::Result<bool> {
-        Ok(false)
+        Ok(true)
     }
 
     async fn can_control(&self) -> fdo::Result<bool> {
