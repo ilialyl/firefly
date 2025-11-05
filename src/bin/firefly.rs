@@ -8,7 +8,7 @@ use std::{
 use color_eyre::eyre::Result;
 
 use firefly_music::global::logic::{
-    data::clear_image_cache, senders::Senders, servers::run_cover_art_server,
+    data::clear_art_cache, senders::Senders, servers::run_cover_art_server,
 };
 use firefly_music::{
     global::{
@@ -132,7 +132,7 @@ async fn main() -> Result<()> {
     // Give terminal back to user
     restore_terminal()?;
 
-    clear_image_cache()?;
+    clear_art_cache()?;
     // Tell user they can clean up if they need to
     if fs::read_dir(get_cache_dir()?)?.count() != 0 {
         println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");

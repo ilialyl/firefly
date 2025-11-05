@@ -28,7 +28,7 @@ use tokio::sync::Mutex;
 use crate::{
     global::{
         logic::{
-            data::{COVER_ART_DIR, get_cache_dir, get_cover_art_cache_path},
+            data::{COVER_ART_DIR, get_art_cache_path, get_cache_dir},
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
         },
@@ -209,7 +209,7 @@ impl Track {
                         .unwrap_or("unknown")
                 );
 
-                let image_path = get_cover_art_cache_path()?.join(&file_name);
+                let image_path = get_art_cache_path()?.join(&file_name);
 
                 let mut file = File::create(&image_path)?;
                 file.write_all(pic.data())?;
