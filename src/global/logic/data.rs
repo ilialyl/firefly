@@ -9,7 +9,7 @@ use log::info;
 use platform_dirs::AppDirs;
 
 pub const APP_NAME: &str = "firefly_music";
-pub const COVER_ART_NAME: &str = "cover_art.jpg";
+pub const COVER_ART_DIR: &str = "cover-art/";
 pub const ADDRESS_FILE_NAME: &str = "address.txt";
 
 pub fn get_data_dir() -> Result<PathBuf> {
@@ -85,11 +85,10 @@ pub fn clear_image_cache() -> Result<()> {
 }
 
 pub fn get_cover_art_cache_path() -> Result<PathBuf> {
-    let dir = get_cache_dir()?.join(COVER_ART_NAME);
-    Ok(dir)
-}   
+    let dir = get_cache_dir()?.join(COVER_ART_DIR);
+    if !dir.exists() {
+        fs::create_dir_all(&dir)?;
+    }
 
-pub fn get_address_file_path() -> Result<PathBuf> {
-    let dir = get_cache_dir()?.join(ADDRESS_FILE_NAME);
     Ok(dir)
 }

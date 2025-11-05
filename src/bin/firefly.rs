@@ -7,7 +7,9 @@ use std::{
 
 use color_eyre::eyre::Result;
 
-use firefly_music::global::logic::{data::clear_image_cache, files::run_server, senders::Senders};
+use firefly_music::global::logic::{
+    data::clear_image_cache, senders::Senders, servers::run_cover_art_server,
+};
 use firefly_music::{
     global::{
         logic::{
@@ -33,7 +35,6 @@ async fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
     setup_logger()?;
-    run_server().await;
 
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
@@ -44,6 +45,9 @@ async fn main() -> Result<()> {
         async_msg: msg_async_tx,
     };
     let mut model = Model::new(senders).await?;
+    if let Some(listener) = model.session.cover_listener.take() {
+        run_cover_art_server(listener).await?;
+    }
 
     // Clap stuff
     let cli_command = cli().get_matches();

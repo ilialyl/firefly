@@ -33,9 +33,9 @@ impl Model {
     pub async fn new(senders: Senders) -> Result<Model> {
         log::info!("Initializing App State...");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
-        let session = Session::default();
+        let session = Session::new().await?;
         Ok(Self {
-            player: Player::new(senders.async_msg.clone()).await?,
+            player: Player::new(senders.async_msg.clone(), session.cover_server_addr).await?,
             queue: TrackQueue::new(senders.msg.clone(), session.unlocked_tick_rate.clone()),
             playlist_ctl: PlaylistController::new(
                 senders.msg.clone(),

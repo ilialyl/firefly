@@ -4,12 +4,10 @@ use std::{
     process::Command,
 };
 
-use axum::{Router, response::IntoResponse, routing::get};
 use color_eyre::eyre::{Result, eyre};
-use local_ip_address::local_ip;
 use rfd::FileDialog;
 
-use crate::global::logic::data::{get_address_file_path, get_cover_art_cache_path, get_data_dir};
+use crate::global::logic::data::get_data_dir;
 
 pub const RODIO_SUPPORTED_FORMATS: [&str; 5] = ["flac", "mp3", "ogg", "wav", "opus"];
 pub const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
@@ -145,38 +143,4 @@ pub fn audio_paths_from_dir(dir: &Path) -> Vec<PathBuf> {
     } else {
         Vec::<PathBuf>::new()
     }
-}
-
-pub async fn serve_cover_art() -> impl IntoResponse {
-    match tokio::fs::read(get_cover_art_cache_path().unwrap()).await {
-        Ok(data) => (
-            [
-                (axum::http::header::CONTENT_TYPE, "image/jpg"),
-                (
-                    axum::http::header::CACHE_CONTROL,
-                    "no-store, must-revalidate",
-                ),
-            ],
-            data,
-        )
-            .into_response(),
-        Err(_) => axum::http::StatusCode::NOT_FOUND.into_response(),
-    }
-}
-
-pub async fn run_server() {
-    tokio::spawn(async move {
-        let app = Router::new().route("/img", get(serve_cover_art));
-        let ip = local_ip().unwrap();
-        let listener = tokio::net::TcpListener::bind(format!("{}:0", ip))
-            .await
-            .unwrap();
-        log::info!("{:?}", listener.local_addr());
-        fs::write(
-            get_address_file_path().unwrap(),
-            listener.local_addr().unwrap().to_string(),
-        )
-        .unwrap();
-        axum::serve(listener, app).await.unwrap();
-    });
 }

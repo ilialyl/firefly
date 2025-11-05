@@ -7,6 +7,7 @@ use mpris_server::{Property, Server};
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
+    net::SocketAddr,
     ops::{Add, Sub},
     path::{Path, PathBuf},
     sync::Arc,
@@ -35,11 +36,15 @@ pub struct Player {
     pub sink: Sink,
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
     pub mpris_server: Option<Server<MprisPlayer>>,
+    pub cover_server_addr: Option<SocketAddr>,
 }
 
 impl Player {
     // Sender is needed because it deals with threads.
-    pub async fn new(async_msg_tx: Sender<Message>) -> Result<Player> {
+    pub async fn new(
+        async_msg_tx: Sender<Message>,
+        cover_server_addr: Option<SocketAddr>,
+    ) -> Result<Player> {
         let (stream, sink) = Self::get_sink()?;
         Ok(Player {
             current: None,
@@ -52,11 +57,12 @@ impl Player {
             mpris_server: Server::new_with_all("Firefly", MprisPlayer { tx: async_msg_tx })
                 .await
                 .ok(),
+            cover_server_addr,
         })
     }
 
     pub fn new_track(&mut self, path: &Path) -> Result<()> {
-        self.current = Some(Track::new(path)?);
+        self.current = Some(Track::new(path, self.cover_server_addr)?);
 
         Ok(())
     }

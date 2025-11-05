@@ -7,4 +7,5 @@ pub mod logger;
 pub mod mpris;
 pub mod opus;
 pub mod senders;
+pub mod servers;
 pub mod session_state;

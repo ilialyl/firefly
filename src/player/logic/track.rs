@@ -1,6 +1,7 @@
 use std::{
     fs::File,
     io::Write,
+    net::SocketAddr,
     path::{Path, PathBuf},
     sync::{
         Arc,
@@ -27,7 +28,7 @@ use tokio::sync::Mutex;
 use crate::{
     global::{
         logic::{
-            data::{get_address_file_path, get_cache_dir, get_cover_art_cache_path},
+            data::{COVER_ART_DIR, get_cache_dir, get_cover_art_cache_path},
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
         },
@@ -52,10 +53,11 @@ pub struct Track {
     pub started_decoding: bool,
     pub conversion_status: FormatConversion,
     pub metadata: Metadata,
+    cover_server_addr: Option<SocketAddr>,
 }
 
 impl Track {
-    pub fn new(path: &Path) -> Result<Track> {
+    pub fn new(path: &Path, cover_server_addr: Option<SocketAddr>) -> Result<Track> {
         log::debug!("Creating a new track from path: {:?}", path);
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
@@ -92,9 +94,9 @@ impl Track {
         };
 
         let metadata = if temp_path.exists() {
-            Self::metadata_from_path(&temp_path, &picture)
+            Self::metadata_from_path(&temp_path, &picture, cover_server_addr)
         } else {
-            Self::metadata_from_path(path, &picture)
+            Self::metadata_from_path(path, &picture, cover_server_addr)
         }?;
 
         let track = Track {
@@ -110,6 +112,7 @@ impl Track {
             started_decoding: false,
             conversion_status,
             metadata,
+            cover_server_addr,
         };
 
         Ok(track)
@@ -130,9 +133,9 @@ impl Track {
             self.tagged_file = Some(tagged_file);
 
             self.metadata = if self.temp_path.exists() {
-                Self::metadata_from_path(&self.temp_path, &self.picture)?
+                Self::metadata_from_path(&self.temp_path, &self.picture, self.cover_server_addr)?
             } else {
-                Self::metadata_from_path(&self.real_path, &self.picture)?
+                Self::metadata_from_path(&self.real_path, &self.picture, self.cover_server_addr)?
             };
         }
 
@@ -178,7 +181,11 @@ impl Track {
         self.pos = sink.get_pos();
     }
 
-    pub fn metadata_from_path(path: &Path, picture: &Option<Picture>) -> Result<Metadata> {
+    pub fn metadata_from_path(
+        path: &Path,
+        picture: &Option<Picture>,
+        cover_server_addr: Option<SocketAddr>,
+    ) -> Result<Metadata> {
         if let Ok(probe) = Probe::open(path)
             && let Ok(tagged_file) = probe
                 .options(ParseOptions::new().read_cover_art(false))
@@ -195,13 +202,24 @@ impl Track {
             metadata.set_track_number(primary_tag.track().map(|n| n as i32));
             metadata.set_genre(primary_tag.genre().map(|s| vec![s.to_string()]));
             if let Some(pic) = picture {
-                let image_path = get_cover_art_cache_path()?;
+                let file_name = format!(
+                    "{}.jpg",
+                    path.file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                );
+
+                let image_path = get_cover_art_cache_path()?.join(&file_name);
+
                 let mut file = File::create(&image_path)?;
                 file.write_all(pic.data())?;
 
-                let addr = std::fs::read_to_string(get_address_file_path()?)?;
-
-                metadata.set_art_url(Some(format!("http://{}/img", addr)));
+                if let Some(addr) = cover_server_addr {
+                    metadata.set_art_url(Some(format!(
+                        "http://{}/{}/{}",
+                        addr, COVER_ART_DIR, file_name,
+                    )));
+                }
             }
 
             if metadata.title().is_none() {
