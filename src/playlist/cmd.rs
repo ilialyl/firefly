@@ -137,12 +137,6 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                     "Sent playlist \"{}\" to queue.",
                     selected.get_name().unwrap_or_default()
                 );
-
-                Some(Message::DisplayInfoMsg(
-                    "Sent Playlist to Queue".to_string(),
-                ))
-            } else {
-                None
             }
         }
         PlaylistTabFocus::Tracks => {
@@ -151,12 +145,15 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                 && let Some(mini_track) = playlist.mini_tracks.get(index)
             {
                 model.queue.enqueue_mini_track_ref(mini_track.clone());
-                Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
-            } else {
-                None
+                log::info!(
+                    "Sent track \"{}\" to queue.",
+                    mini_track.borrow().path.display()
+                );
             }
         }
     }
+
+    None
 }
 
 pub fn navigate_playlists(
