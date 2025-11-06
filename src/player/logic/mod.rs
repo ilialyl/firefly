@@ -92,11 +92,9 @@ impl Player {
             };
         } else if track_dur.sub(current_pos) < seek_dur
             && track_dur.sub(current_pos) > Duration::from_secs(1)
-        {
-            if let Err(e) = self.sink.try_seek(track_dur.sub(Duration::from_secs(1))) {
+            && let Err(e) = self.sink.try_seek(track_dur.sub(Duration::from_secs(1))) {
                 return Err(eyre!("{e}"));
             };
-        }
 
         if let Some(current) = self.current.as_mut() {
             current.pos = self.sink.get_pos();
