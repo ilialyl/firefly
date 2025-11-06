@@ -216,19 +216,19 @@ pub fn toggle_loop(player: &mut Player) -> Option<Message> {
     None
 }
 
-pub async fn decrease_volume(amount: f32, model: &mut Model) -> Option<Message> {
+pub fn decrease_volume(amount: f32, model: &mut Model) -> Option<Message> {
     model.player.set_volume(model.player.volume().sub(amount));
 
     None
 }
 
-pub async fn increase_volume(amount: f32, model: &mut Model) -> Option<Message> {
+pub fn increase_volume(amount: f32, model: &mut Model) -> Option<Message> {
     model.player.set_volume(model.player.volume().add(amount));
 
     None
 }
 
-pub async fn set_volume(amount: f32, model: &mut Model) -> Option<Message> {
+pub fn set_volume(amount: f32, model: &mut Model) -> Option<Message> {
     model.player.set_volume(amount);
 
     None
