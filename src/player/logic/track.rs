@@ -162,7 +162,7 @@ impl Track {
             let source = get_opus_source(&path);
             Ok(source)
         } else {
-            let source = Decoder::new(file)?;
+            let source = Decoder::try_from(file)?;
             Ok(Box::new(source))
         }
     }

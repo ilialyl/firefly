@@ -123,8 +123,6 @@ impl Player {
                 None => return self.reload(),
             };
 
-            self.reload()?;
-
             if let Err(e) = self.sink.try_seek(rewinded_pos) {
                 return Err(eyre!("{e}"));
             };
