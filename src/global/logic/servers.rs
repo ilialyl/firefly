@@ -5,7 +5,7 @@ use tower_http::services::ServeDir;
 
 use crate::global::logic::data::get_art_cache_path;
 
-const COVER_ART_ROUTE: &str = "/cover-art";
+pub const COVER_ART_ROUTE: &str = "/cover-art";
 
 pub async fn run_cover_art_server(listener: TcpListener) -> Result<()> {
     let app = Router::new().nest_service(
@@ -13,9 +13,15 @@ pub async fn run_cover_art_server(listener: TcpListener) -> Result<()> {
         get_service(ServeDir::new(get_art_cache_path()?)),
     );
     tokio::spawn(async move {
-        axum::serve(listener, app.into_make_service())
-            .await
-            .unwrap();
+        log::info!(
+            "Cover art server starting at {}...",
+            listener.local_addr().unwrap()
+        );
+        if let Err(e) = axum::serve(listener, app.into_make_service()).await {
+            log::error!("Error serving: {e}");
+        }
+
+        log::info!("Server stopped.");
     });
 
     Ok(())

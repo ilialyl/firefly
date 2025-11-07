@@ -28,9 +28,10 @@ use tokio::sync::Mutex;
 use crate::{
     global::{
         logic::{
-            data::{COVER_ART_DIR, get_art_cache_path, get_cache_dir},
+            data::{get_art_cache_path, get_cache_dir},
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
+            servers::COVER_ART_ROUTE,
         },
         message::Message,
     },
@@ -216,8 +217,8 @@ impl Track {
 
                 if let Some(addr) = cover_server_addr {
                     metadata.set_art_url(Some(format!(
-                        "http://{}/{}/{}",
-                        addr, COVER_ART_DIR, file_name,
+                        "http://{}{}/{}",
+                        addr, COVER_ART_ROUTE, file_name,
                     )));
                 }
             }

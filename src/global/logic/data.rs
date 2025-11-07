@@ -9,7 +9,6 @@ use platform_dirs::AppDirs;
 
 pub const APP_NAME: &str = "firefly_music";
 pub const COVER_ART_DIR: &str = "cover_art/";
-pub const ADDRESS_FILE_NAME: &str = "address.txt";
 
 pub fn get_data_dir() -> Result<PathBuf> {
     if let Some(app_dirs) = AppDirs::new(Some(APP_NAME), false) {
