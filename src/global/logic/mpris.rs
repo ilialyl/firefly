@@ -22,6 +22,9 @@ impl RootInterface for MprisPlayer {
     }
 
     async fn quit(&self) -> fdo::Result<()> {
+        if let Err(e) = self.tx.send(Message::Quit).await {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
@@ -42,7 +45,7 @@ impl RootInterface for MprisPlayer {
     }
 
     async fn can_raise(&self) -> fdo::Result<bool> {
-        Ok(true)
+        Ok(false)
     }
 
     async fn has_track_list(&self) -> fdo::Result<bool> {
@@ -68,69 +71,85 @@ impl RootInterface for MprisPlayer {
 
 impl PlayerInterface for MprisPlayer {
     async fn next(&self) -> fdo::Result<()> {
-        self.tx
-            .send(Message::Player(PlayerMessage::Skip))
-            .await
-            .unwrap();
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Skip)).await {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn previous(&self) -> fdo::Result<()> {
-        self.tx
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::PreviousTrack))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn pause(&self) -> fdo::Result<()> {
-        self.tx
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn play_pause(&self) -> fdo::Result<()> {
-        self.tx
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn stop(&self) -> fdo::Result<()> {
-        self.tx
-            .send(Message::Player(PlayerMessage::TogglePlay))
-            .await
-            .unwrap();
         Ok(())
     }
 
     async fn play(&self) -> fdo::Result<()> {
-        self.tx
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn seek(&self, offset: Time) -> fdo::Result<()> {
-        self.tx
-            .send(Message::Player(PlayerMessage::SeekOffset(offset)))
+        log::info!("Seek time: {:?}", offset.as_secs());
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SetPosition(
+                Duration::from_secs(offset.as_secs() as u64),
+            )))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn set_position(&self, _track_id: TrackId, position: Time) -> fdo::Result<()> {
         log::error!("{:?}", position);
-        self.tx
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::SetPosition(
-                Duration::from_millis(position.as_millis() as u64),
+                Duration::from_secs(position.as_secs() as u64),
             )))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
@@ -147,10 +166,13 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn set_loop_status(&self, _loop_status: LoopStatus) -> Result<()> {
-        self.tx
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::ToggleLoop))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
@@ -167,10 +189,9 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn set_shuffle(&self, _shuffle: bool) -> Result<()> {
-        self.tx
-            .send(Message::Queue(QueueMessage::Shuffle))
-            .await
-            .unwrap();
+        if let Err(e) = self.tx.send(Message::Queue(QueueMessage::Shuffle)).await {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 

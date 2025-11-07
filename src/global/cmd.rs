@@ -45,9 +45,6 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
         // Update playback status
         let status = current_track.conversion_status;
 
-        // Update playback position
-        current_track.sync_pos_from_sink(&model.player.sink);
-
         // Create Protocol if the track has cover art, if not already.
         if !current_track.started_decoding
             && let Some(picture) = current_track.picture.as_mut()
@@ -78,7 +75,7 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
         // Set position, duration, and status to default if not looped
         if model.player.sink.empty()
             && let Some(dur) = current_track.duration
-            && dur.saturating_sub(current_track.pos) < Duration::from_secs(3)
+            && dur.saturating_sub(model.player.sink.get_pos()) < Duration::from_secs(3)
         {
             if model.player.looping {
                 if let Err(e) = model.player.reload() {

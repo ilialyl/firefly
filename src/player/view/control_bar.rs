@@ -27,7 +27,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let duration_str = if let Some(current_track) = model.player.current.as_mut() {
         format!(
             "{} / {}",
-            duration_as_str(&current_track.pos),
+            duration_as_str(&model.player.sink.get_pos()),
             duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
         )
     } else {
@@ -55,8 +55,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     if let Some(current_track) = model.player.current.as_mut()
         && let Some(dur) = current_track.duration
     {
-        let bar_pos = get_progress_position(progress_str.chars().count(), &current_track.pos, &dur)
-            .saturating_sub(1);
+        let bar_pos = get_progress_position(
+            progress_str.chars().count(),
+            &model.player.sink.get_pos(),
+            &dur,
+        )
+        .saturating_sub(1);
         if let Some((byte_pos, ch)) = progress_str.char_indices().nth(bar_pos) {
             let byte_end = byte_pos + ch.len_utf8();
             progress_str.replace_range(byte_pos..byte_end, "⚬");
@@ -82,7 +86,7 @@ pub fn draw_mini(area: Rect, frame: &mut Frame, model: &mut Model) {
     let duration_str = if let Some(current_track) = model.player.current.as_mut() {
         format!(
             "{} / {}",
-            duration_as_str(&current_track.pos),
+            duration_as_str(&model.player.sink.get_pos()),
             duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
         )
     } else {

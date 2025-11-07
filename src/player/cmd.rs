@@ -43,47 +43,49 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
                 model.player.status.as_mpris_playback_status(),
             )])
             .await
-        {
-            log::error!("Error updating mpris server property: {e}");
-        };
+    {
+        log::error!("Error updating mpris server property: {e}");
+    };
 
     None
 }
 
 pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_ref()
-        && let Some(dur) = current_track.duration {
-            let pos_time = Time::from_millis(current_track.pos.as_millis() as i64);
-            if offset.is_positive() {
-                let new_pos = current_track
-                    .pos
-                    .saturating_add(Duration::from_millis(offset.as_millis() as u64));
-                if dur > new_pos {
-                    seek(Some(new_pos), model).await;
-                }
-            } else if offset.is_negative() {
-                let new_pos = Duration::from_millis(
-                    pos_time.as_millis().saturating_sub(offset.as_millis()) as u64,
-                );
-                if dur > new_pos {
-                    seek(Some(new_pos), model).await;
-                }
+        && let Some(dur) = current_track.duration
+    {
+        log::info!("Offset seeked: {:?}", offset);
+        let pos_time = Time::from_secs(model.player.sink.get_pos().as_secs() as i64);
+        if offset.is_positive() {
+            let new_pos = model
+                .player
+                .sink
+                .get_pos()
+                .saturating_add(Duration::from_millis(offset.as_millis() as u64));
+            if dur > new_pos {
+                seek(Some(new_pos), model).await;
+            }
+        } else if offset.is_negative() {
+            let new_pos = Duration::from_millis(
+                pos_time.as_millis().saturating_sub(offset.as_millis()) as u64,
+            );
+            if dur > new_pos {
+                seek(Some(new_pos), model).await;
             }
         }
+    }
 
     None
 }
 
 pub async fn set_position(position: Duration, model: &mut Model) -> Option<Message> {
-    if let Some(current_track) = model.player.current.as_ref()
-        && let Some(dur) = current_track.duration
-            && position < dur {
-                if position > current_track.pos {
-                    seek(Some(position.saturating_add(current_track.pos)), model).await;
-                } else if position < current_track.pos {
-                    rewind(Some(current_track.pos.saturating_sub(position)), model).await;
-                }
-            }
+    if let Err(e) = model.player.set_position(position) {
+        log::error!("Error setting position: {e}");
+    }
+
+    if let Err(e) = model.player.update_mpris_pos().await {
+        log::error!("Error updating mpris track position: {e}");
+    }
 
     None
 }
@@ -120,7 +122,7 @@ pub async fn rewind(duration: Option<Duration>, model: &mut Model) -> Option<Mes
 
     if let Err(e) = model.player.rewind(rewind_dur) {
         log::error!("Error rewinding: {e}");
-    } ;
+    };
 
     if let Err(e) = model.player.update_mpris_pos().await {
         log::error!("Error updating mpris track position: {e}");
@@ -180,9 +182,10 @@ pub async fn skip(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(handle) = model.player.ffmpeg_handle.take()
-        && let Err(e) = handle.lock().await.kill().await {
-            log::error!("Error killing FFmpeg process: {e}");
-        };
+        && let Err(e) = handle.lock().await.kill().await
+    {
+        log::error!("Error killing FFmpeg process: {e}");
+    };
 
     model.session.state = RunningState::Running;
 
@@ -195,9 +198,10 @@ pub async fn skip(model: &mut Model) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_mut()
         && (current_track.conversion_status == FormatConversion::Unnecessary
             || current_track.conversion_status == FormatConversion::Done)
-        && let Err(e) = model.player.reload() {
-            log::error!("Error reloading track in skip(): {e}");
-        }
+        && let Err(e) = model.player.reload()
+    {
+        log::error!("Error reloading track in skip(): {e}");
+    }
 
     None
 }
@@ -232,9 +236,10 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(handle) = model.player.ffmpeg_handle.take()
-        && let Err(e) = handle.lock().await.kill().await {
-            log::error!("Error killing FFmpeg process: {e}");
-        };
+        && let Err(e) = handle.lock().await.kill().await
+    {
+        log::error!("Error killing FFmpeg process: {e}");
+    };
 
     model.session.state = RunningState::Running;
 
@@ -246,9 +251,10 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
 
     if let Some(current_track) = model.player.current.as_mut()
         && current_track.conversion_status != FormatConversion::Running
-        && let Err(e) = model.player.reload() {
-            log::error!("Error reloading track after prepending previous track in queue: {e}");
-        };
+        && let Err(e) = model.player.reload()
+    {
+        log::error!("Error reloading track after prepending previous track in queue: {e}");
+    };
 
     None
 }

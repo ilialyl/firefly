@@ -21,7 +21,7 @@ use lofty::{
 };
 use mpris_server::{Metadata, Time};
 use ratatui_image::protocol::StatefulProtocol;
-use rodio::{Decoder, Sink, Source};
+use rodio::{Decoder, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
 use tokio::sync::Mutex;
 
@@ -45,7 +45,6 @@ pub struct Track {
     pub id: u32,
     pub real_path: PathBuf,
     pub temp_path: PathBuf,
-    pub pos: Duration,
     pub duration: Option<Duration>,
     pub tagged_file: Option<TaggedFile>,
     pub picture: Option<Picture>,
@@ -105,7 +104,6 @@ impl Track {
             real_path: path.to_path_buf(),
             temp_path,
             tagged_file,
-            pos: Duration::default(),
             duration,
             picture,
             protocol: None,
@@ -176,10 +174,6 @@ impl Track {
         }
 
         Ok(path.clone())
-    }
-
-    pub fn sync_pos_from_sink(&mut self, sink: &Sink) {
-        self.pos = sink.get_pos();
     }
 
     pub fn metadata_from_path(
