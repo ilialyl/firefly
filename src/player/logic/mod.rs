@@ -84,6 +84,21 @@ impl Player {
         self.sink.set_volume(amount.clamp(MIN_VOLUME, MAX_VOLUME));
     }
 
+    pub fn set_position(&mut self, position: Duration) -> Result<()> {
+        if let Some(current_track) = self.current.as_ref()
+            && let Some(dur) = current_track.duration
+            && dur > position
+        {
+            self.reload()?;
+
+            if let Err(e) = self.sink.try_seek(position) {
+                return Err(eyre!("{e}"));
+            };
+        }
+
+        Ok(())
+    }
+
     pub fn seek(&mut self, track_dur: &Duration, seek_dur: Duration) -> Result<()> {
         let current_pos = self.sink.get_pos();
         if current_pos.add(seek_dur) < *track_dur {
@@ -92,13 +107,10 @@ impl Player {
             };
         } else if track_dur.sub(current_pos) < seek_dur
             && track_dur.sub(current_pos) > Duration::from_secs(1)
-            && let Err(e) = self.sink.try_seek(track_dur.sub(Duration::from_secs(1))) {
-                return Err(eyre!("{e}"));
-            };
-
-        if let Some(current) = self.current.as_mut() {
-            current.pos = self.sink.get_pos();
-        }
+            && let Err(e) = self.sink.try_seek(track_dur.sub(Duration::from_secs(1)))
+        {
+            return Err(eyre!("{e}"));
+        };
 
         Ok(())
     }
@@ -116,10 +128,6 @@ impl Player {
             if let Err(e) = self.sink.try_seek(rewinded_pos) {
                 return Err(eyre!("{e}"));
             };
-        }
-
-        if let Some(current) = self.current.as_mut() {
-            current.pos = self.sink.get_pos();
         }
 
         Ok(())
@@ -197,12 +205,12 @@ impl Player {
     }
 
     pub async fn update_mpris_pos(&mut self) -> Result<()> {
-        if let Some(current_track) = self.current.as_ref()
+        if self.current.is_some()
             && let Some(mpris_server) = self.mpris_server.as_ref()
         {
             mpris_server
                 .emit(Signal::Seeked {
-                    position: Time::from_millis(current_track.pos.as_millis() as i64),
+                    position: Time::from_secs(self.sink.get_pos().as_secs() as i64),
                 })
                 .await?;
         }
