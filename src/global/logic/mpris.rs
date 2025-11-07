@@ -74,6 +74,7 @@ impl PlayerInterface for MprisPlayer {
         if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Skip)).await {
             log::error!("Error sending Message through async channel: {e}");
         }
+
         Ok(())
     }
 
@@ -129,9 +130,7 @@ impl PlayerInterface for MprisPlayer {
         log::info!("Seek time: {:?}", offset.as_secs());
         if let Err(e) = self
             .tx
-            .send(Message::Player(PlayerMessage::SetPosition(
-                Duration::from_secs(offset.as_secs() as u64),
-            )))
+            .send(Message::Player(PlayerMessage::SeekOffset(offset)))
             .await
         {
             log::error!("Error sending Message through async channel: {e}");
@@ -203,7 +202,14 @@ impl PlayerInterface for MprisPlayer {
         Ok(1.0 as Volume)
     }
 
-    async fn set_volume(&self, _volume: Volume) -> Result<()> {
+    async fn set_volume(&self, volume: Volume) -> Result<()> {
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SetVolume(volume as f32)))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
@@ -212,11 +218,11 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn minimum_rate(&self) -> fdo::Result<PlaybackRate> {
-        Ok(PlaybackRate::default())
+        Ok(1.0)
     }
 
     async fn maximum_rate(&self) -> fdo::Result<PlaybackRate> {
-        Ok(PlaybackRate::default())
+        Ok(1.0)
     }
 
     async fn can_go_next(&self) -> fdo::Result<bool> {

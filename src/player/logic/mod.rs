@@ -89,8 +89,6 @@ impl Player {
             && let Some(dur) = current_track.duration
             && dur > position
         {
-            self.reload()?;
-
             if let Err(e) = self.sink.try_seek(position) {
                 return Err(eyre!("{e}"));
             };

@@ -42,7 +42,6 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(current_track) = model.player.current.as_mut() {
-        // Update playback status
         let status = current_track.conversion_status;
 
         // Create Protocol if the track has cover art, if not already.

@@ -39,7 +39,7 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
 
     if let Some(mpris_server) = model.player.mpris_server.as_ref()
         && let Err(e) = mpris_server
-            .properties_changed(vec![Property::PlaybackStatus(
+            .properties_changed([Property::PlaybackStatus(
                 model.player.status.as_mpris_playback_status(),
             )])
             .await
@@ -61,16 +61,15 @@ pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
                 .player
                 .sink
                 .get_pos()
-                .saturating_add(Duration::from_millis(offset.as_millis() as u64));
+                .saturating_add(Duration::from_secs(offset.as_secs() as u64));
             if dur > new_pos {
-                seek(Some(new_pos), model).await;
+                set_position(new_pos, model).await;
             }
         } else if offset.is_negative() {
-            let new_pos = Duration::from_millis(
-                pos_time.as_millis().saturating_sub(offset.as_millis()) as u64,
-            );
+            let new_pos =
+                Duration::from_secs(pos_time.as_secs().saturating_add(offset.as_secs()) as u64);
             if dur > new_pos {
-                seek(Some(new_pos), model).await;
+                set_position(new_pos, model).await;
             }
         }
     }
@@ -212,20 +211,44 @@ pub fn toggle_loop(player: &mut Player) -> Option<Message> {
     None
 }
 
-pub fn decrease_volume(amount: f32, model: &mut Model) -> Option<Message> {
+pub async fn decrease_volume(amount: f32, model: &mut Model) -> Option<Message> {
     model.player.set_volume(model.player.volume().sub(amount));
+    if let Some(mpris_server) = model.player.mpris_server.as_ref() {
+        if let Err(e) = mpris_server
+            .properties_changed([Property::Volume(model.player.volume() as f64)])
+            .await
+        {
+            log::error!("Error updating mpris volume: {e}");
+        }
+    }
 
     None
 }
 
-pub fn increase_volume(amount: f32, model: &mut Model) -> Option<Message> {
+pub async fn increase_volume(amount: f32, model: &mut Model) -> Option<Message> {
     model.player.set_volume(model.player.volume().add(amount));
+    if let Some(mpris_server) = model.player.mpris_server.as_ref() {
+        if let Err(e) = mpris_server
+            .properties_changed([Property::Volume(model.player.volume() as f64)])
+            .await
+        {
+            log::error!("Error updating mpris volume: {e}");
+        }
+    }
 
     None
 }
 
-pub fn set_volume(amount: f32, model: &mut Model) -> Option<Message> {
+pub async fn set_volume(amount: f32, model: &mut Model) -> Option<Message> {
     model.player.set_volume(amount);
+    if let Some(mpris_server) = model.player.mpris_server.as_ref() {
+        if let Err(e) = mpris_server
+            .properties_changed([Property::Volume(model.player.volume() as f64)])
+            .await
+        {
+            log::error!("Error updating mpris volume: {e}");
+        }
+    }
 
     None
 }
