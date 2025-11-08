@@ -38,13 +38,18 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
     }
 
     if let Some(mpris_server) = model.player.mpris_server.as_ref()
-        && let Err(e) = mpris_server
+        && let Some(mpris_state) = model.player.mpris_state.as_ref()
+    {
+        if let Err(e) = mpris_server
             .properties_changed([Property::PlaybackStatus(
                 model.player.status.as_mpris_playback_status(),
             )])
             .await
-    {
-        log::error!("Error updating mpris server property: {e}");
+        {
+            log::error!("Error updating mpris server property: {e}");
+        }
+
+        mpris_state.write().await.playback_status = model.player.status.as_mpris_playback_status();
     };
 
     None
@@ -78,7 +83,7 @@ pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
 }
 
 pub async fn set_position(position: Duration, model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.player.set_position(position) {
+    if let Err(e) = model.player.set_position(position).await {
         log::error!("Error setting position: {e}");
     }
 

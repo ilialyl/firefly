@@ -13,10 +13,13 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-use tokio::sync::{Mutex, mpsc::Sender};
+use tokio::sync::{Mutex, RwLock, mpsc::Sender};
 
 use crate::{
-    global::{logic::mpris::MprisPlayer, message::Message},
+    global::{
+        logic::mpris::{MprisPlayer, MprisPlayerState},
+        message::Message,
+    },
     player::logic::{playback_status::PlaybackStatus, track::Track},
     queue::logic::TrackQueue,
 };
@@ -36,6 +39,7 @@ pub struct Player {
     pub sink: Sink,
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
     pub mpris_server: Option<Server<MprisPlayer>>,
+    pub mpris_state: Option<Arc<RwLock<MprisPlayerState>>>,
     pub cover_server_addr: Option<SocketAddr>,
 }
 
@@ -46,6 +50,22 @@ impl Player {
         cover_server_addr: Option<SocketAddr>,
     ) -> Result<Player> {
         let (stream, sink) = Self::get_sink()?;
+        let mpris_state = Arc::new(RwLock::new(MprisPlayerState::default()));
+        let mpris_server = Server::new_with_all(
+            "Firefly",
+            MprisPlayer {
+                tx: async_msg_tx,
+                state: mpris_state.clone(),
+            },
+        )
+        .await
+        .ok();
+        let mpris_state = if mpris_server.is_some() {
+            Some(mpris_state)
+        } else {
+            None
+        };
+
         Ok(Player {
             current: None,
             previous: Vec::<PathBuf>::new(),
@@ -54,9 +74,8 @@ impl Player {
             stream,
             sink,
             ffmpeg_handle: None,
-            mpris_server: Server::new_with_all("Firefly", MprisPlayer { tx: async_msg_tx })
-                .await
-                .ok(),
+            mpris_server,
+            mpris_state,
             cover_server_addr,
         })
     }
@@ -84,7 +103,7 @@ impl Player {
         self.sink.set_volume(amount.clamp(MIN_VOLUME, MAX_VOLUME));
     }
 
-    pub fn set_position(&mut self, position: Duration) -> Result<()> {
+    pub async fn set_position(&mut self, position: Duration) -> Result<()> {
         if let Some(current_track) = self.current.as_ref()
             && let Some(dur) = current_track.duration
             && dur > position
@@ -203,12 +222,16 @@ impl Player {
     pub async fn update_mpris_pos(&mut self) -> Result<()> {
         if self.current.is_some()
             && let Some(mpris_server) = self.mpris_server.as_ref()
+            && let Some(mpris_state) = self.mpris_state.as_ref()
         {
             mpris_server
                 .emit(Signal::Seeked {
                     position: Time::from_secs(self.sink.get_pos().as_secs() as i64),
                 })
                 .await?;
+
+            mpris_state.write().await.position =
+                Time::from_secs(self.sink.get_pos().as_secs() as i64);
         }
 
         Ok(())

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use mpris_server::{
     LoopStatus, Metadata, PlaybackRate, PlaybackStatus, PlayerInterface, Playlist, PlaylistId,
@@ -6,14 +6,29 @@ use mpris_server::{
     Volume,
     zbus::{Result, fdo},
 };
-use tokio::sync::mpsc::Sender;
+use tokio::sync::{RwLock, mpsc::Sender};
 
 use crate::{
     global::message::Message, player::message::PlayerMessage, queue::message::QueueMessage,
 };
 
+pub struct MprisPlayerState {
+    pub position: Time,
+    pub playback_status: PlaybackStatus,
+}
+
+impl Default for MprisPlayerState {
+    fn default() -> Self {
+        Self {
+            position: Time::ZERO,
+            playback_status: PlaybackStatus::Stopped,
+        }
+    }
+}
+
 pub struct MprisPlayer {
     pub tx: Sender<Message>,
+    pub state: Arc<RwLock<MprisPlayerState>>,
 }
 
 impl RootInterface for MprisPlayer {
@@ -157,7 +172,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn playback_status(&self) -> fdo::Result<PlaybackStatus> {
-        Ok(PlaybackStatus::Playing)
+        Ok(self.state.read().await.playback_status)
     }
 
     async fn loop_status(&self) -> fdo::Result<LoopStatus> {
@@ -214,7 +229,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn position(&self) -> fdo::Result<Time> {
-        Ok(Time::ZERO)
+        Ok(self.state.read().await.position)
     }
 
     async fn minimum_rate(&self) -> fdo::Result<PlaybackRate> {
