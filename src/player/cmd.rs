@@ -146,7 +146,7 @@ pub async fn seek(duration: Option<Duration>, model: &mut Model) -> Option<Messa
     None
 }
 
-pub async fn skip(model: &mut Model) -> Option<Message> {
+pub async fn play_next_track(model: &mut Model) -> Option<Message> {
     if model.queue.is_empty() {
         return None;
     }

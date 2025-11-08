@@ -78,16 +78,13 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
             && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
             debug!("Load the next track after current track ends.");
-            player::cmd::skip(model).await;
+            player::cmd::play_next_track(model).await;
         }
 
         // Load first track if no current track and there is something in the queue.
     } else if model.player.current.is_none() && !model.queue.is_empty() {
         debug!("Load first track (player.current is None)");
-        player::cmd::skip(model).await;
-        if let Err(e) = model.player.toggle_play().await {
-            log::error!("Error toggling play: {e}");
-        }
+        player::cmd::play_next_track(model).await;
     }
 
     None

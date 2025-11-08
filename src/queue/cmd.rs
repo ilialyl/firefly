@@ -126,7 +126,7 @@ pub fn scroll_to_end(queue: &mut TrackQueue) -> Option<Message> {
 
 pub async fn skip_to_selected(model: &mut Model) -> Option<Message> {
     model.queue.skip_to_selected();
-    player::cmd::skip(model).await;
+    player::cmd::play_next_track(model).await;
 
     None
 }
