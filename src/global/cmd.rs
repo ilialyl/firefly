@@ -79,6 +79,12 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
         {
             debug!("Load the next track after current track ends.");
             player::cmd::play_next_track(model).await;
+        } else if model.player.current.is_some()
+            && model.player.sink.empty()
+            && model.queue.is_empty()
+        {
+            model.player.reload().await.unwrap();
+            model.player.sink.pause();
         }
 
         // Load first track if no current track and there is something in the queue.
