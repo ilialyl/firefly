@@ -149,7 +149,7 @@ impl Player {
             };
         }
 
-        self.notify_mpris_all().await?;
+        self.update_mpris_pos().await?;
 
         Ok(())
     }
@@ -167,7 +167,7 @@ impl Player {
             return Err(eyre!("{e}"));
         };
 
-        self.notify_mpris_all().await?;
+        self.update_mpris_pos().await?;
 
         Ok(())
     }
@@ -182,7 +182,7 @@ impl Player {
             };
         }
 
-        self.notify_mpris_all().await?;
+        self.update_mpris_pos().await?;
 
         Ok(())
     }
@@ -195,7 +195,7 @@ impl Player {
             self.sink.play();
         }
 
-        self.notify_mpris_all().await?;
+        self.update_mpris_pos().await?;
 
         Ok(())
     }
@@ -212,7 +212,7 @@ impl Player {
 
         self.new_track(&path)?;
 
-        self.notify_mpris_all().await?;
+        self.update_mpris_pos().await?;
 
         Ok(())
     }
@@ -232,7 +232,7 @@ impl Player {
 
         self.new_track(&prev)?;
 
-        self.notify_mpris_all().await?;
+        self.update_mpris_pos().await?;
 
         Ok(())
     }
@@ -289,7 +289,7 @@ impl Player {
 
     pub async fn toggle_loop(&mut self) -> Result<()> {
         self.looping = !self.looping;
-        self.notify_mpris_all().await?;
+        self.update_mpris_loop_status().await?;
 
         Ok(())
     }
@@ -312,7 +312,7 @@ impl Player {
             self.sink.pause();
         }
 
-        self.notify_mpris_all().await?;
+        self.update_mpris_playback_status().await?;
 
         Ok(())
     }
