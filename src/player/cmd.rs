@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 use std::sync::Arc;
 use std::time::Duration;
 
-use mpris_server::{Property, Time};
+use mpris_server::Time;
 use rust_ffmpeg::FFmpegProcess;
 use tokio::sync::Mutex;
 
@@ -14,7 +14,7 @@ use crate::{
         message::Message,
     },
     model::Model,
-    player::logic::{Player, playback_status::PlaybackStatus},
+    player::logic::Player,
 };
 
 pub fn load_now(model: &mut Model) -> Option<Message> {
@@ -31,14 +31,8 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    if model.player.status == PlaybackStatus::Playing {
-        model.player.sink.pause();
-    } else {
-        model.player.sink.play();
-    }
-
-    if let Err(e) = model.player.update_mpris_playback_status().await {
-        log::error!("Error updating mpris playback status: {e}");
+    if let Err(e) = model.player.toggle_play().await {
+        log::error!("Error toggling play: {e}");
     }
 
     None
@@ -76,10 +70,6 @@ pub async fn set_position(position: Duration, model: &mut Model) -> Option<Messa
         log::error!("Error setting position: {e}");
     }
 
-    if let Err(e) = model.player.update_mpris_pos().await {
-        log::error!("Error updating mpris track position: {e}");
-    }
-
     None
 }
 
@@ -111,19 +101,9 @@ pub async fn rewind(duration: Option<Duration>, model: &mut Model) -> Option<Mes
         Duration::from_secs(5)
     };
 
-    let status = model.player.status;
-
-    if let Err(e) = model.player.rewind(rewind_dur) {
+    if let Err(e) = model.player.rewind(rewind_dur).await {
         log::error!("Error rewinding: {e}");
     };
-
-    if let Err(e) = model.player.update_mpris_pos().await {
-        log::error!("Error updating mpris track position: {e}");
-    }
-
-    if matches!(status, PlaybackStatus::Paused) {
-        model.player.sink.pause();
-    }
 
     None
 }
@@ -157,13 +137,10 @@ pub async fn seek(duration: Option<Duration>, model: &mut Model) -> Option<Messa
         if let Err(e) = model
             .player
             .seek(&duration.unwrap_or(Duration::from_secs(0)), seek_dur)
+            .await
         {
             log::error!("Error seeking: {e}");
         }
-    }
-
-    if let Err(e) = model.player.update_mpris_pos().await {
-        log::error!("Error updating mpris track position: {e}");
     }
 
     None
@@ -191,7 +168,7 @@ pub async fn skip(model: &mut Model) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_mut()
         && (current_track.conversion_status == FormatConversion::Unnecessary
             || current_track.conversion_status == FormatConversion::Done)
-        && let Err(e) = model.player.reload()
+        && let Err(e) = model.player.reload().await
     {
         log::error!("Error reloading track in skip(): {e}");
     }
@@ -215,14 +192,6 @@ pub async fn decrease_volume(amount: f32, model: &mut Model) -> Option<Message> 
     {
         log::error!("Error setting volume: {e}");
     };
-    if let Some(mpris_server) = model.player.mpris_server.as_ref() {
-        if let Err(e) = mpris_server
-            .properties_changed([Property::Volume(model.player.volume() as f64)])
-            .await
-        {
-            log::error!("Error updating mpris volume: {e}");
-        }
-    }
 
     None
 }
@@ -235,14 +204,6 @@ pub async fn increase_volume(amount: f32, model: &mut Model) -> Option<Message> 
     {
         log::error!("Error setting volume: {e}");
     };
-    if let Some(mpris_server) = model.player.mpris_server.as_ref() {
-        if let Err(e) = mpris_server
-            .properties_changed([Property::Volume(model.player.volume() as f64)])
-            .await
-        {
-            log::error!("Error updating mpris volume: {e}");
-        }
-    }
 
     None
 }
@@ -251,14 +212,6 @@ pub async fn set_volume(amount: f32, model: &mut Model) -> Option<Message> {
     if let Err(e) = model.player.set_volume(amount).await {
         log::error!("Error setting volume: {e}");
     };
-    if let Some(mpris_server) = model.player.mpris_server.as_ref() {
-        if let Err(e) = mpris_server
-            .properties_changed([Property::Volume(model.player.volume() as f64)])
-            .await
-        {
-            log::error!("Error updating mpris volume: {e}");
-        }
-    }
 
     None
 }
@@ -284,7 +237,7 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
 
     if let Some(current_track) = model.player.current.as_mut()
         && current_track.conversion_status != FormatConversion::Running
-        && let Err(e) = model.player.reload()
+        && let Err(e) = model.player.reload().await
     {
         log::error!("Error reloading track after prepending previous track in queue: {e}");
     };
@@ -305,12 +258,20 @@ pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
         current_track.conversion_status = FormatConversion::Done;
         if let Err(e) = current_track.reload_after_conversion() {
             log::error!("Error reloading metadata after conversion: {e}")
-        } else if let Err(e) = model.player.update_mpris_metadata().await {
+        } else if let Err(e) = model.player.notify_mpris_all().await {
             log::error!("Error updating metadata for mpris server: {e}");
         };
-        if let Err(e) = model.player.reload() {
+        if let Err(e) = model.player.reload().await {
             log::error!("Error reloading track after conversion: {e}");
         };
+    }
+
+    None
+}
+
+pub async fn sync_mpris_state(model: &mut Model) -> Option<Message> {
+    if let Err(e) = model.player.notify_mpris_all().await {
+        log::error!("Error updating mpris state: {e}");
     }
 
     None

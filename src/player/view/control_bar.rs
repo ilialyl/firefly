@@ -1,18 +1,19 @@
 use std::time::Duration;
 
 use lofty::file::{AudioFile, TaggedFile};
+use mpris_server::PlaybackStatus;
 use ratatui::{
     Frame,
     layout::{Constraint, Flex, Layout, Rect},
     widgets::Paragraph,
 };
 
-use crate::{model::Model, player::logic::playback_status::PlaybackStatus};
+use crate::model::Model;
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let play_str = match model.player.status {
+    let play_str = match model.player.sink_status_to_mpris_playback_status() {
         PlaybackStatus::Playing => "Playing",
-        PlaybackStatus::Idle => "Idle",
+        PlaybackStatus::Stopped => "Idle",
         PlaybackStatus::Paused => "Paused",
     };
 
@@ -77,9 +78,9 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
 }
 
 pub fn draw_mini(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let play_str = match model.player.status {
+    let play_str = match model.player.sink_status_to_mpris_playback_status() {
         PlaybackStatus::Playing => "Playing",
-        PlaybackStatus::Idle => "Idle",
+        PlaybackStatus::Stopped => "Idle",
         PlaybackStatus::Paused => "Paused",
     };
 

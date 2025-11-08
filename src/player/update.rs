@@ -20,5 +20,6 @@ pub async fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Mess
         PlayerMessage::SetVolume(amount) => set_volume(amount, model).await,
         PlayerMessage::ConversionStarted(handle) => conversion_started(handle, model),
         PlayerMessage::ConversionEnded => conversion_ended(model).await,
+        PlayerMessage::SyncMprisState => sync_mpris_state(model).await,
     }
 }

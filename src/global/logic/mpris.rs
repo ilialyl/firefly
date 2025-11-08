@@ -220,21 +220,40 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn volume(&self) -> fdo::Result<Volume> {
-        Ok(self.state.read().await.volume)
+        let rounded = (self.state.read().await.volume * 100.0).round() / 100.0;
+
+        Ok(rounded)
     }
 
-    async fn set_volume(&self, volume: Volume) -> Result<()> {
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::SetVolume(volume as f32)))
-            .await
-        {
-            log::error!("Error sending Message through async channel: {e}");
-        }
+    async fn set_volume(&self, _volume: Volume) -> Result<()> {
+        // let new_rounded = (volume * 100.0).round() / 100.0;
+        // let old_rounded = (self.state.read().await.volume * 100.0).round() / 100.0;
+
+        // if new_rounded != old_rounded {
+        //     log::info!("Mpris setting volume to {}.", new_rounded);
+        //     if let Err(e) = self
+        //         .tx
+        //         .send(Message::Player(PlayerMessage::SetVolume(
+        //             new_rounded as f32,
+        //         )))
+        //         .await
+        //     {
+        //         log::error!("Error sending Message through async channel: {e}");
+        //     }
+        // }
+
         Ok(())
     }
 
     async fn position(&self) -> fdo::Result<Time> {
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SyncMprisState))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
+
         Ok(self.state.read().await.position)
     }
 

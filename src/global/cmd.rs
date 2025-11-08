@@ -18,9 +18,7 @@ use crate::{
     model::Model,
     player::{
         self,
-        logic::{
-            format_conversion::FormatConversion, playback_status::PlaybackStatus, track::Track,
-        },
+        logic::{format_conversion::FormatConversion, track::Track},
     },
     playlist::cmd::playlist_save_confirm_then_resume,
     user_input::logic::InputMode,
@@ -29,24 +27,6 @@ use crate::{
 pub async fn tick(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
-    }
-
-    if model.player.sink.is_paused() && !matches!(model.player.status, PlaybackStatus::Paused) {
-        model.player.status = PlaybackStatus::Paused;
-
-        if let Err(e) = model.player.update_mpris_playback_status().await {
-            log::error!("Error updating mpris playback status: {e}");
-        }
-    } else if !model.player.sink.empty() && !matches!(model.player.status, PlaybackStatus::Playing)
-    {
-        model.player.status = PlaybackStatus::Playing;
-        if let Err(e) = model.player.update_mpris_playback_status().await {
-            log::error!("Error updating mpris playback status: {e}");
-        }
-    }
-
-    if model.player.sink.empty() & !model.player.looping {
-        model.player.status = PlaybackStatus::Idle;
     }
 
     if let Some(current_track) = model.player.current.as_mut() {
@@ -85,16 +65,14 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
             && dur.saturating_sub(model.player.sink.get_pos()) < Duration::from_secs(3)
         {
             if model.player.looping {
-                if let Err(e) = model.player.reload() {
+                if let Err(e) = model.player.reload().await {
                     log::error!("{}", e);
                 }
-            } else {
-                model.player.status = PlaybackStatus::Idle;
             }
         }
 
         // Load the next track after current track ends.
-        if model.player.status == PlaybackStatus::Idle
+        if model.player.sink.empty()
             && !model.queue.is_empty()
             && !model.player.looping
             && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
@@ -107,6 +85,9 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
     } else if model.player.current.is_none() && !model.queue.is_empty() {
         debug!("Load first track (player.current is None)");
         player::cmd::skip(model).await;
+        if let Err(e) = model.player.toggle_play().await {
+            log::error!("Error toggling play: {e}");
+        }
     }
 
     None
