@@ -14,7 +14,7 @@ pub async fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Mess
         PlayerMessage::Seek(dur) => seek(dur, model).await,
         PlayerMessage::Skip => skip(model).await,
         PlayerMessage::PreviousTrack => previous_track(model).await,
-        PlayerMessage::ToggleLoop => toggle_loop(&mut model.player),
+        PlayerMessage::ToggleLoop => toggle_loop(&mut model.player).await,
         PlayerMessage::IncreaseVolume(amount) => increase_volume(amount, model).await,
         PlayerMessage::DecreaseVolume(amount) => decrease_volume(amount, model).await,
         PlayerMessage::SetVolume(amount) => set_volume(amount, model).await,

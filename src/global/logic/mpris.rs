@@ -15,6 +15,9 @@ use crate::{
 pub struct MprisPlayerState {
     pub position: Time,
     pub playback_status: PlaybackStatus,
+    pub metadata: Metadata,
+    pub volume: Volume,
+    pub loop_status: LoopStatus,
 }
 
 impl Default for MprisPlayerState {
@@ -22,6 +25,9 @@ impl Default for MprisPlayerState {
         Self {
             position: Time::ZERO,
             playback_status: PlaybackStatus::Stopped,
+            metadata: Metadata::new(),
+            volume: 1.0,
+            loop_status: LoopStatus::None,
         }
     }
 }
@@ -176,7 +182,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn loop_status(&self) -> fdo::Result<LoopStatus> {
-        Ok(LoopStatus::None)
+        Ok(self.state.read().await.loop_status)
     }
 
     async fn set_loop_status(&self, _loop_status: LoopStatus) -> Result<()> {
@@ -210,11 +216,11 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn metadata(&self) -> fdo::Result<Metadata> {
-        Ok(Metadata::default())
+        Ok(self.state.read().await.metadata.clone())
     }
 
     async fn volume(&self) -> fdo::Result<Volume> {
-        Ok(1.0 as Volume)
+        Ok(self.state.read().await.volume)
     }
 
     async fn set_volume(&self, volume: Volume) -> Result<()> {

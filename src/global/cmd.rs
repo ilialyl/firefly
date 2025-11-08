@@ -31,10 +31,18 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    if model.player.sink.is_paused() {
+    if model.player.sink.is_paused() && !matches!(model.player.status, PlaybackStatus::Paused) {
         model.player.status = PlaybackStatus::Paused;
-    } else if !model.player.sink.empty() {
+
+        if let Err(e) = model.player.update_mpris_playback_status().await {
+            log::error!("Error updating mpris playback status: {e}");
+        }
+    } else if !model.player.sink.empty() && !matches!(model.player.status, PlaybackStatus::Playing)
+    {
         model.player.status = PlaybackStatus::Playing;
+        if let Err(e) = model.player.update_mpris_playback_status().await {
+            log::error!("Error updating mpris playback status: {e}");
+        }
     }
 
     if model.player.sink.empty() & !model.player.looping {
