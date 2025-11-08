@@ -19,7 +19,7 @@ use lofty::{
     probe::Probe,
     tag::Accessor,
 };
-use mpris_server::{Metadata, Time};
+use mpris_server::{Metadata, Time, TrackId};
 use ratatui_image::protocol::StatefulProtocol;
 use rodio::{Decoder, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
@@ -188,6 +188,9 @@ impl Track {
             && let Some(primary_tag) = tagged_file.primary_tag()
         {
             let mut metadata = Metadata::new();
+            metadata.set_trackid(Some(
+                TrackId::try_from("/org/mpris/MediaPlayer2/Firefly/track/1").unwrap(),
+            ));
             metadata.set_title(primary_tag.title());
             metadata.set_album(primary_tag.album());
             metadata.set_artist(primary_tag.artist().map(|s| vec![s.to_string()]));
