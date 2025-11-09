@@ -173,6 +173,10 @@ pub async fn play_next_track(model: &mut Model) -> Option<Message> {
         log::error!("Error reloading track in skip(): {e}");
     }
 
+    if let Err(e) = model.player.update_mpris_metadata().await {
+        log::error!("Error updating metadata for mpris server: {e}");
+    };
+
     None
 }
 
@@ -258,9 +262,7 @@ pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
         current_track.conversion_status = FormatConversion::Done;
         if let Err(e) = current_track.reload_after_conversion() {
             log::error!("Error reloading metadata after conversion: {e}")
-        } else if let Err(e) = model.player.notify_mpris_all().await {
-            log::error!("Error updating metadata for mpris server: {e}");
-        };
+        }
         if let Err(e) = model.player.reload().await {
             log::error!("Error reloading track after conversion: {e}");
         };

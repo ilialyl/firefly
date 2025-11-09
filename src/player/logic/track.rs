@@ -94,9 +94,9 @@ impl Track {
         };
 
         let metadata = if temp_path.exists() {
-            Self::metadata_from_path(&temp_path, &picture, cover_server_addr)
+            Self::metadata_from_path(&temp_path, &picture, cover_server_addr, id)
         } else {
-            Self::metadata_from_path(path, &picture, cover_server_addr)
+            Self::metadata_from_path(path, &picture, cover_server_addr, id)
         }?;
 
         let track = Track {
@@ -132,9 +132,19 @@ impl Track {
             self.tagged_file = Some(tagged_file);
 
             self.metadata = if self.temp_path.exists() {
-                Self::metadata_from_path(&self.temp_path, &self.picture, self.cover_server_addr)?
+                Self::metadata_from_path(
+                    &self.temp_path,
+                    &self.picture,
+                    self.cover_server_addr,
+                    self.id,
+                )?
             } else {
-                Self::metadata_from_path(&self.real_path, &self.picture, self.cover_server_addr)?
+                Self::metadata_from_path(
+                    &self.real_path,
+                    &self.picture,
+                    self.cover_server_addr,
+                    self.id,
+                )?
             };
         }
 
@@ -180,6 +190,7 @@ impl Track {
         path: &Path,
         picture: &Option<Picture>,
         cover_server_addr: Option<SocketAddr>,
+        id: u32,
     ) -> Result<Metadata> {
         if let Ok(probe) = Probe::open(path)
             && let Ok(tagged_file) = probe
@@ -189,7 +200,7 @@ impl Track {
         {
             let mut metadata = Metadata::new();
             metadata.set_trackid(Some(
-                TrackId::try_from("/org/mpris/MediaPlayer2/Firefly/track/1").unwrap(),
+                TrackId::try_from(format!("/org/mpris/MediaPlayer2/Firefly/track/{}", id)).unwrap(),
             ));
             metadata.set_title(primary_tag.title());
             metadata.set_album(primary_tag.album());

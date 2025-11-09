@@ -99,7 +99,7 @@ impl Player {
 
     pub async fn set_volume(&mut self, amount: f32) -> Result<()> {
         self.sink.set_volume(amount.clamp(MIN_VOLUME, MAX_VOLUME));
-        self.notify_mpris_all().await?;
+        self.update_mpris_volume().await?;
 
         Ok(())
     }
@@ -196,6 +196,7 @@ impl Player {
         }
 
         self.update_mpris_pos().await?;
+        self.update_mpris_playback_status().await?;
 
         Ok(())
     }
@@ -212,6 +213,7 @@ impl Player {
 
         self.new_track(&path)?;
 
+        self.update_mpris_metadata().await?;
         self.update_mpris_pos().await?;
 
         Ok(())
@@ -232,6 +234,7 @@ impl Player {
 
         self.new_track(&prev)?;
 
+        self.update_mpris_metadata().await?;
         self.update_mpris_pos().await?;
 
         Ok(())
@@ -257,14 +260,10 @@ impl Player {
             && let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
         {
-            mpris_server
-                .emit(Signal::Seeked {
-                    position: Time::from_secs(self.sink.get_pos().as_secs() as i64),
-                })
-                .await?;
+            let pos = Time::from_secs(self.sink.get_pos().as_secs() as i64);
+            mpris_server.emit(Signal::Seeked { position: pos }).await?;
 
-            mpris_state.write().await.position =
-                Time::from_micros(self.sink.get_pos().as_micros() as i64);
+            mpris_state.write().await.position = pos;
         }
 
         Ok(())

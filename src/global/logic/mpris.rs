@@ -172,6 +172,9 @@ impl PlayerInterface for MprisPlayer {
         }
         Ok(())
     }
+    async fn position(&self) -> fdo::Result<Time> {
+        Ok(self.state.read().await.position)
+    }
 
     async fn open_uri(&self, _uri: String) -> fdo::Result<()> {
         Ok(())
@@ -243,18 +246,6 @@ impl PlayerInterface for MprisPlayer {
         // }
 
         Ok(())
-    }
-
-    async fn position(&self) -> fdo::Result<Time> {
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::SyncMprisState))
-            .await
-        {
-            log::error!("Error sending Message through async channel: {e}");
-        }
-
-        Ok(self.state.read().await.position)
     }
 
     async fn minimum_rate(&self) -> fdo::Result<PlaybackRate> {
