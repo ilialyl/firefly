@@ -66,7 +66,7 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
         {
             if model.player.looping {
                 if let Err(e) = model.player.reload().await {
-                    log::error!("{}", e);
+                    log::error!("Error looping track: {}", e);
                 }
             }
         }
@@ -82,6 +82,7 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
         } else if model.player.current.is_some()
             && model.player.sink.empty()
             && model.queue.is_empty()
+            && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
             model.player.reload().await.unwrap();
             model.player.sink.pause();

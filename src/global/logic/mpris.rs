@@ -92,7 +92,7 @@ impl RootInterface for MprisPlayer {
 
 impl PlayerInterface for MprisPlayer {
     async fn next(&self) -> fdo::Result<()> {
-        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Skip)).await {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Next)).await {
             log::error!("Error sending Message through async channel: {e}");
         }
 
@@ -173,7 +173,17 @@ impl PlayerInterface for MprisPlayer {
         Ok(())
     }
     async fn position(&self) -> fdo::Result<Time> {
-        Ok(self.state.read().await.position)
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::UpdateMprisPos))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
+
+        let pos = self.state.read().await.position;
+        log::info!("Mpris retrieved position: {}", pos.as_micros());
+        Ok(pos)
     }
 
     async fn open_uri(&self, _uri: String) -> fdo::Result<()> {

@@ -7,7 +7,7 @@ use tokio::sync::Mutex;
 pub enum PlayerMessage {
     LoadNow,
     TogglePlay,
-    Skip,
+    Next,
     PreviousTrack,
     IncreaseVolume(f32),
     DecreaseVolume(f32),
@@ -19,5 +19,5 @@ pub enum PlayerMessage {
     ToggleLoop,
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
-    SyncMprisState,
+    UpdateMprisPos,
 }

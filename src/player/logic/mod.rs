@@ -99,42 +99,7 @@ impl Player {
 
     pub async fn set_volume(&mut self, amount: f32) -> Result<()> {
         self.sink.set_volume(amount.clamp(MIN_VOLUME, MAX_VOLUME));
-        self.update_mpris_volume().await?;
-
-        Ok(())
-    }
-
-    pub async fn update_mpris_volume(&mut self) -> Result<()> {
-        if let Some(mpris_server) = self.mpris_server.as_ref()
-            && let Some(mpris_state) = self.mpris_state.as_ref()
-        {
-            let vol = self.volume() as f64;
-            mpris_server
-                .properties_changed([Property::Volume(vol)])
-                .await?;
-
-            mpris_state.write().await.volume = vol;
-        }
-
-        Ok(())
-    }
-
-    pub async fn update_mpris_loop_status(&mut self) -> Result<()> {
-        if let Some(mpris_server) = self.mpris_server.as_ref()
-            && let Some(mpris_state) = self.mpris_state.as_ref()
-        {
-            let loop_status = if self.looping {
-                LoopStatus::Track
-            } else {
-                LoopStatus::None
-            };
-
-            mpris_server
-                .properties_changed([Property::LoopStatus(loop_status)])
-                .await?;
-
-            mpris_state.write().await.loop_status = loop_status;
-        }
+        self.update_and_notify_volume().await?;
 
         Ok(())
     }
@@ -149,7 +114,7 @@ impl Player {
             };
         }
 
-        self.update_mpris_pos().await?;
+        self.update_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -167,7 +132,7 @@ impl Player {
             return Err(eyre!("{e}"));
         };
 
-        self.update_mpris_pos().await?;
+        self.update_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -182,7 +147,7 @@ impl Player {
             };
         }
 
-        self.update_mpris_pos().await?;
+        self.update_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -195,8 +160,8 @@ impl Player {
             self.sink.play();
         }
 
-        self.update_mpris_pos().await?;
-        self.update_mpris_playback_status().await?;
+        self.update_and_notify_mpris_pos().await?;
+        self.update_and_notify_playback_status().await?;
 
         Ok(())
     }
@@ -213,8 +178,8 @@ impl Player {
 
         self.new_track(&path)?;
 
-        self.update_mpris_metadata().await?;
-        self.update_mpris_pos().await?;
+        self.update_and_notify_metadata().await?;
+        self.update_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -234,61 +199,15 @@ impl Player {
 
         self.new_track(&prev)?;
 
-        self.update_mpris_metadata().await?;
-        self.update_mpris_pos().await?;
-
-        Ok(())
-    }
-
-    pub async fn update_mpris_metadata(&mut self) -> Result<()> {
-        if let Some(mpris_server) = self.mpris_server.as_ref()
-            && let Some(current) = self.current.as_ref()
-            && let Some(mpris_state) = self.mpris_state.as_ref()
-        {
-            mpris_server
-                .properties_changed([Property::Metadata(current.metadata.clone())])
-                .await?;
-
-            mpris_state.write().await.metadata = current.metadata.clone();
-        }
-
-        Ok(())
-    }
-
-    pub async fn update_mpris_pos(&mut self) -> Result<()> {
-        if self.current.is_some()
-            && let Some(mpris_server) = self.mpris_server.as_ref()
-            && let Some(mpris_state) = self.mpris_state.as_ref()
-        {
-            let pos = Time::from_secs(self.sink.get_pos().as_secs() as i64);
-            mpris_server.emit(Signal::Seeked { position: pos }).await?;
-
-            mpris_state.write().await.position = pos;
-        }
-
-        Ok(())
-    }
-
-    pub async fn update_mpris_playback_status(&mut self) -> Result<()> {
-        if self.current.is_some()
-            && let Some(mpris_server) = self.mpris_server.as_ref()
-            && let Some(mpris_state) = self.mpris_state.as_ref()
-        {
-            mpris_server
-                .properties_changed([Property::PlaybackStatus(
-                    self.sink_status_to_mpris_playback_status(),
-                )])
-                .await?;
-
-            mpris_state.write().await.playback_status = self.sink_status_to_mpris_playback_status();
-        }
+        self.update_and_notify_metadata().await?;
+        self.update_and_notify_mpris_pos().await?;
 
         Ok(())
     }
 
     pub async fn toggle_loop(&mut self) -> Result<()> {
         self.looping = !self.looping;
-        self.update_mpris_loop_status().await?;
+        self.update_and_notify_loop_status().await?;
 
         Ok(())
     }
@@ -311,17 +230,110 @@ impl Player {
             self.sink.pause();
         }
 
-        self.update_mpris_playback_status().await?;
+        self.update_and_notify_playback_status().await?;
 
         Ok(())
     }
 
-    pub async fn notify_mpris_all(&mut self) -> Result<()> {
-        self.update_mpris_pos().await?;
-        self.update_mpris_playback_status().await?;
-        self.update_mpris_metadata().await?;
-        self.update_mpris_volume().await?;
-        self.update_mpris_loop_status().await?;
+    pub async fn update_and_notify_volume(&mut self) -> Result<()> {
+        if let Some(mpris_server) = self.mpris_server.as_ref()
+            && let Some(mpris_state) = self.mpris_state.as_ref()
+        {
+            let vol = self.volume() as f64;
+            mpris_server
+                .properties_changed([Property::Volume(vol)])
+                .await?;
+
+            mpris_state.write().await.volume = vol;
+        }
+
+        Ok(())
+    }
+
+    pub async fn update_and_notify_loop_status(&mut self) -> Result<()> {
+        if let Some(mpris_server) = self.mpris_server.as_ref()
+            && let Some(mpris_state) = self.mpris_state.as_ref()
+        {
+            let loop_status = if self.looping {
+                LoopStatus::Track
+            } else {
+                LoopStatus::None
+            };
+
+            mpris_server
+                .properties_changed([Property::LoopStatus(loop_status)])
+                .await?;
+
+            mpris_state.write().await.loop_status = loop_status;
+        }
+
+        Ok(())
+    }
+
+    pub async fn update_and_notify_mpris_pos(&mut self) -> Result<()> {
+        if self.current.is_some()
+            && let Some(mpris_server) = self.mpris_server.as_ref()
+            && let Some(mpris_state) = self.mpris_state.as_ref()
+        {
+            let pos = Time::from_secs(self.sink.get_pos().as_secs() as i64);
+            mpris_server.emit(Signal::Seeked { position: pos }).await?;
+            log::info!("Player set mpris position to {:?}.", pos);
+            mpris_state.write().await.position = pos;
+        }
+
+        Ok(())
+    }
+
+    pub async fn update_and_notify_playback_status(&mut self) -> Result<()> {
+        if self.current.is_some()
+            && let Some(mpris_server) = self.mpris_server.as_ref()
+            && let Some(mpris_state) = self.mpris_state.as_ref()
+        {
+            mpris_server
+                .properties_changed([Property::PlaybackStatus(
+                    self.sink_status_to_mpris_playback_status(),
+                )])
+                .await?;
+
+            mpris_state.write().await.playback_status = self.sink_status_to_mpris_playback_status();
+        }
+
+        Ok(())
+    }
+
+    pub async fn update_and_notify_metadata(&mut self) -> Result<()> {
+        if let Some(mpris_server) = self.mpris_server.as_ref()
+            && let Some(current) = self.current.as_ref()
+            && let Some(mpris_state) = self.mpris_state.as_ref()
+        {
+            mpris_server
+                .properties_changed([Property::Metadata(current.metadata.clone())])
+                .await?;
+
+            mpris_state.write().await.metadata = current.metadata.clone();
+        }
+
+        Ok(())
+    }
+
+    pub async fn update_and_notify_mpris_all(&mut self) -> Result<()> {
+        self.update_and_notify_mpris_pos().await?;
+        self.update_and_notify_playback_status().await?;
+        self.update_and_notify_metadata().await?;
+        self.update_and_notify_volume().await?;
+        self.update_and_notify_loop_status().await?;
+        Ok(())
+    }
+
+    pub async fn update_mpris_pos(&mut self) -> Result<()> {
+        if self.current.is_some()
+            && let Some(mpris_state) = self.mpris_state.as_ref()
+        {
+            let pos = Time::from_secs(self.sink.get_pos().as_secs() as i64);
+            mpris_state.write().await.position = pos;
+            log::info!("Player set mpris position to {:?}.", pos);
+        }
+
         Ok(())
     }
 }
