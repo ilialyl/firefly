@@ -160,7 +160,6 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn set_position(&self, _track_id: TrackId, position: Time) -> fdo::Result<()> {
-        log::error!("{:?}", position);
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::SetPosition(
@@ -170,12 +169,14 @@ impl PlayerInterface for MprisPlayer {
         {
             log::error!("Error sending Message through async channel: {e}");
         }
+        log::info!("Mpris set position to {:?}.", position);
+
         Ok(())
     }
     async fn position(&self) -> fdo::Result<Time> {
         if let Err(e) = self
             .tx
-            .send(Message::Player(PlayerMessage::UpdateMprisPos))
+            .send(Message::Player(PlayerMessage::SyncMprisPos))
             .await
         {
             log::error!("Error sending Message through async channel: {e}");
@@ -233,27 +234,24 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn volume(&self) -> fdo::Result<Volume> {
-        let rounded = (self.state.read().await.volume * 100.0).round() / 100.0;
+        let vol = self.state.read().await.volume;
 
-        Ok(rounded)
+        log::info!("Mpris retrieved volume: {:?}.", vol);
+
+        Ok(vol)
     }
 
-    async fn set_volume(&self, _volume: Volume) -> Result<()> {
-        // let new_rounded = (volume * 100.0).round() / 100.0;
-        // let old_rounded = (self.state.read().await.volume * 100.0).round() / 100.0;
-
-        // if new_rounded != old_rounded {
-        //     log::info!("Mpris setting volume to {}.", new_rounded);
-        //     if let Err(e) = self
-        //         .tx
-        //         .send(Message::Player(PlayerMessage::SetVolume(
-        //             new_rounded as f32,
-        //         )))
-        //         .await
-        //     {
-        //         log::error!("Error sending Message through async channel: {e}");
-        //     }
-        // }
+    async fn set_volume(&self, volume: Volume) -> Result<()> {
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SetVolume(
+                ((volume * 1000.0).round() / 1000.0) as f32,
+            )))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
+        log::info!("Mpris set volume to {:?}.", volume);
 
         Ok(())
     }

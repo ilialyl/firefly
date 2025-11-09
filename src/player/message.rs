@@ -19,5 +19,6 @@ pub enum PlayerMessage {
     ToggleLoop,
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
-    UpdateMprisPos,
+    SyncMprisPos,
+    SyncMprisVolume,
 }

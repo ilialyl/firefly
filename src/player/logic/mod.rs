@@ -99,7 +99,7 @@ impl Player {
 
     pub async fn set_volume(&mut self, amount: f32) -> Result<()> {
         self.sink.set_volume(amount.clamp(MIN_VOLUME, MAX_VOLUME));
-        self.update_and_notify_volume().await?;
+        self.sync_mpris_volume().await?;
 
         Ok(())
     }
@@ -114,7 +114,7 @@ impl Player {
             };
         }
 
-        self.update_and_notify_mpris_pos().await?;
+        self.sync_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -132,7 +132,7 @@ impl Player {
             return Err(eyre!("{e}"));
         };
 
-        self.update_and_notify_mpris_pos().await?;
+        self.sync_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -147,7 +147,7 @@ impl Player {
             };
         }
 
-        self.update_and_notify_mpris_pos().await?;
+        self.sync_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -160,8 +160,8 @@ impl Player {
             self.sink.play();
         }
 
-        self.update_and_notify_mpris_pos().await?;
-        self.update_and_notify_playback_status().await?;
+        self.sync_and_notify_mpris_pos().await?;
+        self.sync_and_notify_playback_status().await?;
 
         Ok(())
     }
@@ -178,8 +178,8 @@ impl Player {
 
         self.new_track(&path)?;
 
-        self.update_and_notify_metadata().await?;
-        self.update_and_notify_mpris_pos().await?;
+        self.sync_and_notify_metadata().await?;
+        self.sync_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -199,15 +199,15 @@ impl Player {
 
         self.new_track(&prev)?;
 
-        self.update_and_notify_metadata().await?;
-        self.update_and_notify_mpris_pos().await?;
+        self.sync_and_notify_metadata().await?;
+        self.sync_and_notify_mpris_pos().await?;
 
         Ok(())
     }
 
     pub async fn toggle_loop(&mut self) -> Result<()> {
         self.looping = !self.looping;
-        self.update_and_notify_loop_status().await?;
+        self.sync_and_notify_loop_status().await?;
 
         Ok(())
     }
@@ -230,27 +230,32 @@ impl Player {
             self.sink.pause();
         }
 
-        self.update_and_notify_playback_status().await?;
+        self.sync_and_notify_playback_status().await?;
 
         Ok(())
     }
 
-    pub async fn update_and_notify_volume(&mut self) -> Result<()> {
-        if let Some(mpris_server) = self.mpris_server.as_ref()
-            && let Some(mpris_state) = self.mpris_state.as_ref()
-        {
+    pub async fn notify_mpris_volume(&mut self) -> Result<()> {
+        if let Some(mpris_server) = self.mpris_server.as_ref() {
             let vol = self.volume() as f64;
             mpris_server
                 .properties_changed([Property::Volume(vol)])
                 .await?;
+        }
 
+        Ok(())
+    }
+
+    pub async fn sync_mpris_volume(&mut self) -> Result<()> {
+        if let Some(mpris_state) = self.mpris_state.as_ref() {
+            let vol = self.volume() as f64;
             mpris_state.write().await.volume = vol;
         }
 
         Ok(())
     }
 
-    pub async fn update_and_notify_loop_status(&mut self) -> Result<()> {
+    pub async fn sync_and_notify_loop_status(&mut self) -> Result<()> {
         if let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
         {
@@ -270,7 +275,7 @@ impl Player {
         Ok(())
     }
 
-    pub async fn update_and_notify_mpris_pos(&mut self) -> Result<()> {
+    pub async fn sync_and_notify_mpris_pos(&mut self) -> Result<()> {
         if self.current.is_some()
             && let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
@@ -284,7 +289,7 @@ impl Player {
         Ok(())
     }
 
-    pub async fn update_and_notify_playback_status(&mut self) -> Result<()> {
+    pub async fn sync_and_notify_playback_status(&mut self) -> Result<()> {
         if self.current.is_some()
             && let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
@@ -301,7 +306,7 @@ impl Player {
         Ok(())
     }
 
-    pub async fn update_and_notify_metadata(&mut self) -> Result<()> {
+    pub async fn sync_and_notify_metadata(&mut self) -> Result<()> {
         if let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(current) = self.current.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
@@ -317,15 +322,15 @@ impl Player {
     }
 
     pub async fn update_and_notify_mpris_all(&mut self) -> Result<()> {
-        self.update_and_notify_mpris_pos().await?;
-        self.update_and_notify_playback_status().await?;
-        self.update_and_notify_metadata().await?;
-        self.update_and_notify_volume().await?;
-        self.update_and_notify_loop_status().await?;
+        self.sync_and_notify_mpris_pos().await?;
+        self.sync_and_notify_playback_status().await?;
+        self.sync_and_notify_metadata().await?;
+        self.notify_mpris_volume().await?;
+        self.sync_and_notify_loop_status().await?;
         Ok(())
     }
 
-    pub async fn update_mpris_pos(&mut self) -> Result<()> {
+    pub async fn sync_mpris_pos(&mut self) -> Result<()> {
         if self.current.is_some()
             && let Some(mpris_state) = self.mpris_state.as_ref()
         {

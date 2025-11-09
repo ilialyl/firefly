@@ -173,7 +173,7 @@ pub async fn play_next_track(model: &mut Model) -> Option<Message> {
         log::error!("Error reloading track in skip(): {e}");
     }
 
-    if let Err(e) = model.player.update_and_notify_metadata().await {
+    if let Err(e) = model.player.sync_and_notify_metadata().await {
         log::error!("Error updating metadata for mpris server: {e}");
     };
 
@@ -273,9 +273,17 @@ pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub async fn update_mpris_pos(model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.player.update_mpris_pos().await {
-        log::error!("Error updating mpris state: {e}");
+pub async fn sync_mpris_pos(model: &mut Model) -> Option<Message> {
+    if let Err(e) = model.player.sync_mpris_pos().await {
+        log::error!("Error syncing mpris position: {e}");
+    }
+
+    None
+}
+
+pub async fn sync_mpris_volume(model: &mut Model) -> Option<Message> {
+    if let Err(e) = model.player.sync_mpris_volume().await {
+        log::error!("Error syncing mpris volume: {e}");
     }
 
     None
