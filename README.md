@@ -11,8 +11,8 @@ Written in Rust with audio playback handled by [Rodio](https://github.com/RustAu
 - Track and Directory queuing
 - Queue Arrangement, Shuffling, Clearing
 - Skip Forward or Backward
-- Metadata Display (Cover Art, Title, Artist, Album, Year, Bit Depth, Sample Rate, Bitrate)
-- [Linux] Basic Media Key Controls (Play and Pause)
+- Metadata Display
+- [Linux] MPRIS Support: Media control with metadata, including cover art. KDE Connect compatible.
 
 ### Formats Supported
 - FLAC ([Symphonia](https://github.com/pdeljanov/Symphonia))
@@ -28,7 +28,7 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `fi
 - [x] Playlists (v0.6.0)
 - [x] Album art display for supported terminals (v0.7.0)
 - [x] UI overhaul (v0.7.0)
-- [ ] Proper MPRIS control
+- [x] Proper MPRIS control
 
 ## Installation
 ### Windows and Linux
