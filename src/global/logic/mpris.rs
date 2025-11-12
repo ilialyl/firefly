@@ -138,6 +138,13 @@ impl PlayerInterface for MprisPlayer {
 
     async fn stop(&self) -> fdo::Result<()> {
         log::info!("Mpris called stop().");
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::ClearCurrent))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 

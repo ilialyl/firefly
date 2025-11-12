@@ -22,5 +22,6 @@ pub async fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Mess
         PlayerMessage::ConversionEnded => conversion_ended(model).await,
         PlayerMessage::SyncMprisPos(done_tx) => sync_mpris_pos(done_tx, model).await,
         PlayerMessage::SyncMprisVolume => sync_mpris_volume(model).await,
+        PlayerMessage::ClearCurrent => clear_current(model).await,
     }
 }

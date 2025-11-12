@@ -3,7 +3,7 @@ pub mod playback_status;
 pub mod track;
 
 use color_eyre::eyre::{Result, eyre};
-use mpris_server::{LoopStatus, PlaybackStatus, Property, Server, Signal, Time};
+use mpris_server::{LoopStatus, Metadata, PlaybackStatus, Property, Server, Signal, Time};
 use rodio::{OutputStream, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
@@ -273,8 +273,7 @@ impl Player {
     }
 
     pub async fn sync_and_notify_mpris_pos(&mut self) -> Result<()> {
-        if self.current.is_some()
-            && let Some(mpris_server) = self.mpris_server.as_ref()
+        if let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
         {
             let pos = Time::from_secs(self.sink.get_pos().as_secs() as i64);
@@ -287,8 +286,7 @@ impl Player {
     }
 
     pub async fn sync_and_notify_playback_status(&mut self) -> Result<()> {
-        if self.current.is_some()
-            && let Some(mpris_server) = self.mpris_server.as_ref()
+        if let Some(mpris_server) = self.mpris_server.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
         {
             mpris_server
@@ -305,14 +303,21 @@ impl Player {
 
     pub async fn sync_and_notify_metadata(&mut self) -> Result<()> {
         if let Some(mpris_server) = self.mpris_server.as_ref()
-            && let Some(current) = self.current.as_ref()
             && let Some(mpris_state) = self.mpris_state.as_ref()
         {
-            mpris_server
-                .properties_changed([Property::Metadata(current.metadata.clone())])
-                .await?;
+            if let Some(current) = self.current.as_ref() {
+                mpris_server
+                    .properties_changed([Property::Metadata(current.metadata.clone())])
+                    .await?;
 
-            mpris_state.write().await.metadata = current.metadata.clone();
+                mpris_state.write().await.metadata = current.metadata.clone();
+            } else {
+                mpris_server
+                    .properties_changed([Property::Metadata(Metadata::new())])
+                    .await?;
+
+                mpris_state.write().await.metadata = Metadata::new();
+            }
         }
 
         Ok(())

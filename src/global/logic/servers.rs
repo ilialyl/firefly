@@ -14,8 +14,8 @@ pub async fn run_cover_art_server(listener: TcpListener) -> Result<()> {
     );
     tokio::spawn(async move {
         log::info!(
-            "Cover art server starting at {}...",
-            listener.local_addr().unwrap()
+            "Cover art server starting at {:?}...",
+            listener.local_addr()
         );
         if let Err(e) = axum::serve(listener, app.into_make_service()).await {
             log::error!("Error serving: {e}");

@@ -274,7 +274,9 @@ pub async fn sync_mpris_pos(done_tx: Sender<()>, model: &mut Model) -> Option<Me
     if let Err(e) = model.player.sync_mpris_pos().await {
         log::error!("Error syncing mpris position: {e}");
     }
-    done_tx.send(()).unwrap();
+    if let Err(e) = done_tx.send(()) {
+        log::error!("Error sending mpris sync success signal: {:?}", e)
+    }
 
     None
 }
@@ -282,6 +284,17 @@ pub async fn sync_mpris_pos(done_tx: Sender<()>, model: &mut Model) -> Option<Me
 pub async fn sync_mpris_volume(model: &mut Model) -> Option<Message> {
     if let Err(e) = model.player.sync_mpris_volume().await {
         log::error!("Error syncing mpris volume: {e}");
+    }
+
+    None
+}
+
+pub async fn clear_current(model: &mut Model) -> Option<Message> {
+    model.queue.clear();
+    model.player.current = None;
+    model.player.sink.clear();
+    if let Err(e) = model.player.sync_and_notify_mpris_all().await {
+        log::error!("Error clearing current track and queue: {e}");
     }
 
     None

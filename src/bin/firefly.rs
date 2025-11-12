@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
                     .senders
                     .msg
                     .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
-                    .unwrap();
+                    .expect("Error sending queue.");
             }
         }
         _ => {}

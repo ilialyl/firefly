@@ -197,7 +197,7 @@ impl Playlist {
         if let Some(current_name) = self.get_name() {
             let path = Self::get_path_from_name(current_name)?;
             if path.exists() {
-                std::fs::remove_file(&path).unwrap();
+                std::fs::remove_file(&path)?;
             }
         }
 
