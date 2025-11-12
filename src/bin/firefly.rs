@@ -22,12 +22,10 @@ use firefly_music::{
         message::Message,
         update::update_global,
         view::draw,
-        view_logic::terminal::{
-            handle_events, init_terminal, install_panic_hook, restore_terminal,
-        },
     },
     model::Model,
     queue::message::QueueMessage,
+    terminal::{handle_events, init_terminal, install_panic_hook, restore_terminal},
 };
 
 #[tokio::main]

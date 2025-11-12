@@ -1,4 +1,5 @@
 pub mod confirmation_box;
+pub mod focused_area;
 pub mod help;
 pub mod home;
 
@@ -11,7 +12,7 @@ use ratatui::{
 };
 
 use crate::{
-    global::view_logic::focused_area::FocusedArea,
+    global::view::focused_area::FocusedArea,
     model::Model,
     player::view::{control_bar, cover_art, track_details},
     playlist, queue,

@@ -7,7 +7,6 @@ use crate::{
             files::{choose_dirs, choose_multiple_audio_files, filter_dir_for_audio_files},
         },
         message::Message,
-        view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
     playlist::{
@@ -17,6 +16,7 @@ use crate::{
         },
         message::PlaylistMessage,
     },
+    terminal::CursorMovementDirection,
     user_input::{logic::InputTarget, message::UserInputMessage},
 };
 

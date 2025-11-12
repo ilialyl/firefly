@@ -6,7 +6,7 @@ use ratatui_image::picker::Picker;
 use crate::{
     global::{
         logic::{confirmation::Confirmation, senders::Senders, session_state::Session},
-        view_logic::focused_area::FocusedArea,
+        view::focused_area::FocusedArea,
     },
     player::logic::Player,
     playlist::logic::playlist_controller::PlaylistController,

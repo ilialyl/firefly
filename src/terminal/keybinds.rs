@@ -1,15 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
-    global::{
-        logic::confirmation::Response,
-        message::Message,
-        view_logic::{focused_area::FocusedArea, terminal::CursorMovementDirection},
-    },
+    global::{logic::confirmation::Response, message::Message, view::focused_area::FocusedArea},
     model::Model,
     player::{logic::DEFAULT_VOLUME_CHANGE_AMOUNT, message::PlayerMessage},
     playlist::message::PlaylistMessage,
     queue::message::QueueMessage,
+    terminal::CursorMovementDirection,
     user_input::{logic::InputMode, message::UserInputMessage},
 };
 

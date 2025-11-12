@@ -9,7 +9,7 @@ use ratatui::{
 };
 
 use crate::{
-    global::view_logic::focused_area::FocusedArea, model::Model,
+    global::view::focused_area::FocusedArea, model::Model,
     playlist::logic::playlist_tab_focus::PlaylistTabFocus,
 };
 
