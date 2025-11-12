@@ -6,7 +6,7 @@ use crate::{
     player::{logic::DEFAULT_VOLUME_CHANGE_AMOUNT, message::PlayerMessage},
     playlist::message::PlaylistMessage,
     queue::message::QueueMessage,
-    terminal::CursorMovementDirection,
+    terminal::Direction,
     user_input::{logic::InputMode, message::UserInputMessage},
 };
 
@@ -24,17 +24,15 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
                 KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::SendToPlayer)),
                 KeyCode::Delete => Some(Message::Playlist(PlaylistMessage::RemoveTrack)),
-                KeyCode::Right => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Right,
+                KeyCode::Right => Some(Message::Playlist(PlaylistMessage::Navigate(
+                    Direction::Right,
                 ))),
-                KeyCode::Left => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Left,
+                KeyCode::Left => Some(Message::Playlist(PlaylistMessage::Navigate(
+                    Direction::Left,
                 ))),
-                KeyCode::Up => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Up,
-                ))),
-                KeyCode::Down => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Down,
+                KeyCode::Up => Some(Message::Playlist(PlaylistMessage::Navigate(Direction::Up))),
+                KeyCode::Down => Some(Message::Playlist(PlaylistMessage::Navigate(
+                    Direction::Down,
                 ))),
                 KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::SendToPlayer)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),

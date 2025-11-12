@@ -1,11 +1,11 @@
 use crate::{
     global::message::Message,
     playlist::logic::{mini_metadata::MiniMetadata, playlist_collection::Index},
-    terminal::CursorMovementDirection,
+    terminal::Direction,
 };
 
 pub enum PlaylistMessage {
-    MoveCursor(CursorMovementDirection),
+    Navigate(Direction),
     Create,
     Rename,
     Delete,

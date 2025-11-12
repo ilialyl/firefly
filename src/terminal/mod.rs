@@ -22,7 +22,7 @@ use crossterm::event::{self, Event, KeyEventKind};
 use crate::{global::message::Message, model::Model, terminal::keybinds::handle_key_inputs};
 
 #[derive(Clone, Copy)]
-pub enum CursorMovementDirection {
+pub enum Direction {
     Up,
     Down,
     Left,
