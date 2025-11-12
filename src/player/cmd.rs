@@ -55,8 +55,9 @@ pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
                 set_position(new_pos, model).await;
             }
         } else if offset.is_negative() {
-            let new_pos =
-                Duration::from_secs(pos_time.as_secs().saturating_add(offset.as_secs()) as u64);
+            let new_pos = Duration::from_secs(
+                pos_time.as_secs().saturating_add(offset.as_secs()).max(0) as u64,
+            );
             if dur > new_pos {
                 set_position(new_pos, model).await;
             }
