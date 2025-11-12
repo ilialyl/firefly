@@ -1,11 +1,25 @@
+use std::{sync::Arc, time::Duration};
+
+use mpris_server::Time;
+use rust_ffmpeg::FFmpegProcess;
+use tokio::sync::{Mutex, oneshot::Sender};
+
 pub enum PlayerMessage {
     LoadNow,
     TogglePlay,
-    Skip,
+    Next,
     PreviousTrack,
-    IncreaseVolume,
-    DecreaseVolume,
-    Seek,
-    Rewind,
+    IncreaseVolume(f32),
+    DecreaseVolume(f32),
+    SetVolume(f32),
+    Seek(Option<Duration>),
+    Rewind(Option<Duration>),
+    SeekOffset(Time),
+    SetPosition(Duration),
     ToggleLoop,
+    ConversionStarted(Arc<Mutex<FFmpegProcess>>),
+    ConversionEnded,
+    SyncMprisPos(Sender<()>),
+    SyncMprisVolume,
+    ClearCurrent,
 }

@@ -7,17 +7,15 @@ use crate::{
     user_input::update::update_userinput,
 };
 
-pub fn update_global(model: &mut Model, msg: Message) -> Option<Message> {
+pub async fn update_global(model: &mut Model, msg: Message) -> Option<Message> {
     match msg {
-        Message::Tick => tick(model),
+        Message::Tick => tick(model).await,
         Message::AskConfirmation(prompt, msg) => ask_for_confirmation(prompt, *msg, model),
         Message::Confirm(answer) => confirmed(answer, model),
-        Message::Player(player_msg) => update_player(model, player_msg),
-        Message::Queue(queue_msg) => update_queue(model, queue_msg),
+        Message::Player(player_msg) => update_player(model, player_msg).await,
+        Message::Queue(queue_msg) => update_queue(model, queue_msg).await,
         Message::Playlist(playlist_msg) => update_playlist(model, playlist_msg),
         Message::UserInput(userinput_msg) => update_userinput(model, userinput_msg),
-        Message::ConversionStarted(handle) => conversion_started(handle, model),
-        Message::ConversionEnded => conversion_ended(model),
         Message::UpdateInfoMsg(info) => update_info_msg(info, model),
         Message::CycleTabs => cycle_tabs(model),
         Message::AcknowledgeInfo => acknowledge_info(model),

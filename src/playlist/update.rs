@@ -9,7 +9,7 @@ pub fn update_playlist(model: &mut Model, msg: PlaylistMessage) -> Option<Messag
         PlaylistMessage::Create => create_playlist(&mut model.playlist_ctl),
         PlaylistMessage::AddTracks => add_tracks(&mut model.playlist_ctl),
         PlaylistMessage::SendToPlayer => send_to_player(model),
-        PlaylistMessage::MoveCursor(direction) => move_cursor(direction, &mut model.playlist_ctl),
+        PlaylistMessage::Navigate(direction) => move_cursor(direction, &mut model.playlist_ctl),
         PlaylistMessage::AddDir => add_dir(&mut model.playlist_ctl),
         PlaylistMessage::Delete => delete_playlist(
             &mut model.user_confirmation.response,

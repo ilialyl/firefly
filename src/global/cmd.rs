@@ -1,6 +1,6 @@
 use std::{
     io::Cursor,
-    sync::{Arc, Mutex, mpsc::Sender},
+    sync::{Arc, mpsc::Sender},
     thread,
     time::Duration,
 };
@@ -9,7 +9,6 @@ use image::ImageReader;
 use lofty::picture::Picture;
 use log::debug;
 use ratatui_image::{picker::Picker, protocol::StatefulProtocol};
-use rust_ffmpeg::FFmpegProcess;
 
 use crate::{
     global::{
@@ -19,35 +18,20 @@ use crate::{
     model::Model,
     player::{
         self,
-        logic::{
-            format_conversion::FormatConversion, playback_status::PlaybackStatus, track::Track,
-        },
+        logic::{format_conversion::FormatConversion, track::Track},
     },
     playlist::cmd::playlist_save_confirm_then_resume,
     user_input::logic::InputMode,
 };
 
-pub fn tick(model: &mut Model) -> Option<Message> {
+/// The main loop of the program that occurs every frame.
+pub async fn tick(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;
     }
 
-    if model.player.sink.is_paused() {
-        model.player.status = PlaybackStatus::Paused;
-    } else if !model.player.sink.empty() {
-        model.player.status = PlaybackStatus::Playing;
-    }
-
-    if model.player.sink.empty() & !model.player.looping {
-        model.player.status = PlaybackStatus::Idle;
-    }
-
     if let Some(current_track) = model.player.current.as_mut() {
-        // Update playback status
         let status = current_track.conversion_status;
-
-        // Update playback position
-        current_track.sync_pos_from_sink(&model.player.sink);
 
         // Create Protocol if the track has cover art, if not already.
         if !current_track.started_decoding
@@ -69,40 +53,48 @@ pub fn tick(model: &mut Model) -> Option<Message> {
             Track::convert_format(
                 &current_track.real_path,
                 &current_track.temp_path,
-                &model.senders.msg,
+                &model.senders.async_msg,
                 &model.senders.info,
-            );
+            )
+            .await;
         }
 
         // Reload track when track ends if looped
-        // Set position, duration, and status to default if not looped
         if model.player.sink.empty()
             && let Some(dur) = current_track.duration
-            && dur.saturating_sub(current_track.pos) < Duration::from_secs(3)
+            && dur.saturating_sub(model.player.sink.get_pos()) < Duration::from_secs(3)
         {
             if model.player.looping {
-                if let Err(e) = model.player.reload() {
-                    log::error!("{}", e);
+                if let Err(e) = model.player.reload().await {
+                    log::error!("Error looping track: {}", e);
                 }
             } else {
-                model.player.status = PlaybackStatus::Idle;
             }
         }
 
         // Load the next track after current track ends.
-        if model.player.status == PlaybackStatus::Idle
+        if model.player.sink.empty()
             && !model.queue.is_empty()
             && !model.player.looping
             && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
             debug!("Load the next track after current track ends.");
-            player::cmd::skip(model);
+            player::cmd::play_next_track(model).await;
+        } else if model.player.current.is_some()
+            && model.player.sink.empty()
+            && !model.queue.is_empty()
+            && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
+        {
+            if let Err(e) = model.player.reload().await {
+                log::error!("Error looping track: {}", e);
+            }
+            model.player.sink.pause();
         }
 
         // Load first track if no current track and there is something in the queue.
     } else if model.player.current.is_none() && !model.queue.is_empty() {
         debug!("Load first track (player.current is None)");
-        player::cmd::skip(model);
+        player::cmd::play_next_track(model).await;
     }
 
     None
@@ -123,26 +115,6 @@ pub fn confirmed(answer: Response, model: &mut Model) -> Option<Message> {
     model.user_confirmation.response = Some(answer);
 
     message
-}
-
-pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
-    model.player.ffmpeg_handle = Some(handle);
-    model.session.state = RunningState::RunningFFmpeg;
-
-    None
-}
-
-pub fn conversion_ended(model: &mut Model) -> Option<Message> {
-    model.session.state = RunningState::Running;
-    if let Some(current_track) = model.player.current.as_mut() {
-        current_track.conversion_status = FormatConversion::Done;
-        current_track.reload_after_conversion();
-        if let Err(e) = model.player.reload() {
-            log::error!("Error reloading track after conversion: {e}");
-        };
-    }
-
-    None
 }
 
 pub fn update_info_msg(info: String, model: &mut Model) -> Option<Message> {

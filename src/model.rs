@@ -6,7 +6,7 @@ use ratatui_image::picker::Picker;
 use crate::{
     global::{
         logic::{confirmation::Confirmation, senders::Senders, session_state::Session},
-        view_logic::focused_area::FocusedArea,
+        view::focused_area::FocusedArea,
     },
     player::logic::Player,
     playlist::logic::playlist_controller::PlaylistController,
@@ -30,12 +30,12 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(senders: Senders) -> Result<Model> {
+    pub async fn new(senders: Senders) -> Result<Model> {
         log::info!("Initializing App State...");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
-        let session = Session::default();
+        let session = Session::new().await?;
         Ok(Self {
-            player: Player::new()?,
+            player: Player::new(senders.async_msg.clone(), session.cover_server_addr).await?,
             queue: TrackQueue::new(senders.msg.clone(), session.unlocked_tick_rate.clone()),
             playlist_ctl: PlaylistController::new(
                 senders.msg.clone(),

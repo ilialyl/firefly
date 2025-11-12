@@ -1,3 +1,5 @@
+pub mod keybinds;
+
 use ratatui::{
     Terminal,
     backend::CrosstermBackend,
@@ -17,13 +19,10 @@ use std::time::Duration;
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyEventKind};
 
-use crate::{
-    global::{message::Message, view_logic::keybinds::handle_key_inputs},
-    model::Model,
-};
+use crate::{global::message::Message, model::Model, terminal::keybinds::handle_key_inputs};
 
 #[derive(Clone, Copy)]
-pub enum CursorMovementDirection {
+pub enum Direction {
     Up,
     Down,
     Left,

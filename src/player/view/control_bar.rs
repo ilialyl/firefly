@@ -1,18 +1,19 @@
 use std::time::Duration;
 
 use lofty::file::{AudioFile, TaggedFile};
+use mpris_server::PlaybackStatus;
 use ratatui::{
     Frame,
     layout::{Constraint, Flex, Layout, Rect},
     widgets::Paragraph,
 };
 
-use crate::{model::Model, player::logic::playback_status::PlaybackStatus};
+use crate::model::Model;
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let play_str = match model.player.status {
+    let play_str = match model.player.sink_status_to_mpris_playback_status() {
         PlaybackStatus::Playing => "Playing",
-        PlaybackStatus::Idle => "Idle",
+        PlaybackStatus::Stopped => "Idle",
         PlaybackStatus::Paused => "Paused",
     };
 
@@ -27,7 +28,7 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let duration_str = if let Some(current_track) = model.player.current.as_mut() {
         format!(
             "{} / {}",
-            duration_as_str(&current_track.pos),
+            duration_as_str(&model.player.sink.get_pos()),
             duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
         )
     } else {
@@ -55,8 +56,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     if let Some(current_track) = model.player.current.as_mut()
         && let Some(dur) = current_track.duration
     {
-        let bar_pos = get_progress_position(progress_str.chars().count(), &current_track.pos, &dur)
-            .saturating_sub(1);
+        let bar_pos = get_progress_position(
+            progress_str.chars().count(),
+            &model.player.sink.get_pos(),
+            &dur,
+        )
+        .saturating_sub(1);
         if let Some((byte_pos, ch)) = progress_str.char_indices().nth(bar_pos) {
             let byte_end = byte_pos + ch.len_utf8();
             progress_str.replace_range(byte_pos..byte_end, "⚬");
@@ -73,16 +78,16 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
 }
 
 pub fn draw_mini(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let play_str = match model.player.status {
+    let play_str = match model.player.sink_status_to_mpris_playback_status() {
         PlaybackStatus::Playing => "Playing",
-        PlaybackStatus::Idle => "Idle",
+        PlaybackStatus::Stopped => "Idle",
         PlaybackStatus::Paused => "Paused",
     };
 
     let duration_str = if let Some(current_track) = model.player.current.as_mut() {
         format!(
             "{} / {}",
-            duration_as_str(&current_track.pos),
+            duration_as_str(&model.player.sink.get_pos()),
             duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
         )
     } else {

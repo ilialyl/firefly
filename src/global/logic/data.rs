@@ -5,11 +5,10 @@ use std::{
 
 use color_eyre::eyre::Result;
 use glob::glob;
-use log::info;
 use platform_dirs::AppDirs;
 
-pub const TEMP_FILE_PREFIX: &str = "firefly";
 pub const APP_NAME: &str = "firefly_music";
+pub const COVER_ART_DIR: &str = "cover_art/";
 
 pub fn get_data_dir() -> Result<PathBuf> {
     if let Some(app_dirs) = AppDirs::new(Some(APP_NAME), false) {
@@ -37,26 +36,60 @@ pub fn get_cache_dir() -> Result<PathBuf> {
     }
 }
 
-pub fn clear_cache() -> Result<()> {
+pub fn clear_all_cache() -> Result<()> {
     let dir = get_cache_dir()?;
     if let Some(dir_str) = dir.as_os_str().to_str() {
-        let temp_pattern = glob(format!("{}/{}*", dir_str, TEMP_FILE_PREFIX).as_str());
+        let temp_pattern = glob(format!("{}/*", dir_str).as_str());
         for path in temp_pattern? {
             match path {
                 Ok(path) => {
                     if path.is_file() {
                         fs::remove_file(&path)?;
                         println!("Deleted {:?}", path);
-                        info!("Deleted {:?}", path);
+                        log::info!("Deleted {:?}", path);
                     }
                 }
                 Err(e) => {
-                    println!("Error: {:?}", e);
-                    info!("Error: {:?}", e);
+                    log::error!("Error: {:?}", e);
                 }
             }
         }
     }
 
     Ok(())
+}
+
+pub fn clear_art_cache() -> Result<()> {
+    let dir = get_art_cache_path()?;
+    if let Some(dir_str) = dir.as_os_str().to_str() {
+        let temp_pattern = glob(format!("{}/*", dir_str).as_str());
+        for path in temp_pattern? {
+            match path {
+                Ok(path) => {
+                    if path.is_file() {
+                        fs::remove_file(&path)?;
+                        log::info!("Deleted {:?}", path);
+                    }
+                }
+                Err(e) => {
+                    log::error!("Error: {:?}", e);
+                }
+            }
+        }
+    }
+
+    if dir.exists() && dir.is_dir() {
+        fs::remove_dir(dir)?;
+    }
+
+    Ok(())
+}
+
+pub fn get_art_cache_path() -> Result<PathBuf> {
+    let dir = get_cache_dir()?.join(COVER_ART_DIR);
+    if !dir.exists() {
+        fs::create_dir_all(&dir)?;
+    }
+
+    Ok(dir)
 }

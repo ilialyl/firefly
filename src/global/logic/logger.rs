@@ -20,6 +20,8 @@ pub fn setup_logger() -> Result<()> {
         })
         .level(log::LevelFilter::Info)
         .level_for("lofty", log::LevelFilter::Error)
+        .level_for("zbus", log::LevelFilter::Error)
+        .level_for("tracing", log::LevelFilter::Error)
         .chain(fern::log_file(log_path)?)
         .apply()?;
     Ok(())

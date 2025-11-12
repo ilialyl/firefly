@@ -1,25 +1,51 @@
-use std::future;
+use std::{sync::Arc, time::Duration};
 
-use async_std::{channel::Sender, task};
 use mpris_server::{
-    LocalPlayerInterface, LocalPlaylistsInterface, LocalRootInterface, LocalServer,
-    LocalTrackListInterface, LoopStatus, Metadata, PlaybackRate, PlaybackStatus, Playlist,
-    PlaylistId, PlaylistOrdering, Property, Signal, Time, TrackId, Uri, Volume,
+    LoopStatus, Metadata, PlaybackRate, PlaybackStatus, PlayerInterface, Playlist, PlaylistId,
+    PlaylistOrdering, PlaylistsInterface, RootInterface, Time, TrackId, TrackListInterface, Uri,
+    Volume,
     zbus::{Result, fdo},
 };
+use tokio::sync::{RwLock, mpsc::Sender};
 
-use crate::{global::message::Message, player::message::PlayerMessage};
+use crate::{
+    global::message::Message, player::message::PlayerMessage, queue::message::QueueMessage,
+};
+
+pub struct MprisPlayerState {
+    pub position: Time,
+    pub playback_status: PlaybackStatus,
+    pub metadata: Metadata,
+    pub volume: Volume,
+    pub loop_status: LoopStatus,
+}
+
+impl Default for MprisPlayerState {
+    fn default() -> Self {
+        Self {
+            position: Time::ZERO,
+            playback_status: PlaybackStatus::Stopped,
+            metadata: Metadata::new(),
+            volume: 1.0,
+            loop_status: LoopStatus::None,
+        }
+    }
+}
 
 pub struct MprisPlayer {
     pub tx: Sender<Message>,
+    pub state: Arc<RwLock<MprisPlayerState>>,
 }
 
-impl LocalRootInterface for MprisPlayer {
+impl RootInterface for MprisPlayer {
     async fn raise(&self) -> fdo::Result<()> {
         Ok(())
     }
 
     async fn quit(&self) -> fdo::Result<()> {
+        if let Err(e) = self.tx.send(Message::Quit).await {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
@@ -40,7 +66,7 @@ impl LocalRootInterface for MprisPlayer {
     }
 
     async fn can_raise(&self) -> fdo::Result<bool> {
-        Ok(true)
+        Ok(false)
     }
 
     async fn has_track_list(&self) -> fdo::Result<bool> {
@@ -64,85 +90,158 @@ impl LocalRootInterface for MprisPlayer {
     }
 }
 
-impl LocalPlayerInterface for MprisPlayer {
+impl PlayerInterface for MprisPlayer {
     async fn next(&self) -> fdo::Result<()> {
-        self.tx
-            .send(Message::Player(PlayerMessage::Skip))
-            .await
-            .unwrap();
+        log::info!("Mpris called next().");
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Next)).await {
+            log::error!("Error sending Message through async channel: {e}");
+        }
+
         Ok(())
     }
 
     async fn previous(&self) -> fdo::Result<()> {
-        self.tx
+        log::info!("Mpris called previous().");
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::PreviousTrack))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn pause(&self) -> fdo::Result<()> {
-        self.tx
+        log::info!("Mpris called pause().");
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn play_pause(&self) -> fdo::Result<()> {
-        self.tx
+        log::info!("Mpris called play_pause().");
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn stop(&self) -> fdo::Result<()> {
-        self.tx
-            .send(Message::Player(PlayerMessage::TogglePlay))
+        log::info!("Mpris called stop().");
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::ClearCurrent))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn play(&self) -> fdo::Result<()> {
-        self.tx
+        log::info!("Mpris called play().");
+        if let Err(e) = self
+            .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
-    async fn seek(&self, _offset: Time) -> fdo::Result<()> {
-        self.tx
-            .send(Message::Player(PlayerMessage::Seek))
+    async fn seek(&self, offset: Time) -> fdo::Result<()> {
+        log::info!("Mpris called seek().");
+        log::info!("Seek time: {:?}", offset.as_secs());
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SeekOffset(offset)))
             .await
-            .unwrap();
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
-    async fn set_position(&self, _track_id: TrackId, _position: Time) -> fdo::Result<()> {
+    async fn set_position(&self, _track_id: TrackId, position: Time) -> fdo::Result<()> {
+        log::info!("Mpris called set_position().");
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SetPosition(
+                Duration::from_secs(position.as_secs() as u64),
+            )))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
+        log::info!("Mpris set position to {:?}.", position);
+
         Ok(())
+    }
+    async fn position(&self) -> fdo::Result<Time> {
+        log::info!("Mpris called position().");
+
+        let (done_tx, done_rx) = tokio::sync::oneshot::channel::<()>();
+
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SyncMprisPos(done_tx)))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
+
+        let pos;
+        loop {
+            if !done_rx.is_empty() {
+                pos = self.state.read().await.position;
+                break;
+            }
+        }
+
+        log::info!("Mpris retrieved position: {}", pos.as_micros());
+        Ok(pos)
     }
 
     async fn open_uri(&self, _uri: String) -> fdo::Result<()> {
+        log::info!("Mpris called open_uri().");
         Ok(())
     }
 
     async fn playback_status(&self) -> fdo::Result<PlaybackStatus> {
-        Ok(PlaybackStatus::Playing)
+        log::info!("Mpris called playback_status().");
+        Ok(self.state.read().await.playback_status)
     }
 
     async fn loop_status(&self) -> fdo::Result<LoopStatus> {
-        Ok(LoopStatus::None)
+        log::info!("Mpris called loop_status().");
+        Ok(self.state.read().await.loop_status)
     }
 
     async fn set_loop_status(&self, _loop_status: LoopStatus) -> Result<()> {
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::ToggleLoop))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn rate(&self) -> fdo::Result<PlaybackRate> {
-        Ok(PlaybackRate::default())
+        log::info!("Mpris called rate().");
+        Ok(1.0)
     }
 
     async fn set_rate(&self, _rate: PlaybackRate) -> Result<()> {
@@ -154,39 +253,55 @@ impl LocalPlayerInterface for MprisPlayer {
     }
 
     async fn set_shuffle(&self, _shuffle: bool) -> Result<()> {
+        if let Err(e) = self.tx.send(Message::Queue(QueueMessage::Shuffle)).await {
+            log::error!("Error sending Message through async channel: {e}");
+        }
         Ok(())
     }
 
     async fn metadata(&self) -> fdo::Result<Metadata> {
-        Ok(Metadata::default())
+        log::info!("Mpris called metadata().");
+        Ok(self.state.read().await.metadata.clone())
     }
 
     async fn volume(&self) -> fdo::Result<Volume> {
-        Ok(Volume::default())
+        log::info!("Mpris called volume().");
+        let vol = self.state.read().await.volume;
+
+        log::info!("Mpris retrieved volume: {:?}.", vol);
+
+        Ok(vol)
     }
 
-    async fn set_volume(&self, _volume: Volume) -> Result<()> {
+    async fn set_volume(&self, volume: Volume) -> Result<()> {
+        if let Err(e) = self
+            .tx
+            .send(Message::Player(PlayerMessage::SetVolume(
+                ((volume * 1000.0).round() / 1000.0) as f32,
+            )))
+            .await
+        {
+            log::error!("Error sending Message through async channel: {e}");
+        }
+        log::info!("Mpris set volume to {:?}.", volume);
+
         Ok(())
     }
 
-    async fn position(&self) -> fdo::Result<Time> {
-        Ok(Time::ZERO)
-    }
-
     async fn minimum_rate(&self) -> fdo::Result<PlaybackRate> {
-        Ok(PlaybackRate::default())
+        Ok(1.0)
     }
 
     async fn maximum_rate(&self) -> fdo::Result<PlaybackRate> {
-        Ok(PlaybackRate::default())
+        Ok(1.0)
     }
 
     async fn can_go_next(&self) -> fdo::Result<bool> {
-        Ok(false)
+        Ok(true)
     }
 
     async fn can_go_previous(&self) -> fdo::Result<bool> {
-        Ok(false)
+        Ok(true)
     }
 
     async fn can_play(&self) -> fdo::Result<bool> {
@@ -198,7 +313,7 @@ impl LocalPlayerInterface for MprisPlayer {
     }
 
     async fn can_seek(&self) -> fdo::Result<bool> {
-        Ok(false)
+        Ok(true)
     }
 
     async fn can_control(&self) -> fdo::Result<bool> {
@@ -206,7 +321,7 @@ impl LocalPlayerInterface for MprisPlayer {
     }
 }
 
-impl LocalTrackListInterface for MprisPlayer {
+impl TrackListInterface for MprisPlayer {
     async fn get_tracks_metadata(&self, track_ids: Vec<TrackId>) -> fdo::Result<Vec<Metadata>> {
         println!("GetTracksMetadata({track_ids:?})");
         Ok(vec![])
@@ -243,7 +358,7 @@ impl LocalTrackListInterface for MprisPlayer {
     }
 }
 
-impl LocalPlaylistsInterface for MprisPlayer {
+impl PlaylistsInterface for MprisPlayer {
     async fn activate_playlist(&self, _playlist_id: PlaylistId) -> fdo::Result<()> {
         Ok(())
     }
@@ -269,26 +384,4 @@ impl LocalPlaylistsInterface for MprisPlayer {
     async fn active_playlist(&self) -> fdo::Result<Option<Playlist>> {
         Ok(None)
     }
-}
-
-pub async fn run_server(tx: Sender<Message>) -> Result<()> {
-    let server = LocalServer::new_with_all("Firefly", MprisPlayer { tx }).await?;
-    task::spawn_local(server.run());
-
-    server
-        .properties_changed([
-            Property::CanSeek(false),
-            Property::Metadata(Metadata::new()),
-        ])
-        .await?;
-
-    server
-        .emit(Signal::Seeked {
-            position: Time::from_micros(124),
-        })
-        .await?;
-
-    future::pending::<()>().await;
-
-    Ok(())
 }

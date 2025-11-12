@@ -1,15 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
-    global::{
-        logic::confirmation::Response,
-        message::Message,
-        view_logic::{focused_area::FocusedArea, terminal::CursorMovementDirection},
-    },
+    global::{logic::confirmation::Response, message::Message, view::focused_area::FocusedArea},
     model::Model,
-    player::message::PlayerMessage,
+    player::{logic::DEFAULT_VOLUME_CHANGE_AMOUNT, message::PlayerMessage},
     playlist::message::PlaylistMessage,
     queue::message::QueueMessage,
+    terminal::Direction,
     user_input::{logic::InputMode, message::UserInputMessage},
 };
 
@@ -22,22 +19,20 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Char('n') => Some(Message::Playlist(PlaylistMessage::Create)),
                 KeyCode::Char('W') => Some(Message::Playlist(PlaylistMessage::AddDir)),
                 KeyCode::Char('w') => Some(Message::Playlist(PlaylistMessage::AddTracks)),
-                KeyCode::Char('s') => Some(Message::Player(PlayerMessage::Skip)),
+                KeyCode::Char('s') => Some(Message::Player(PlayerMessage::Next)),
                 KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
                 KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
                 KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::SendToPlayer)),
                 KeyCode::Delete => Some(Message::Playlist(PlaylistMessage::RemoveTrack)),
-                KeyCode::Right => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Right,
+                KeyCode::Right => Some(Message::Playlist(PlaylistMessage::Navigate(
+                    Direction::Right,
                 ))),
-                KeyCode::Left => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Left,
+                KeyCode::Left => Some(Message::Playlist(PlaylistMessage::Navigate(
+                    Direction::Left,
                 ))),
-                KeyCode::Up => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Up,
-                ))),
-                KeyCode::Down => Some(Message::Playlist(PlaylistMessage::MoveCursor(
-                    CursorMovementDirection::Down,
+                KeyCode::Up => Some(Message::Playlist(PlaylistMessage::Navigate(Direction::Up))),
+                KeyCode::Down => Some(Message::Playlist(PlaylistMessage::Navigate(
+                    Direction::Down,
                 ))),
                 KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::SendToPlayer)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
@@ -54,17 +49,21 @@ pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> 
                 KeyCode::Esc => Some(Message::Quit),
                 KeyCode::Char('n') => Some(Message::Player(PlayerMessage::LoadNow)),
                 KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
-                KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume)),
-                KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume)),
-                KeyCode::Right => Some(Message::Player(PlayerMessage::Seek)),
-                KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind)),
+                KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume(
+                    DEFAULT_VOLUME_CHANGE_AMOUNT,
+                ))),
+                KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume(
+                    DEFAULT_VOLUME_CHANGE_AMOUNT,
+                ))),
+                KeyCode::Right => Some(Message::Player(PlayerMessage::Seek(None))),
+                KeyCode::Left => Some(Message::Player(PlayerMessage::Rewind(None))),
                 KeyCode::Char('l') => Some(Message::Player(PlayerMessage::ToggleLoop)),
                 KeyCode::Char('q') => Some(Message::Queue(QueueMessage::QueueFilesWithFileDialog)),
                 KeyCode::Char('Q') => Some(Message::Queue(QueueMessage::QueueDirsWithFileDialog)),
                 KeyCode::Up => Some(Message::Queue(QueueMessage::MoveUp)),
                 KeyCode::Down => Some(Message::Queue(QueueMessage::MoveDown)),
                 KeyCode::Char('a') => Some(Message::Queue(QueueMessage::ToggleArrange)),
-                KeyCode::Char('s') => Some(Message::Player(PlayerMessage::Skip)),
+                KeyCode::Char('s') => Some(Message::Player(PlayerMessage::Next)),
                 KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
                 KeyCode::Char('m') => Some(Message::Queue(QueueMessage::Shuffle)),
                 KeyCode::Char('h') => Some(Message::ShowHelp),

@@ -5,15 +5,16 @@ use std::{
     sync::mpsc::{self},
 };
 
-use async_std::task;
 use color_eyre::eyre::Result;
 
-use firefly_music::global::logic::{mpris::run_server, senders::Senders};
+use firefly_music::global::logic::{
+    data::clear_art_cache, senders::Senders, servers::run_cover_art_server,
+};
 use firefly_music::{
     global::{
         logic::{
             cli::cli,
-            data::{clear_cache, get_cache_dir},
+            data::{clear_all_cache, get_cache_dir},
             files::get_playlists_path,
             logger::{get_log_path, setup_logger},
             session_state::RunningState,
@@ -21,15 +22,13 @@ use firefly_music::{
         message::Message,
         update::update_global,
         view::draw,
-        view_logic::terminal::{
-            handle_events, init_terminal, install_panic_hook, restore_terminal,
-        },
     },
     model::Model,
     queue::message::QueueMessage,
+    terminal::{handle_events, init_terminal, install_panic_hook, restore_terminal},
 };
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     dpi::enable_dpi_awareness();
     color_eyre::install()?;
@@ -37,29 +36,23 @@ async fn main() -> Result<()> {
 
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
+    let (msg_async_tx, mut msg_async_rx) = tokio::sync::mpsc::channel(10);
     let senders = Senders {
         msg: msg_tx,
         info: info_tx,
+        async_msg: msg_async_tx,
     };
-    let mut model = Model::new(senders)?;
-
-    let (msg_async_tx, msg_async_rx) = async_std::channel::unbounded::<Message>();
-
-    #[cfg(not(target_os = "windows"))]
-    std::thread::spawn(move || {
-        task::block_on(async {
-            if let Err(e) = run_server(msg_async_tx).await {
-                eprintln!("Server error: {e}");
-            }
-        });
-    });
+    let mut model = Model::new(senders).await?;
+    if let Some(listener) = model.session.cover_listener.take() {
+        run_cover_art_server(listener).await?;
+    }
 
     // Clap stuff
     let cli_command = cli().get_matches();
 
     match cli_command.subcommand() {
         Some(("clean", _)) => {
-            clear_cache()?;
+            clear_all_cache()?;
             return Ok(());
         }
         Some(("log", _)) => {
@@ -83,7 +76,7 @@ async fn main() -> Result<()> {
                     .senders
                     .msg
                     .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
-                    .unwrap();
+                    .expect("Error sending queue.");
             }
         }
         _ => {}
@@ -97,7 +90,7 @@ async fn main() -> Result<()> {
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated
-        if let Some(msg) = update_global(&mut model, Message::Tick) {
+        if let Some(msg) = update_global(&mut model, Message::Tick).await {
             msg_queue.push_back(msg);
         }
 
@@ -121,14 +114,14 @@ async fn main() -> Result<()> {
 
         // Display info sent from other threads
         if let Ok(info) = info_rx.try_recv() {
-            update_global(&mut model, Message::UpdateInfoMsg(info));
+            update_global(&mut model, Message::UpdateInfoMsg(info)).await;
         }
 
         // Consume messages
         while !msg_queue.is_empty()
             && let Some(msg) = msg_queue.pop_front()
         {
-            if let Some(msg) = update_global(&mut model, msg) {
+            if let Some(msg) = update_global(&mut model, msg).await {
                 msg_queue.push_back(msg);
             }
         }
@@ -137,6 +130,7 @@ async fn main() -> Result<()> {
     // Give terminal back to user
     restore_terminal()?;
 
+    clear_art_cache()?;
     // Tell user they can clean up if they need to
     if fs::read_dir(get_cache_dir()?)?.count() != 0 {
         println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear cache.");

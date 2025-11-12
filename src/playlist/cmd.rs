@@ -7,7 +7,6 @@ use crate::{
             files::{choose_dirs, choose_multiple_audio_files, filter_dir_for_audio_files},
         },
         message::Message,
-        view_logic::terminal::CursorMovementDirection,
     },
     model::Model,
     playlist::{
@@ -17,6 +16,7 @@ use crate::{
         },
         message::PlaylistMessage,
     },
+    terminal::Direction,
     user_input::{logic::InputTarget, message::UserInputMessage},
 };
 
@@ -137,12 +137,6 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                     "Sent playlist \"{}\" to queue.",
                     selected.get_name().unwrap_or_default()
                 );
-
-                Some(Message::DisplayInfoMsg(
-                    "Sent Playlist to Queue".to_string(),
-                ))
-            } else {
-                None
             }
         }
         PlaylistTabFocus::Tracks => {
@@ -151,16 +145,19 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
                 && let Some(mini_track) = playlist.mini_tracks.get(index)
             {
                 model.queue.enqueue_mini_track_ref(mini_track.clone());
-                Some(Message::DisplayInfoMsg("Sent Track to Player".to_string()))
-            } else {
-                None
+                log::info!(
+                    "Sent track \"{}\" to queue.",
+                    mini_track.borrow().path.display()
+                );
             }
         }
     }
+
+    None
 }
 
 pub fn navigate_playlists(
-    direction: CursorMovementDirection,
+    direction: Direction,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
     if !matches!(playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
@@ -168,9 +165,9 @@ pub fn navigate_playlists(
     }
 
     match direction {
-        CursorMovementDirection::Up => {
+        Direction::Up => {
             if let Some(to_resume) = playlist_save_confirm_then_resume(
-                Message::Playlist(PlaylistMessage::MoveCursor(direction)),
+                Message::Playlist(PlaylistMessage::Navigate(direction)),
                 playlist_ctl,
             ) {
                 return Some(to_resume);
@@ -178,9 +175,9 @@ pub fn navigate_playlists(
 
             playlist_ctl.prev_playlist();
         }
-        CursorMovementDirection::Down => {
+        Direction::Down => {
             if let Some(to_resume) = playlist_save_confirm_then_resume(
-                Message::Playlist(PlaylistMessage::MoveCursor(direction)),
+                Message::Playlist(PlaylistMessage::Navigate(direction)),
                 playlist_ctl,
             ) {
                 return Some(to_resume);
@@ -193,7 +190,7 @@ pub fn navigate_playlists(
     None
 }
 
-pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut PlaylistController) {
+pub fn navigate_tracks(direction: Direction, playlist_ctl: &mut PlaylistController) {
     if !matches!(playlist_ctl.tab_focus, PlaylistTabFocus::Tracks) {
         return;
     }
@@ -202,10 +199,10 @@ pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut Pl
 
     if let Some(selected_playlist) = playlist_ctl.get_selected_playlist() {
         match direction {
-            CursorMovementDirection::Up => {
+            Direction::Up => {
                 selected_playlist.select_prev_track(arrange_mode);
             }
-            CursorMovementDirection::Down => {
+            Direction::Down => {
                 selected_playlist.select_next_track(arrange_mode);
             }
             _ => {}
@@ -213,19 +210,16 @@ pub fn navigate_tracks(direction: CursorMovementDirection, playlist_ctl: &mut Pl
     }
 }
 
-pub fn move_cursor(
-    direction: CursorMovementDirection,
-    playlist_ctl: &mut PlaylistController,
-) -> Option<Message> {
+pub fn move_cursor(direction: Direction, playlist_ctl: &mut PlaylistController) -> Option<Message> {
     if playlist_ctl.playlist_coll.is_empty() {
         return None;
     }
 
     match direction {
-        CursorMovementDirection::Left => {
+        Direction::Left => {
             playlist_ctl.tab_focus = PlaylistTabFocus::Playlists;
         }
-        CursorMovementDirection::Right => {
+        Direction::Right => {
             if let Some(selected_playlist) = playlist_ctl.get_selected_playlist()
                 && !selected_playlist.is_empty()
             {

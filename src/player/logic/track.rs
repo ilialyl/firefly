@@ -1,37 +1,41 @@
 use std::{
-    fs::{self, File},
+    fs::File,
+    io::Write,
+    net::SocketAddr,
     path::{Path, PathBuf},
     sync::{
-        Arc, Mutex,
+        Arc,
         atomic::{AtomicU32, Ordering},
         mpsc::Sender,
     },
-    thread,
     time::Duration,
 };
 
 use color_eyre::eyre::Result;
 use lofty::{
+    config::ParseOptions,
     file::{AudioFile, TaggedFile, TaggedFileExt},
     picture::Picture,
     probe::Probe,
     tag::Accessor,
 };
+use mpris_server::{Metadata, Time, TrackId};
 use ratatui_image::protocol::StatefulProtocol;
-use rodio::{Decoder, Sink, Source};
+use rodio::{Decoder, Source};
 use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
-use tokio::runtime::Runtime;
+use tokio::sync::Mutex;
 
 use crate::{
     global::{
         logic::{
-            data::{TEMP_FILE_PREFIX, get_cache_dir},
+            data::{get_art_cache_path, get_cache_dir},
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
+            servers::COVER_ART_ROUTE,
         },
         message::Message,
     },
-    player::logic::format_conversion::FormatConversion,
+    player::{logic::format_conversion::FormatConversion, message::PlayerMessage},
 };
 
 // So that the program can identify whose cover art is whose after decoding in background.
@@ -41,7 +45,6 @@ pub struct Track {
     pub id: u32,
     pub real_path: PathBuf,
     pub temp_path: PathBuf,
-    pub pos: Duration,
     pub duration: Option<Duration>,
     pub tagged_file: Option<TaggedFile>,
     pub picture: Option<Picture>,
@@ -49,10 +52,12 @@ pub struct Track {
     pub has_title: bool,
     pub started_decoding: bool,
     pub conversion_status: FormatConversion,
+    pub metadata: Metadata,
+    cover_server_addr: Option<SocketAddr>,
 }
 
 impl Track {
-    pub fn new(path: &Path) -> Result<Track> {
+    pub fn new(path: &Path, cover_server_addr: Option<SocketAddr>) -> Result<Track> {
         log::debug!("Creating a new track from path: {:?}", path);
         let id = TRACK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
@@ -78,7 +83,7 @@ impl Track {
         let mut picture = None;
 
         if let Some(tagged) = tagged_file.as_mut() {
-            duration = Some(Self::read_duration_from_tag(tagged));
+            duration = Some(tagged.properties().duration());
             if let Some(tag) = tagged.primary_tag() {
                 has_title = tag.title().is_some();
 
@@ -88,28 +93,35 @@ impl Track {
             }
         };
 
+        let metadata = if temp_path.exists() {
+            Self::metadata_from_path(&temp_path, &picture, cover_server_addr, id)
+        } else {
+            Self::metadata_from_path(path, &picture, cover_server_addr, id)
+        }?;
+
         let track = Track {
             id,
             real_path: path.to_path_buf(),
             temp_path,
             tagged_file,
-            pos: Duration::default(),
             duration,
             picture,
             protocol: None,
             has_title,
             started_decoding: false,
             conversion_status,
+            metadata,
+            cover_server_addr,
         };
 
         Ok(track)
     }
 
-    pub fn reload_after_conversion(&mut self) {
+    pub fn reload_after_conversion(&mut self) -> Result<()> {
         if let Ok(probe) = Probe::open(&self.temp_path)
             && let Ok(tagged_file) = probe.read()
         {
-            self.duration = Some(Self::read_duration_from_tag(&tagged_file));
+            self.duration = Some(tagged_file.properties().duration());
             if let Some(tag) = tagged_file.primary_tag() {
                 self.has_title = tag.title().is_some();
                 if let Some(pic) = tag.pictures().first() {
@@ -118,7 +130,25 @@ impl Track {
             }
 
             self.tagged_file = Some(tagged_file);
+
+            self.metadata = if self.temp_path.exists() {
+                Self::metadata_from_path(
+                    &self.temp_path,
+                    &self.picture,
+                    self.cover_server_addr,
+                    self.id,
+                )?
+            } else {
+                Self::metadata_from_path(
+                    &self.real_path,
+                    &self.picture,
+                    self.cover_server_addr,
+                    self.id,
+                )?
+            };
         }
+
+        Ok(())
     }
 
     pub fn get_temp_file(path: &Path) -> Result<PathBuf> {
@@ -129,16 +159,10 @@ impl Track {
             .unwrap_or_default();
 
         Ok(PathBuf::from(format!(
-            "{}/{}_{}.flac",
+            "{}/{}.flac",
             get_cache_dir()?.to_str().unwrap(),
-            TEMP_FILE_PREFIX,
             file_name
         )))
-    }
-
-    pub fn read_duration_from_tag(tagged_file: &TaggedFile) -> Duration {
-        log::debug!("Reading duration from tag...");
-        tagged_file.properties().duration()
     }
 
     pub fn get_source(&self) -> Result<Box<dyn Source<Item = f32> + Send>> {
@@ -148,7 +172,7 @@ impl Track {
             let source = get_opus_source(&path);
             Ok(source)
         } else {
-            let source = Decoder::new(file)?;
+            let source = Decoder::try_from(file)?;
             Ok(Box::new(source))
         }
     }
@@ -162,53 +186,110 @@ impl Track {
         Ok(path.clone())
     }
 
-    pub fn sync_pos_from_sink(&mut self, sink: &Sink) {
-        self.pos = sink.get_pos();
+    pub fn metadata_from_path(
+        path: &Path,
+        picture: &Option<Picture>,
+        cover_server_addr: Option<SocketAddr>,
+        id: u32,
+    ) -> Result<Metadata> {
+        if let Ok(probe) = Probe::open(path)
+            && let Ok(tagged_file) = probe
+                .options(ParseOptions::new().read_cover_art(false))
+                .read()
+            && let Some(primary_tag) = tagged_file.primary_tag()
+        {
+            let mut metadata = Metadata::new();
+            metadata.set_trackid(Some(
+                TrackId::try_from(format!("/org/mpris/MediaPlayer2/Firefly/track/{}", id)).unwrap(),
+            ));
+            metadata.set_title(primary_tag.title());
+            metadata.set_album(primary_tag.album());
+            metadata.set_artist(primary_tag.artist().map(|s| vec![s.to_string()]));
+            metadata.set_length(Some(Time::from_secs(
+                tagged_file.properties().duration().as_secs() as i64,
+            )));
+            metadata.set_track_number(primary_tag.track().map(|n| n as i32));
+            metadata.set_genre(primary_tag.genre().map(|s| vec![s.to_string()]));
+            if let Some(pic) = picture {
+                let file_name = format!(
+                    "{}.jpg",
+                    path.file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                );
+
+                let image_path = get_art_cache_path()?.join(&file_name);
+
+                let mut file = File::create(&image_path)?;
+                file.write_all(pic.data())?;
+
+                if let Some(addr) = cover_server_addr {
+                    metadata.set_art_url(Some(format!(
+                        "http://{}{}/{}",
+                        addr, COVER_ART_ROUTE, file_name,
+                    )));
+                }
+            }
+
+            if metadata.title().is_none() {
+                metadata.set_title(Some(
+                    path.file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("No Title"),
+                ));
+            }
+
+            return Ok(metadata);
+        }
+
+        Ok(Metadata::new())
     }
 
-    pub fn convert_format(
+    pub async fn convert_format(
         real_path: &Path,
         temp_path: &Path,
-        msg_tx: &Sender<Message>,
+        async_msg_tx: &tokio::sync::mpsc::Sender<Message>,
         info_tx: &Sender<String>,
     ) {
         let real_path = real_path.to_path_buf();
         let temp_path = temp_path.to_path_buf();
-        let msg_tx = msg_tx.clone();
+        let msg_tx = async_msg_tx.clone();
         let info_tx = info_tx.clone();
 
         log::info!("Converting file...");
         if let Err(e) = info_tx.send("Converting format and normalizing volume...".to_string()) {
             log::error!("Error sending info message: {e}");
         }
-        thread::spawn(move || {
-            let runtime = Runtime::new().unwrap();
-            let ffmpeg_handle = Arc::new(Mutex::new(runtime.block_on(async {
+        tokio::spawn(async move {
+            let ffmpeg_handle = Arc::new(Mutex::new(
                 FFmpegBuilder::convert(real_path.to_path_buf(), temp_path.to_path_buf())
                     .audio_filter(AudioFilter::loudnorm())
                     .spawn()
                     .await
-                    .unwrap()
-            })));
-            if let Err(e) = msg_tx.send(Message::ConversionStarted(ffmpeg_handle.clone())) {
+                    .unwrap(),
+            ));
+            if let Err(e) = msg_tx
+                .send(Message::Player(PlayerMessage::ConversionStarted(
+                    ffmpeg_handle.clone(),
+                )))
+                .await
+            {
                 log::error!("Error sending FFmpegProcess back to main thread: {e}");
             }
 
             loop {
-                if ffmpeg_handle.lock().unwrap().try_wait().unwrap().is_some() {
-                    if ffmpeg_handle
-                        .lock()
-                        .unwrap()
-                        .try_wait()
-                        .unwrap()
-                        .unwrap()
-                        .success()
-                    {
+                if let Ok(exit) = ffmpeg_handle.lock().await.try_wait()
+                    && let Some(exit_status) = exit
+                {
+                    if exit_status.success() {
                         if let Err(e) = info_tx.send("".to_string()) {
                             log::error!("Error sending info message: {e}");
                         }
                         log::info!("Conversion Complete.");
-                        if let Err(e) = msg_tx.send(Message::ConversionEnded) {
+                        if let Err(e) = msg_tx
+                            .send(Message::Player(PlayerMessage::ConversionEnded))
+                            .await
+                        {
                             log::error!("Error sending ConversionEnded Message: {e}");
                         }
                         break;
@@ -217,7 +298,7 @@ impl Track {
                         log::error!("Error sending info message: {e}");
                     }
                     if temp_path.is_file() {
-                        if let Err(e) = fs::remove_file(&temp_path) {
+                        if let Err(e) = tokio::fs::remove_file(&temp_path).await {
                             log::error!("Error deleting half-converted file: {e}");
                         }
                         log::info!("Deleted {:?}", temp_path);
@@ -225,6 +306,7 @@ impl Track {
                     log::info!("Conversion killed.");
                     break;
                 }
+                tokio::time::sleep(Duration::from_millis(500)).await;
             }
         });
     }

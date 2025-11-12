@@ -11,7 +11,7 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-use crate::global::view_logic::focused_area::FocusedArea;
+use crate::global::view::focused_area::FocusedArea;
 use crate::model::Model;
 use crate::playlist::logic::playlist_tab_focus::PlaylistTabFocus;
 

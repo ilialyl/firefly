@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState, Padding, StatefulWidget},
 };
 
-use crate::{global::view_logic::focused_area::FocusedArea, model::Model};
+use crate::{global::view::focused_area::FocusedArea, model::Model};
 
 pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let queue_entries: Vec<ListItem> = model
