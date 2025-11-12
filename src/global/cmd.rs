@@ -24,6 +24,7 @@ use crate::{
     user_input::logic::InputMode,
 };
 
+/// The main loop of the program that occurs every frame.
 pub async fn tick(model: &mut Model) -> Option<Message> {
     if model.session.state == RunningState::RunningFFmpeg {
         return None;

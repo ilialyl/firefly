@@ -160,7 +160,6 @@ impl Player {
             self.sink.play();
         }
 
-        self.sync_and_notify_mpris_pos().await?;
         self.sync_and_notify_playback_status().await?;
 
         Ok(())
@@ -179,7 +178,6 @@ impl Player {
         self.new_track(&path)?;
 
         self.sync_and_notify_metadata().await?;
-        self.sync_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -200,7 +198,6 @@ impl Player {
         self.new_track(&prev)?;
 
         self.sync_and_notify_metadata().await?;
-        self.sync_and_notify_mpris_pos().await?;
 
         Ok(())
     }
@@ -321,7 +318,7 @@ impl Player {
         Ok(())
     }
 
-    pub async fn update_and_notify_mpris_all(&mut self) -> Result<()> {
+    pub async fn sync_and_notify_mpris_all(&mut self) -> Result<()> {
         self.sync_and_notify_mpris_pos().await?;
         self.sync_and_notify_playback_status().await?;
         self.sync_and_notify_metadata().await?;

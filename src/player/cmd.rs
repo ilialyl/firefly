@@ -5,6 +5,7 @@ use std::time::Duration;
 use mpris_server::Time;
 use rust_ffmpeg::FFmpegProcess;
 use tokio::sync::Mutex;
+use tokio::sync::oneshot::Sender;
 
 use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::message::PlayerMessage;
@@ -173,10 +174,6 @@ pub async fn play_next_track(model: &mut Model) -> Option<Message> {
         log::error!("Error reloading track in skip(): {e}");
     }
 
-    if let Err(e) = model.player.sync_and_notify_metadata().await {
-        log::error!("Error updating metadata for mpris server: {e}");
-    };
-
     None
 }
 
@@ -262,7 +259,7 @@ pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
         current_track.conversion_status = FormatConversion::Done;
         if let Err(e) = current_track.reload_after_conversion() {
             log::error!("Error reloading metadata after conversion: {e}")
-        } else if let Err(e) = model.player.update_and_notify_mpris_all().await {
+        } else if let Err(e) = model.player.sync_and_notify_mpris_all().await {
             log::error!("Error updating mpris server state: {e}");
         };
         if let Err(e) = model.player.reload().await {
@@ -273,10 +270,11 @@ pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub async fn sync_mpris_pos(model: &mut Model) -> Option<Message> {
+pub async fn sync_mpris_pos(done_tx: Sender<()>, model: &mut Model) -> Option<Message> {
     if let Err(e) = model.player.sync_mpris_pos().await {
         log::error!("Error syncing mpris position: {e}");
     }
+    done_tx.send(()).unwrap();
 
     None
 }

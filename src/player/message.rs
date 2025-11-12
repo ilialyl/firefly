@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use mpris_server::Time;
 use rust_ffmpeg::FFmpegProcess;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, oneshot::Sender};
 
 pub enum PlayerMessage {
     LoadNow,
@@ -19,6 +19,6 @@ pub enum PlayerMessage {
     ToggleLoop,
     ConversionStarted(Arc<Mutex<FFmpegProcess>>),
     ConversionEnded,
-    SyncMprisPos,
+    SyncMprisPos(Sender<()>),
     SyncMprisVolume,
 }

@@ -92,6 +92,7 @@ impl RootInterface for MprisPlayer {
 
 impl PlayerInterface for MprisPlayer {
     async fn next(&self) -> fdo::Result<()> {
+        log::info!("Mpris called next().");
         if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Next)).await {
             log::error!("Error sending Message through async channel: {e}");
         }
@@ -100,6 +101,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn previous(&self) -> fdo::Result<()> {
+        log::info!("Mpris called previous().");
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::PreviousTrack))
@@ -111,6 +113,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn pause(&self) -> fdo::Result<()> {
+        log::info!("Mpris called pause().");
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
@@ -122,6 +125,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn play_pause(&self) -> fdo::Result<()> {
+        log::info!("Mpris called play_pause().");
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
@@ -133,10 +137,12 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn stop(&self) -> fdo::Result<()> {
+        log::info!("Mpris called stop().");
         Ok(())
     }
 
     async fn play(&self) -> fdo::Result<()> {
+        log::info!("Mpris called play().");
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::TogglePlay))
@@ -148,6 +154,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn seek(&self, offset: Time) -> fdo::Result<()> {
+        log::info!("Mpris called seek().");
         log::info!("Seek time: {:?}", offset.as_secs());
         if let Err(e) = self
             .tx
@@ -160,6 +167,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn set_position(&self, _track_id: TrackId, position: Time) -> fdo::Result<()> {
+        log::info!("Mpris called set_position().");
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::SetPosition(
@@ -174,28 +182,42 @@ impl PlayerInterface for MprisPlayer {
         Ok(())
     }
     async fn position(&self) -> fdo::Result<Time> {
+        log::info!("Mpris called position().");
+
+        let (done_tx, done_rx) = tokio::sync::oneshot::channel::<()>();
+
         if let Err(e) = self
             .tx
-            .send(Message::Player(PlayerMessage::SyncMprisPos))
+            .send(Message::Player(PlayerMessage::SyncMprisPos(done_tx)))
             .await
         {
             log::error!("Error sending Message through async channel: {e}");
         }
 
-        let pos = self.state.read().await.position;
+        let pos;
+        loop {
+            if !done_rx.is_empty() {
+                pos = self.state.read().await.position;
+                break;
+            }
+        }
+
         log::info!("Mpris retrieved position: {}", pos.as_micros());
         Ok(pos)
     }
 
     async fn open_uri(&self, _uri: String) -> fdo::Result<()> {
+        log::info!("Mpris called open_uri().");
         Ok(())
     }
 
     async fn playback_status(&self) -> fdo::Result<PlaybackStatus> {
+        log::info!("Mpris called playback_status().");
         Ok(self.state.read().await.playback_status)
     }
 
     async fn loop_status(&self) -> fdo::Result<LoopStatus> {
+        log::info!("Mpris called loop_status().");
         Ok(self.state.read().await.loop_status)
     }
 
@@ -211,6 +233,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn rate(&self) -> fdo::Result<PlaybackRate> {
+        log::info!("Mpris called rate().");
         Ok(1.0)
     }
 
@@ -230,10 +253,12 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn metadata(&self) -> fdo::Result<Metadata> {
+        log::info!("Mpris called metadata().");
         Ok(self.state.read().await.metadata.clone())
     }
 
     async fn volume(&self) -> fdo::Result<Volume> {
+        log::info!("Mpris called volume().");
         let vol = self.state.read().await.volume;
 
         log::info!("Mpris retrieved volume: {:?}.", vol);
