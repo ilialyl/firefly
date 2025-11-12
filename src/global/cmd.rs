@@ -59,7 +59,6 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
         }
 
         // Reload track when track ends if looped
-        // Set position, duration, and status to default if not looped
         if model.player.sink.empty()
             && let Some(dur) = current_track.duration
             && dur.saturating_sub(model.player.sink.get_pos()) < Duration::from_secs(3)
@@ -68,6 +67,7 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
                 if let Err(e) = model.player.reload().await {
                     log::error!("Error looping track: {}", e);
                 }
+            } else {
             }
         }
 
@@ -81,10 +81,12 @@ pub async fn tick(model: &mut Model) -> Option<Message> {
             player::cmd::play_next_track(model).await;
         } else if model.player.current.is_some()
             && model.player.sink.empty()
-            && model.queue.is_empty()
+            && !model.queue.is_empty()
             && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
-            model.player.reload().await.unwrap();
+            if let Err(e) = model.player.reload().await {
+                log::error!("Error looping track: {}", e);
+            }
             model.player.sink.pause();
         }
 
