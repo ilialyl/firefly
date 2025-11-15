@@ -211,13 +211,8 @@ impl Track {
             metadata.set_track_number(primary_tag.track().map(|n| n as i32));
             metadata.set_genre(primary_tag.genre().map(|s| vec![s.to_string()]));
             if let Some(pic) = picture {
-                let file_name = format!(
-                    "{}.jpg",
-                    path.file_stem()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("unknown")
-                );
-
+                let file_name = format!("{}.jpg", id);
+                log::info!("Cover art: {file_name}");
                 let image_path = get_art_cache_path()?.join(&file_name);
 
                 let mut file = File::create(&image_path)?;
