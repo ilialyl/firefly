@@ -25,7 +25,7 @@ use firefly_music::{
     },
     model::Model,
     queue::message::QueueMessage,
-    terminal::{handle_events, init_terminal, install_panic_hook, restore_terminal},
+    tui::{handle_events, init_terminal, install_panic_hook, restore_terminal},
 };
 
 #[tokio::main]

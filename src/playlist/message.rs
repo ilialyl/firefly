@@ -1,7 +1,7 @@
 use crate::{
     global::message::Message,
     playlist::logic::{mini_metadata::MiniMetadata, playlist_collection::Index},
-    terminal::Direction,
+    tui::Direction,
 };
 
 pub enum PlaylistMessage {

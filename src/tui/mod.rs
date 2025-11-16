@@ -19,7 +19,7 @@ use std::time::Duration;
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyEventKind};
 
-use crate::{global::message::Message, model::Model, terminal::keybinds::handle_key_inputs};
+use crate::{global::message::Message, model::Model, tui::keybinds::handle_key_inputs};
 
 #[derive(Clone, Copy)]
 pub enum Direction {

@@ -16,7 +16,7 @@ use crate::{
         },
         message::PlaylistMessage,
     },
-    terminal::Direction,
+    tui::Direction,
     user_input::{logic::InputTarget, message::UserInputMessage},
 };
 

@@ -6,7 +6,7 @@ use crate::{
     player::{logic::DEFAULT_VOLUME_CHANGE_AMOUNT, message::PlayerMessage},
     playlist::message::PlaylistMessage,
     queue::message::QueueMessage,
-    terminal::Direction,
+    tui::Direction,
     user_input::{logic::InputMode, message::UserInputMessage},
 };
 
