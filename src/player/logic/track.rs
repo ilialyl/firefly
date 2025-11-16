@@ -28,10 +28,10 @@ use tokio::sync::Mutex;
 use crate::{
     global::{
         logic::{
+            cover_art_server::COVER_ART_ROUTE,
             data::{get_art_cache_path, get_cache_dir},
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
-            servers::COVER_ART_ROUTE,
         },
         message::Message,
     },

@@ -5,7 +5,10 @@ use ratatui_image::picker::Picker;
 
 use crate::{
     global::{
-        logic::{confirmation::Confirmation, senders::Senders, session_state::Session},
+        logic::{
+            confirmation::Confirmation, cover_art_server::CoverArtServer, senders::Senders,
+            session_state::Session,
+        },
         view::focused_area::FocusedArea,
     },
     player::logic::Player,
@@ -27,6 +30,7 @@ pub struct Model {
     pub show_help: bool,
     pub picker: Arc<Picker>,
     pub senders: Senders,
+    pub cover_art_server: CoverArtServer,
 }
 
 impl Model {
@@ -34,8 +38,9 @@ impl Model {
         log::info!("Initializing App State...");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         let session = Session::new().await?;
+        let cover_art_server = CoverArtServer::new().await?;
         Ok(Self {
-            player: Player::new(senders.async_msg.clone(), session.cover_server_addr).await?,
+            player: Player::new(senders.async_msg.clone(), cover_art_server.addr).await?,
             queue: TrackQueue::new(senders.msg.clone(), session.unlocked_tick_rate.clone()),
             playlist_ctl: PlaylistController::new(
                 senders.msg.clone(),
@@ -50,6 +55,7 @@ impl Model {
             picker: Arc::new(picker),
             session,
             senders,
+            cover_art_server,
         })
     }
 }
