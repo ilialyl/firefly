@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
+    app::App,
     global::{
         logic::{
             confirmation::Response,
@@ -8,7 +9,6 @@ use crate::{
         },
         message::Message,
     },
-    model::Model,
     playlist::{
         logic::{
             mini_metadata::MiniMetadata, playlist_controller::PlaylistController,
@@ -50,16 +50,16 @@ pub fn create_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message>
     )))
 }
 
-pub fn name_playlist(index: usize, model: &mut Model) -> Option<Message> {
-    let current_playlist_names: Vec<String> = model
+pub fn name_playlist(index: usize, app: &mut App) -> Option<Message> {
+    let current_playlist_names: Vec<String> = app
         .playlist_ctl
         .get_all_playlist_names()
         .iter()
         .map(|&s| s.to_string())
         .collect();
 
-    if let Some(name) = model.user_input.input_history.pop()
-        && let Some(playlist) = model.playlist_ctl.playlist_coll.get_playlist(index)
+    if let Some(name) = app.user_input.input_history.pop()
+        && let Some(playlist) = app.playlist_ctl.playlist_coll.get_playlist(index)
         && !current_playlist_names.contains(&name)
     {
         if let Err(e) = playlist.rename(&name) {
@@ -124,14 +124,14 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     None
 }
 
-pub fn send_to_player(model: &mut Model) -> Option<Message> {
-    match model.playlist_ctl.tab_focus {
+pub fn send_to_player(app: &mut App) -> Option<Message> {
+    match app.playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
-            if let Some(selected) = model.playlist_ctl.get_selected_playlist() {
+            if let Some(selected) = app.playlist_ctl.get_selected_playlist() {
                 selected
                     .mini_tracks
                     .iter()
-                    .for_each(|m| model.queue.enqueue_mini_track_ref(m.clone()));
+                    .for_each(|m| app.queue.enqueue_mini_track_ref(m.clone()));
 
                 log::info!(
                     "Sent playlist \"{}\" to queue.",
@@ -140,11 +140,11 @@ pub fn send_to_player(model: &mut Model) -> Option<Message> {
             }
         }
         PlaylistTabFocus::Tracks => {
-            if let Some(playlist) = model.playlist_ctl.get_selected_playlist()
+            if let Some(playlist) = app.playlist_ctl.get_selected_playlist()
                 && let Some(index) = playlist.selected_track
                 && let Some(mini_track) = playlist.mini_tracks.get(index)
             {
-                model.queue.enqueue_mini_track_ref(mini_track.clone());
+                app.queue.enqueue_mini_track_ref(mini_track.clone());
                 log::info!(
                     "Sent track \"{}\" to queue.",
                     mini_track.borrow().path.display()

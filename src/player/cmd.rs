@@ -10,80 +10,80 @@ use tokio::sync::oneshot::Sender;
 use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::message::PlayerMessage;
 use crate::{
+    app::App,
     global::{
         logic::{files::choose_audio_file, session_state::SessionState},
         message::Message,
     },
-    model::Model,
     player::logic::Player,
 };
 
-pub fn load_now(model: &mut Model) -> Option<Message> {
+pub fn load_now(app: &mut App) -> Option<Message> {
     if let Some(path) = choose_audio_file() {
-        model.queue.prepend_track(&path);
+        app.queue.prepend_track(&path);
         return Some(Message::Player(PlayerMessage::Next));
     }
 
     None
 }
 
-pub async fn toggle_play(model: &mut Model) -> Option<Message> {
-    if model.session_state == SessionState::RunningFFmpeg {
+pub async fn toggle_play(app: &mut App) -> Option<Message> {
+    if app.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
-    if let Err(e) = model.player.toggle_play().await {
+    if let Err(e) = app.player.toggle_play().await {
         log::error!("Error toggling play: {e}");
     }
 
     None
 }
 
-pub async fn play(model: &mut Model) -> Option<Message> {
-    if model.session_state == SessionState::RunningFFmpeg {
+pub async fn play(app: &mut App) -> Option<Message> {
+    if app.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
-    if let Err(e) = model.player.play().await {
+    if let Err(e) = app.player.play().await {
         log::error!("Error playing: {e}");
     }
 
     None
 }
 
-pub async fn pause(model: &mut Model) -> Option<Message> {
-    if model.session_state == SessionState::RunningFFmpeg {
+pub async fn pause(app: &mut App) -> Option<Message> {
+    if app.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
-    if let Err(e) = model.player.pause().await {
+    if let Err(e) = app.player.pause().await {
         log::error!("Error pausing: {e}");
     }
 
     None
 }
 
-pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
-    if let Some(current_track) = model.player.current.as_ref()
+pub async fn seek_offset(offset: Time, app: &mut App) -> Option<Message> {
+    if let Some(current_track) = app.player.current.as_ref()
         && let Some(dur) = current_track.duration
     {
         log::info!("Offset seeked: {:?}", offset);
-        let pos_time = Time::from_secs(model.player.sink.get_pos().as_secs() as i64);
+        let pos_time = Time::from_secs(app.player.sink.get_pos().as_secs() as i64);
         if offset.is_positive() {
-            let new_pos = model
+            let new_pos = app
                 .player
                 .sink
                 .get_pos()
                 .saturating_add(Duration::from_secs(offset.as_secs() as u64));
             if dur > new_pos {
-                set_position(new_pos, model).await;
+                set_position(new_pos, app).await;
             }
         } else if offset.is_negative() {
             let new_pos = Duration::from_secs(
                 pos_time.as_secs().saturating_add(offset.as_secs()).max(0) as u64,
             );
             if dur > new_pos {
-                set_position(new_pos, model).await;
+                set_position(new_pos, app).await;
             }
         }
     }
@@ -91,20 +91,20 @@ pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
     None
 }
 
-pub async fn set_position(position: Duration, model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.player.set_position(position).await {
+pub async fn set_position(position: Duration, app: &mut App) -> Option<Message> {
+    if let Err(e) = app.player.set_position(position).await {
         log::error!("Error setting position: {e}");
     }
 
     None
 }
 
-pub async fn rewind(duration: Option<Duration>, model: &mut Model) -> Option<Message> {
-    if model.session_state == SessionState::RunningFFmpeg {
+pub async fn rewind(duration: Option<Duration>, app: &mut App) -> Option<Message> {
+    if app.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
-    let track_dur = if let Some(current_track) = model.player.current.as_mut() {
+    let track_dur = if let Some(current_track) = app.player.current.as_mut() {
         current_track.duration.unwrap_or(Duration::from_secs(0))
     } else {
         return None;
@@ -127,19 +127,19 @@ pub async fn rewind(duration: Option<Duration>, model: &mut Model) -> Option<Mes
         Duration::from_secs(5)
     };
 
-    if let Err(e) = model.player.rewind(rewind_dur).await {
+    if let Err(e) = app.player.rewind(rewind_dur).await {
         log::error!("Error rewinding: {e}");
     };
 
     None
 }
 
-pub async fn seek(duration: Option<Duration>, model: &mut Model) -> Option<Message> {
-    if model.session_state == SessionState::RunningFFmpeg {
+pub async fn seek(duration: Option<Duration>, app: &mut App) -> Option<Message> {
+    if app.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
-    let track_dur = if let Some(current_track) = model.player.current.as_mut() {
+    let track_dur = if let Some(current_track) = app.player.current.as_mut() {
         current_track.duration.unwrap_or(Duration::from_secs(0))
     } else {
         return None;
@@ -158,9 +158,9 @@ pub async fn seek(duration: Option<Duration>, model: &mut Model) -> Option<Messa
         Duration::from_secs(5)
     };
 
-    if let Some(current_track) = &model.player.current {
+    if let Some(current_track) = &app.player.current {
         let duration = current_track.duration;
-        if let Err(e) = model
+        if let Err(e) = app
             .player
             .seek(&duration.unwrap_or(Duration::from_secs(0)), seek_dur)
             .await
@@ -172,29 +172,29 @@ pub async fn seek(duration: Option<Duration>, model: &mut Model) -> Option<Messa
     None
 }
 
-pub async fn play_next_track(model: &mut Model) -> Option<Message> {
-    if model.queue.is_empty() {
+pub async fn play_next_track(app: &mut App) -> Option<Message> {
+    if app.queue.is_empty() {
         return None;
     }
 
-    if let Some(handle) = model.player.ffmpeg_handle.take()
+    if let Some(handle) = app.player.ffmpeg_handle.take()
         && let Err(e) = handle.lock().await.kill().await
     {
         log::error!("Error killing FFmpeg process: {e}");
     };
 
-    model.session_state = SessionState::Running;
+    app.session_state = SessionState::Running;
 
-    log::info!("Loading track {:?}.", model.queue.front_path());
-    model.player.sink.clear();
-    if let Err(e) = model.player.load_next_track(&mut model.queue).await {
+    log::info!("Loading track {:?}.", app.queue.front_path());
+    app.player.sink.clear();
+    if let Err(e) = app.player.load_next_track(&mut app.queue).await {
         log::error!("Error loading next track: {e}");
     };
 
-    if let Some(current_track) = model.player.current.as_mut()
+    if let Some(current_track) = app.player.current.as_mut()
         && (current_track.conversion_status == FormatConversion::Unnecessary
             || current_track.conversion_status == FormatConversion::Done)
-        && let Err(e) = model.player.reload().await
+        && let Err(e) = app.player.reload().await
     {
         log::error!("Error reloading track in skip(): {e}");
     }
@@ -210,60 +210,52 @@ pub async fn toggle_loop(player: &mut Player) -> Option<Message> {
     None
 }
 
-pub async fn decrease_volume(amount: f32, model: &mut Model) -> Option<Message> {
-    if let Err(e) = model
-        .player
-        .set_volume(model.player.volume().sub(amount))
-        .await
-    {
+pub async fn decrease_volume(amount: f32, app: &mut App) -> Option<Message> {
+    if let Err(e) = app.player.set_volume(app.player.volume().sub(amount)).await {
         log::error!("Error setting volume: {e}");
     };
 
     None
 }
 
-pub async fn increase_volume(amount: f32, model: &mut Model) -> Option<Message> {
-    if let Err(e) = model
-        .player
-        .set_volume(model.player.volume().add(amount))
-        .await
-    {
+pub async fn increase_volume(amount: f32, app: &mut App) -> Option<Message> {
+    if let Err(e) = app.player.set_volume(app.player.volume().add(amount)).await {
         log::error!("Error setting volume: {e}");
     };
 
     None
 }
 
-pub async fn set_volume(amount: f32, model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.player.set_volume(amount).await {
+pub async fn set_volume(amount: f32, app: &mut App) -> Option<Message> {
+    if let Err(e) = app.player.set_volume(amount).await {
         log::error!("Error setting volume: {e}");
     };
 
     None
 }
 
-pub async fn previous_track(model: &mut Model) -> Option<Message> {
-    if model.player.previous.is_empty() {
+pub async fn previous_track(app: &mut App) -> Option<Message> {
+    if app.player.previous.is_empty() {
         return None;
     }
 
-    if let Some(handle) = model.player.ffmpeg_handle.take()
+    if let Some(handle) = app.player.ffmpeg_handle.take()
         && let Err(e) = handle.lock().await.kill().await
     {
         log::error!("Error killing FFmpeg process: {e}");
     };
 
-    model.session_state = SessionState::Running;
+    app.session_state = SessionState::Running;
 
     log::info!("Loading previous track...");
-    model.player.sink.clear();
-    if let Err(e) = model.player.load_prev_track(&mut model.queue).await {
+    app.player.sink.clear();
+    if let Err(e) = app.player.load_prev_track(&mut app.queue).await {
         log::error!("Error loading previous track: {e}");
     };
 
-    if let Some(current_track) = model.player.current.as_mut()
+    if let Some(current_track) = app.player.current.as_mut()
         && current_track.conversion_status != FormatConversion::Running
-        && let Err(e) = model.player.reload().await
+        && let Err(e) = app.player.reload().await
     {
         log::error!("Error reloading track after prepending previous track in queue: {e}");
     };
@@ -271,23 +263,23 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
-    model.player.ffmpeg_handle = Some(handle);
-    model.session_state = SessionState::RunningFFmpeg;
+pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, app: &mut App) -> Option<Message> {
+    app.player.ffmpeg_handle = Some(handle);
+    app.session_state = SessionState::RunningFFmpeg;
 
     None
 }
 
-pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
-    model.session_state = SessionState::Running;
-    if let Some(current_track) = model.player.current.as_mut() {
+pub async fn conversion_ended(app: &mut App) -> Option<Message> {
+    app.session_state = SessionState::Running;
+    if let Some(current_track) = app.player.current.as_mut() {
         current_track.conversion_status = FormatConversion::Done;
         if let Err(e) = current_track.reload_after_conversion() {
             log::error!("Error reloading metadata after conversion: {e}")
-        } else if let Err(e) = model.player.sync_and_notify_mpris_all().await {
+        } else if let Err(e) = app.player.sync_and_notify_mpris_all().await {
             log::error!("Error updating mpris server state: {e}");
         };
-        if let Err(e) = model.player.reload().await {
+        if let Err(e) = app.player.reload().await {
             log::error!("Error reloading track after conversion: {e}");
         };
     }
@@ -295,8 +287,8 @@ pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub async fn sync_mpris_pos(done_tx: Sender<()>, model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.player.sync_mpris_pos().await {
+pub async fn sync_mpris_pos(done_tx: Sender<()>, app: &mut App) -> Option<Message> {
+    if let Err(e) = app.player.sync_mpris_pos().await {
         log::error!("Error syncing mpris position: {e}");
     }
     if let Err(e) = done_tx.send(()) {
@@ -306,19 +298,19 @@ pub async fn sync_mpris_pos(done_tx: Sender<()>, model: &mut Model) -> Option<Me
     None
 }
 
-pub async fn sync_mpris_volume(model: &mut Model) -> Option<Message> {
-    if let Err(e) = model.player.sync_mpris_volume().await {
+pub async fn sync_mpris_volume(app: &mut App) -> Option<Message> {
+    if let Err(e) = app.player.sync_mpris_volume().await {
         log::error!("Error syncing mpris volume: {e}");
     }
 
     None
 }
 
-pub async fn clear_current_session(model: &mut Model) -> Option<Message> {
-    model.queue.clear();
-    model.player.current = None;
-    model.player.sink.clear();
-    if let Err(e) = model.player.sync_and_notify_mpris_all().await {
+pub async fn clear_current_session(app: &mut App) -> Option<Message> {
+    app.queue.clear();
+    app.player.current = None;
+    app.player.sink.clear();
+    if let Err(e) = app.player.sync_and_notify_mpris_all().await {
         log::error!("Error clearing current track and queue: {e}");
     }
 

@@ -6,12 +6,12 @@ use ratatui::{
 };
 
 use crate::{
-    global::view::focused_area::FocusedArea, model::Model,
+    app::App, global::view::focused_area::FocusedArea,
     playlist::logic::playlist_tab_focus::PlaylistTabFocus,
 };
 
-pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
-    let playlists = model.playlist_ctl.playlist_coll.get_playlists();
+pub fn draw(app: &mut App, frame: &mut Frame, area: Rect) {
+    let playlists = app.playlist_ctl.playlist_coll.get_playlists();
 
     let playlist_entries: Vec<ListItem> = playlists
         .iter()
@@ -19,9 +19,9 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .map(ListItem::from)
         .collect();
 
-    let highlight = if !matches!(model.focused_view_area, FocusedArea::Playlist) {
+    let highlight = if !matches!(app.focused_view_area, FocusedArea::Playlist) {
         Style::default()
-    } else if matches!(model.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
+    } else if matches!(app.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
         Style::default().reversed()
     } else {
         Style::default().reversed().italic()
@@ -30,7 +30,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
     let list = List::new(playlist_entries).highlight_style(highlight);
 
     let mut list_state = ListState::default();
-    list_state.select(model.playlist_ctl.selected_playlist);
+    list_state.select(app.playlist_ctl.selected_playlist);
 
     StatefulWidget::render(list, area, frame.buffer_mut(), &mut list_state);
 }

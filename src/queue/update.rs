@@ -1,27 +1,25 @@
 use crate::{
+    app::App,
     global::message::Message,
-    model::Model,
     queue::{cmd::*, message::QueueMessage},
 };
 
-pub async fn update_queue(model: &mut Model, msg: QueueMessage) -> Option<Message> {
+pub async fn update_queue(app: &mut App, msg: QueueMessage) -> Option<Message> {
     match msg {
-        QueueMessage::Clear => clear(&mut model.queue),
-        QueueMessage::MoveDown => move_queue_down(&mut model.queue),
-        QueueMessage::MoveUp => move_queue_up(&mut model.queue),
-        QueueMessage::QueueDirsWithFileDialog => queue_dirs_with_file_dialog(&mut model.queue),
-        QueueMessage::QueuePaths(pathbufs) => queue_paths(pathbufs, &mut model.queue),
+        QueueMessage::Clear => clear(&mut app.queue),
+        QueueMessage::MoveDown => move_queue_down(&mut app.queue),
+        QueueMessage::MoveUp => move_queue_up(&mut app.queue),
+        QueueMessage::QueueDirsWithFileDialog => queue_dirs_with_file_dialog(&mut app.queue),
+        QueueMessage::QueuePaths(pathbufs) => queue_paths(pathbufs, &mut app.queue),
         QueueMessage::QueueFilesWithFileDialog => {
-            queue_files_with_file_dialog(&mut model.queue, &mut model.player)
+            queue_files_with_file_dialog(&mut app.queue, &mut app.player)
         }
-        QueueMessage::RemoveSelected => remove_selected(&mut model.queue),
-        QueueMessage::ScrollToEnd => scroll_to_end(&mut model.queue),
-        QueueMessage::ScrollToStart => scroll_to_start(&mut model.queue),
-        QueueMessage::Shuffle => shuffle(&mut model.queue),
-        QueueMessage::ToggleArrange => toggle_arrange(&mut model.queue),
-        QueueMessage::CreatedMiniTrack(mini_track) => {
-            queue_mini_track(mini_track, &mut model.queue)
-        }
-        QueueMessage::SkipToSelected => skip_to_selected(model).await,
+        QueueMessage::RemoveSelected => remove_selected(&mut app.queue),
+        QueueMessage::ScrollToEnd => scroll_to_end(&mut app.queue),
+        QueueMessage::ScrollToStart => scroll_to_start(&mut app.queue),
+        QueueMessage::Shuffle => shuffle(&mut app.queue),
+        QueueMessage::ToggleArrange => toggle_arrange(&mut app.queue),
+        QueueMessage::CreatedMiniTrack(mini_track) => queue_mini_track(mini_track, &mut app.queue),
+        QueueMessage::SkipToSelected => skip_to_selected(app).await,
     }
 }

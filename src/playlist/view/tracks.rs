@@ -9,19 +9,19 @@ use ratatui::{
 };
 
 use crate::{
-    global::view::focused_area::FocusedArea, model::Model,
+    app::App, global::view::focused_area::FocusedArea,
     playlist::logic::playlist_tab_focus::PlaylistTabFocus,
 };
 
-pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_area: Rect) {
-    let tab_focus = model.playlist_ctl.tab_focus;
+pub fn draw(app: &mut App, frame: &mut Frame, entries_area: Rect, scrollbar_area: Rect) {
+    let tab_focus = app.playlist_ctl.tab_focus;
 
     let header = ["Title", "Artist"]
         .into_iter()
         .map(Cell::from)
         .collect::<Row>();
 
-    if let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist() {
+    if let Some(selected_playlist) = app.playlist_ctl.get_selected_playlist() {
         let track_entries: Vec<Row> = selected_playlist
             .mini_tracks
             .iter()
@@ -50,7 +50,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
 
         let widths = [Constraint::Fill(1), Constraint::Percentage(30)];
 
-        let highlight_style = if !matches!(model.focused_view_area, FocusedArea::Playlist) {
+        let highlight_style = if !matches!(app.focused_view_area, FocusedArea::Playlist) {
             Style::default()
         } else if matches!(tab_focus, PlaylistTabFocus::Tracks) {
             Style::default().reversed()
@@ -68,7 +68,7 @@ pub fn draw(model: &mut Model, frame: &mut Frame, entries_area: Rect, scrollbar_
         let mut scrollbar_state = ScrollbarState::new(selected_playlist.len())
             .position(selected_playlist.selected_track.unwrap_or(0));
 
-        if matches!(model.focused_view_area, FocusedArea::Playlist) {
+        if matches!(app.focused_view_area, FocusedArea::Playlist) {
             frame.render_stateful_widget(
                 Scrollbar::new(ScrollbarOrientation::VerticalRight)
                     .begin_symbol(Some("↑"))

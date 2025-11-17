@@ -5,11 +5,11 @@ use ratatui::{
     widgets::{Block, Clear, Paragraph, Widget},
 };
 
-use crate::{global::view::center_xy, model::Model};
+use crate::{app::App, global::view::center_xy};
 
-pub fn draw(model: &Model, frame: &mut Frame, area: Rect) {
+pub fn draw(app: &App, frame: &mut Frame, area: Rect) {
     let popup_block = Block::bordered()
-        .title(format!("{} ", model.user_confirmation.prompt))
+        .title(format!("{} ", app.user_confirmation.prompt))
         .title_alignment(Alignment::Left)
         .border_style(Style::default());
 

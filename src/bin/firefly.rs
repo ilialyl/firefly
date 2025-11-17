@@ -9,6 +9,7 @@ use color_eyre::eyre::Result;
 
 use firefly_music::global::logic::{data::clear_art_cache, senders::Senders};
 use firefly_music::{
+    app::App,
     global::{
         logic::{
             cli::cli,
@@ -21,7 +22,6 @@ use firefly_music::{
         update::update_global,
         view::draw,
     },
-    model::Model,
     queue::message::QueueMessage,
     tui::{handle_events, init_terminal, install_panic_hook, restore_terminal},
 };
@@ -40,8 +40,8 @@ async fn main() -> Result<()> {
         info: info_tx,
         async_msg: msg_async_tx,
     };
-    let mut model = Model::new(senders).await?;
-    model.cover_art_server.run_server().await?;
+    let mut app = App::new(senders).await?;
+    app.cover_art_server.run_server().await?;
 
     // Clap stuff
     let cli_command = cli().get_matches();
@@ -68,8 +68,7 @@ async fn main() -> Result<()> {
                     eprintln!("No path is valid.");
                     return Ok(());
                 }
-                model
-                    .senders
+                app.senders
                     .msg
                     .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
                     .expect("Error sending queue.");
@@ -81,20 +80,20 @@ async fn main() -> Result<()> {
     let mut terminal = init_terminal()?;
     install_panic_hook();
 
-    while model.session_state != SessionState::Exit {
+    while app.session_state != SessionState::Exit {
         // VecDeque is better for queues
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated
-        if let Some(msg) = update_global(&mut model, Message::Tick).await {
+        if let Some(msg) = update_global(&mut app, Message::Tick).await {
             msg_queue.push_back(msg);
         }
 
         // Draw TUI view
-        terminal.draw(|f| draw(&mut model, f))?;
+        terminal.draw(|f| draw(&mut app, f))?;
 
         // Handle terminal events
-        if let Some(msg) = handle_events(&model)? {
+        if let Some(msg) = handle_events(&app)? {
             msg_queue.push_back(msg);
         }
 
@@ -110,14 +109,14 @@ async fn main() -> Result<()> {
 
         // Display info sent from other threads
         if let Ok(info) = info_rx.try_recv() {
-            update_global(&mut model, Message::UpdateInfoMsg(info)).await;
+            update_global(&mut app, Message::UpdateInfoMsg(info)).await;
         }
 
         // Consume messages
         while !msg_queue.is_empty()
             && let Some(msg) = msg_queue.pop_front()
         {
-            if let Some(msg) = update_global(&mut model, msg).await {
+            if let Some(msg) = update_global(&mut app, msg).await {
                 msg_queue.push_back(msg);
             }
         }

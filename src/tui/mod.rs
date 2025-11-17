@@ -19,7 +19,7 @@ use std::time::Duration;
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyEventKind};
 
-use crate::{global::message::Message, model::Model, tui::keybinds::handle_key_inputs};
+use crate::{app::App, global::message::Message, tui::keybinds::handle_key_inputs};
 
 #[derive(Clone, Copy)]
 pub enum Direction {
@@ -51,8 +51,8 @@ pub fn install_panic_hook() {
     }));
 }
 
-pub fn handle_events(model: &Model) -> Result<Option<Message>> {
-    let frame_time = match model.unlocked_tick_rate.load(Ordering::Relaxed) {
+pub fn handle_events(app: &App) -> Result<Option<Message>> {
+    let frame_time = match app.unlocked_tick_rate.load(Ordering::Relaxed) {
         true => Duration::ZERO,
         false => Duration::from_millis(30),
     };
@@ -60,7 +60,7 @@ pub fn handle_events(model: &Model) -> Result<Option<Message>> {
     if event::poll(frame_time)? {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                return Ok(handle_key_inputs(key_event, model));
+                return Ok(handle_key_inputs(key_event, app));
             }
             _ => {}
         };

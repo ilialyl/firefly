@@ -17,7 +17,7 @@ use crate::{
     user_input::logic::{InputMode, UserInput},
 };
 
-pub struct Model {
+pub struct App {
     pub focused_view_area: FocusedArea,
     pub input_mode: InputMode,
     pub show_help: bool,
@@ -34,8 +34,8 @@ pub struct Model {
     pub cover_art_server: CoverArtServer,
 }
 
-impl Model {
-    pub async fn new(senders: Senders) -> Result<Model> {
+impl App {
+    pub async fn new(senders: Senders) -> Result<App> {
         log::info!("Initializing App State...");
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         let cover_art_server = CoverArtServer::new().await?;

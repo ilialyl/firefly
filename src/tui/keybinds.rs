@@ -1,8 +1,8 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    app::App,
     global::{logic::confirmation::Response, message::Message, view::focused_area::FocusedArea},
-    model::Model,
     player::{logic::DEFAULT_VOLUME_CHANGE_AMOUNT, message::PlayerMessage},
     playlist::message::PlaylistMessage,
     queue::message::QueueMessage,
@@ -10,9 +10,9 @@ use crate::{
     user_input::{logic::InputMode, message::UserInputMessage},
 };
 
-pub fn handle_key_inputs(key_event: KeyEvent, model: &Model) -> Option<Message> {
-    match model.input_mode {
-        InputMode::Commands => match model.focused_view_area {
+pub fn handle_key_inputs(key_event: KeyEvent, app: &App) -> Option<Message> {
+    match app.input_mode {
+        InputMode::Commands => match app.focused_view_area {
             FocusedArea::Playlist => match key_event.code {
                 KeyCode::Esc => Some(Message::Quit),
                 KeyCode::Char('a') => Some(Message::Playlist(PlaylistMessage::ToggleArrangeTracks)),

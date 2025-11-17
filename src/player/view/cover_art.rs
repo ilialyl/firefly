@@ -1,10 +1,10 @@
 use ratatui::{Frame, layout::Rect};
 use ratatui_image::{Resize, StatefulImage};
 
-use crate::model::Model;
+use crate::app::App;
 
-pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
-    if let Some(current_track) = model.player.current.as_mut()
+pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
+    if let Some(current_track) = app.player.current.as_mut()
         && let Some(img) = current_track.protocol.as_mut()
     {
         let widget = StatefulImage::default().resize(Resize::Scale(None));
