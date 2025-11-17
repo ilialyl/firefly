@@ -1,5 +1,6 @@
 use crate::user_input::logic::{InputTarget, PromptMsg};
 
+/// UserInput-related Messages.
 pub enum UserInputMessage {
     Submit(InputTarget),
     Insert(char),

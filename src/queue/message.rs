@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::queue::logic::mini_track::MiniTrack;
 
+/// Messages related to TrackQueue
 pub enum QueueMessage {
     ToggleArrange,
     MoveUp,

@@ -12,6 +12,7 @@ use crate::{
     global::message::Message, player::message::PlayerMessage, queue::message::QueueMessage,
 };
 
+/// Store states that MPRIS can retrieve on demand.
 pub struct MprisPlayerState {
     pub position: Time,
     pub playback_status: PlaybackStatus,

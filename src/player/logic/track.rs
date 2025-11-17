@@ -41,6 +41,7 @@ use crate::{
 // So that the program can identify whose cover art is whose after decoding in background.
 static TRACK_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
+/// Stores the most info about a track out of all structs. Used for current playing track.
 pub struct Track {
     pub id: u32,
     pub real_path: PathBuf,

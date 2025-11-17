@@ -6,6 +6,7 @@ use crate::{
     user_input::message::UserInputMessage,
 };
 
+/// Elm-style messages.
 pub enum Message {
     Tick,
     Quit,

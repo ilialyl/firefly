@@ -17,6 +17,7 @@ use crate::{
     user_input::logic::{InputMode, UserInput},
 };
 
+/// Stores app state.
 pub struct App {
     pub focused_view_area: FocusedArea,
     pub input_mode: InputMode,

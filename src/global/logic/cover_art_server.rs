@@ -9,6 +9,7 @@ use crate::global::logic::data::get_art_cache_path;
 
 pub const COVER_ART_ROUTE: &str = "/cover-art";
 
+/// Server serving cover art directory.
 pub struct CoverArtServer {
     listener: Option<TcpListener>,
     pub addr: Option<SocketAddr>,

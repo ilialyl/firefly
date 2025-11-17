@@ -15,6 +15,7 @@ use color_eyre::eyre::{Result, eyre};
 
 use crate::{global::logic::files::get_playlists_path, queue::logic::mini_track::MiniTrack};
 
+/// Stores stuff related to a single playlist.
 #[derive(Debug)]
 pub struct Playlist {
     name: Option<String>,

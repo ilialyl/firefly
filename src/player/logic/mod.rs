@@ -28,7 +28,7 @@ const MIN_VOLUME: f32 = 0.0;
 const MAX_VOLUME: f32 = 2.0;
 pub const DEFAULT_VOLUME_CHANGE_AMOUNT: f32 = 0.05;
 
-/// Deals with stuff like current track, previous tracks, looping bool, sink, and MPRIS server.
+/// Deals player-related stuff like current track, previous tracks, looping bool, sink, and MPRIS server.
 pub struct Player {
     pub current: Option<Track>,
     // Previous is Vec instead of VecDeque because it's a stack, not queue.

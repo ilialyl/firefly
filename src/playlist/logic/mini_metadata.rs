@@ -2,6 +2,7 @@ use std::path::Path;
 
 use lofty::{config::ParseOptions, file::TaggedFileExt, probe::Probe, tag::Accessor};
 
+/// Minimal metadata collection.
 #[derive(Debug, Default, Clone)]
 pub struct MiniMetadata {
     pub file_stem: Option<String>,

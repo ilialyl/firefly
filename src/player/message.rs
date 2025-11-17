@@ -4,6 +4,7 @@ use mpris_server::Time;
 use rust_ffmpeg::FFmpegProcess;
 use tokio::sync::{Mutex, oneshot::Sender};
 
+/// Messages related to Player
 pub enum PlayerMessage {
     LoadNow,
     TogglePlay,

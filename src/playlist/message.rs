@@ -4,6 +4,7 @@ use crate::{
     tui::Direction,
 };
 
+/// Messages related to Playlist
 pub enum PlaylistMessage {
     Navigate(Direction),
     Create,
