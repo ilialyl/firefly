@@ -12,7 +12,7 @@ use ratatui_image::{picker::Picker, protocol::StatefulProtocol};
 
 use crate::{
     global::{
-        logic::{confirmation::Response, image::crop_to_square, session_state::RunningState},
+        logic::{confirmation::Response, image::crop_to_square, session_state::SessionState},
         message::Message,
     },
     model::Model,
@@ -26,7 +26,7 @@ use crate::{
 
 /// The main loop of the program that occurs every frame.
 pub async fn tick(model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
+    if model.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
@@ -132,7 +132,7 @@ pub fn quit(model: &mut Model) -> Option<Message> {
         return Some(to_resume);
     }
 
-    model.session.state = RunningState::Exit;
+    model.session_state = SessionState::Exit;
 
     None
 }

@@ -15,7 +15,7 @@ use firefly_music::{
             data::{clear_all_cache, get_cache_dir},
             files::get_playlists_path,
             logger::{get_log_path, setup_logger},
-            session_state::RunningState,
+            session_state::SessionState,
         },
         message::Message,
         update::update_global,
@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
     let mut terminal = init_terminal()?;
     install_panic_hook();
 
-    while model.session.state != RunningState::Exit {
+    while model.session_state != SessionState::Exit {
         // VecDeque is better for queues
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 

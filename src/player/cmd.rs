@@ -11,7 +11,7 @@ use crate::player::logic::format_conversion::FormatConversion;
 use crate::player::message::PlayerMessage;
 use crate::{
     global::{
-        logic::{files::choose_audio_file, session_state::RunningState},
+        logic::{files::choose_audio_file, session_state::SessionState},
         message::Message,
     },
     model::Model,
@@ -28,7 +28,7 @@ pub fn load_now(model: &mut Model) -> Option<Message> {
 }
 
 pub async fn toggle_play(model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
+    if model.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
@@ -40,7 +40,7 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
 }
 
 pub async fn play(model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
+    if model.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
@@ -52,7 +52,7 @@ pub async fn play(model: &mut Model) -> Option<Message> {
 }
 
 pub async fn pause(model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
+    if model.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
@@ -100,7 +100,7 @@ pub async fn set_position(position: Duration, model: &mut Model) -> Option<Messa
 }
 
 pub async fn rewind(duration: Option<Duration>, model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
+    if model.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
@@ -135,7 +135,7 @@ pub async fn rewind(duration: Option<Duration>, model: &mut Model) -> Option<Mes
 }
 
 pub async fn seek(duration: Option<Duration>, model: &mut Model) -> Option<Message> {
-    if model.session.state == RunningState::RunningFFmpeg {
+    if model.session_state == SessionState::RunningFFmpeg {
         return None;
     }
 
@@ -183,7 +183,7 @@ pub async fn play_next_track(model: &mut Model) -> Option<Message> {
         log::error!("Error killing FFmpeg process: {e}");
     };
 
-    model.session.state = RunningState::Running;
+    model.session_state = SessionState::Running;
 
     log::info!("Loading track {:?}.", model.queue.front_path());
     model.player.sink.clear();
@@ -253,7 +253,7 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
         log::error!("Error killing FFmpeg process: {e}");
     };
 
-    model.session.state = RunningState::Running;
+    model.session_state = SessionState::Running;
 
     log::info!("Loading previous track...");
     model.player.sink.clear();
@@ -273,13 +273,13 @@ pub async fn previous_track(model: &mut Model) -> Option<Message> {
 
 pub fn conversion_started(handle: Arc<Mutex<FFmpegProcess>>, model: &mut Model) -> Option<Message> {
     model.player.ffmpeg_handle = Some(handle);
-    model.session.state = RunningState::RunningFFmpeg;
+    model.session_state = SessionState::RunningFFmpeg;
 
     None
 }
 
 pub async fn conversion_ended(model: &mut Model) -> Option<Message> {
-    model.session.state = RunningState::Running;
+    model.session_state = SessionState::Running;
     if let Some(current_track) = model.player.current.as_mut() {
         current_track.conversion_status = FormatConversion::Done;
         if let Err(e) = current_track.reload_after_conversion() {
