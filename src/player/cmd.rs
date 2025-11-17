@@ -314,7 +314,7 @@ pub async fn sync_mpris_volume(model: &mut Model) -> Option<Message> {
     None
 }
 
-pub async fn clear_current(model: &mut Model) -> Option<Message> {
+pub async fn clear_current_session(model: &mut Model) -> Option<Message> {
     model.queue.clear();
     model.player.current = None;
     model.player.sink.clear();

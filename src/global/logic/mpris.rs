@@ -136,7 +136,7 @@ impl PlayerInterface for MprisPlayer {
         log::info!("Mpris called stop().");
         if let Err(e) = self
             .tx
-            .send(Message::Player(PlayerMessage::ClearCurrent))
+            .send(Message::Player(PlayerMessage::ClearCurrentSession))
             .await
         {
             log::error!("Error sending Message through async channel: {e}");

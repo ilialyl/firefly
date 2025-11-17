@@ -23,5 +23,5 @@ pub enum PlayerMessage {
     ConversionEnded,
     SyncMprisPos(Sender<()>),
     SyncMprisVolume,
-    ClearCurrent,
+    ClearCurrentSession,
 }
