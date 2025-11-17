@@ -32,7 +32,7 @@ Temporary FLAC files stay on disk for reuse, which can be cleared by running `fi
 
 ## Installation
 ### Windows and Linux
-Download a [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) or use [cargo binstall](https://crates.io/crates/cargo-binstall) to automatically install it for you:
+Download a [Prebuilt Binary](https://github.com/ilialyl/firefly/releases/latest) or use [cargo binstall](https://crates.io/crates/cargo-binstall) to automatically install it for you (requires [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)):
 ```
 # Install cargo-binstall if not already
 cargo install cargo-binstall
