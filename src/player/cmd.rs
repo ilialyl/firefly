@@ -39,6 +39,30 @@ pub async fn toggle_play(model: &mut Model) -> Option<Message> {
     None
 }
 
+pub async fn play(model: &mut Model) -> Option<Message> {
+    if model.session.state == RunningState::RunningFFmpeg {
+        return None;
+    }
+
+    if let Err(e) = model.player.play().await {
+        log::error!("Error playing: {e}");
+    }
+
+    None
+}
+
+pub async fn pause(model: &mut Model) -> Option<Message> {
+    if model.session.state == RunningState::RunningFFmpeg {
+        return None;
+    }
+
+    if let Err(e) = model.player.pause().await {
+        log::error!("Error pausing: {e}");
+    }
+
+    None
+}
+
 pub async fn seek_offset(offset: Time, model: &mut Model) -> Option<Message> {
     if let Some(current_track) = model.player.current.as_ref()
         && let Some(dur) = current_track.duration

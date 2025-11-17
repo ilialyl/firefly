@@ -7,6 +7,8 @@ use tokio::sync::{Mutex, oneshot::Sender};
 pub enum PlayerMessage {
     LoadNow,
     TogglePlay,
+    Play,
+    Pause,
     Next,
     PreviousTrack,
     IncreaseVolume(f32),

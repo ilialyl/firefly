@@ -114,11 +114,7 @@ impl PlayerInterface for MprisPlayer {
 
     async fn pause(&self) -> fdo::Result<()> {
         log::info!("Mpris called pause().");
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::TogglePlay))
-            .await
-        {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Pause)).await {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -150,11 +146,7 @@ impl PlayerInterface for MprisPlayer {
 
     async fn play(&self) -> fdo::Result<()> {
         log::info!("Mpris called play().");
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::TogglePlay))
-            .await
-        {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Play)).await {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())

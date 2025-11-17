@@ -8,6 +8,8 @@ pub async fn update_player(model: &mut Model, msg: PlayerMessage) -> Option<Mess
     match msg {
         PlayerMessage::LoadNow => load_now(model),
         PlayerMessage::TogglePlay => toggle_play(model).await,
+        PlayerMessage::Play => play(model).await,
+        PlayerMessage::Pause => pause(model).await,
         PlayerMessage::SeekOffset(offset) => seek_offset(offset, model).await,
         PlayerMessage::SetPosition(pos) => set_position(pos, model).await,
         PlayerMessage::Rewind(dur) => rewind(dur, model).await,

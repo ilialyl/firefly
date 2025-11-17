@@ -232,6 +232,20 @@ impl Player {
         Ok(())
     }
 
+    pub async fn play(&mut self) -> Result<()> {
+        self.sink.play();
+        self.sync_and_notify_playback_status().await?;
+
+        Ok(())
+    }
+
+    pub async fn pause(&mut self) -> Result<()> {
+        self.sink.pause();
+        self.sync_and_notify_playback_status().await?;
+
+        Ok(())
+    }
+
     pub async fn notify_mpris_volume(&mut self) -> Result<()> {
         if let Some(mpris_server) = self.mpris_server.as_ref() {
             let vol = self.volume() as f64;
