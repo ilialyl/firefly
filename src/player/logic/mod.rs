@@ -1,4 +1,5 @@
 pub mod format_conversion;
+pub mod mpris;
 pub mod playback_status;
 pub mod track;
 
@@ -16,11 +17,11 @@ use std::{
 use tokio::sync::{Mutex, RwLock, mpsc::Sender};
 
 use crate::{
-    global::{
-        logic::mpris::{MprisPlayer, MprisPlayerState},
-        message::Message,
+    global::message::Message,
+    player::logic::{
+        mpris::{MprisPlayer, MprisPlayerState},
+        track::Track,
     },
-    player::logic::track::Track,
     queue::logic::TrackQueue,
 };
 

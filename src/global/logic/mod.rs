@@ -5,7 +5,6 @@ pub mod data;
 pub mod files;
 pub mod image;
 pub mod logger;
-pub mod mpris;
 pub mod opus;
 pub mod senders;
 pub mod session_state;
