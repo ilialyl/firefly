@@ -77,7 +77,7 @@ firefly with ./**/*.opus
 ```
 
 ## Known Issue
-- Rewinding can be slow on systems that use [ALSA](https://www.alsa-project.org/wiki/Main_Page).
+- Seeking an OPUS track is slow.
 - Wezterm (Windows) does not display cover art.
 - Does not work with WSL as no audio output is connected.
 
