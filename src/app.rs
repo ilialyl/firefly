@@ -1,17 +1,24 @@
-use std::sync::{Arc, atomic::AtomicBool};
+use std::{
+    collections::HashMap,
+    sync::{Arc, atomic::AtomicBool},
+};
 
 use color_eyre::eyre::Result;
 use ratatui_image::picker::Picker;
+use rodio::SampleRate;
 
 use crate::{
     global::{
         logic::{
-            confirmation::Confirmation, cover_art_server::CoverArtServer, senders::Senders,
+            confirmation::Confirmation,
+            cover_art_server::CoverArtServer,
+            data::{ConfigKeys, load_config},
+            senders::Senders,
             session_state::SessionState,
         },
         view::focused_area::FocusedArea,
     },
-    player::logic::Player,
+    player::logic::{DEFAULT_SAMPLE_RATE, Player},
     playlist::logic::playlist_controller::PlaylistController,
     queue::logic::TrackQueue,
     user_input::logic::{InputMode, UserInput},
@@ -33,6 +40,7 @@ pub struct App {
     pub user_confirmation: Confirmation,
     pub picker: Arc<Picker>,
     pub cover_art_server: CoverArtServer,
+    pub config: HashMap<ConfigKeys, String>,
 }
 
 impl App {
@@ -41,8 +49,18 @@ impl App {
         let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
         let cover_art_server = CoverArtServer::new().await?;
         let unlocked_tick_rate = Arc::new(AtomicBool::default());
+        let config = load_config()?;
+
         Ok(Self {
-            player: Player::new(senders.async_msg.clone(), cover_art_server.addr).await?,
+            player: Player::new(
+                senders.async_msg.clone(),
+                cover_art_server.addr,
+                config
+                    .get(&ConfigKeys::SampleRate)
+                    .and_then(|v| v.parse::<SampleRate>().ok())
+                    .unwrap_or(DEFAULT_SAMPLE_RATE),
+            )
+            .await?,
             queue: TrackQueue::new(senders.msg.clone(), unlocked_tick_rate.clone()),
             playlist_ctl: PlaylistController::new(senders.msg.clone(), unlocked_tick_rate.clone())?,
             info_msg: String::new(),
@@ -56,6 +74,7 @@ impl App {
             cover_art_server,
             session_state: SessionState::default(),
             unlocked_tick_rate,
+            config,
         })
     }
 }

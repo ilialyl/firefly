@@ -1,14 +1,20 @@
 use std::{
-    fs::{self},
-    path::PathBuf,
+    collections::HashMap,
+    fs::{self, File},
+    io::Write,
+    path::{Path, PathBuf},
 };
 
 use color_eyre::eyre::Result;
+use config::Config;
 use glob::glob;
 use platform_dirs::AppDirs;
+use serde::Deserialize;
+use strum_macros::Display;
 
 pub const APP_NAME: &str = "firefly_music";
 pub const COVER_ART_DIR: &str = "cover_art/";
+const CONFIG_FILE_NAME: &str = "config.toml";
 
 pub fn get_data_dir() -> Result<PathBuf> {
     if let Some(app_dirs) = AppDirs::new(Some(APP_NAME), false) {
@@ -92,4 +98,39 @@ pub fn get_art_cache_path() -> Result<PathBuf> {
     }
 
     Ok(dir)
+}
+
+pub fn get_config_file() -> Result<PathBuf> {
+    let path = get_data_dir()?.join(CONFIG_FILE_NAME);
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        create_default_config_file(&path)?;
+    }
+
+    Ok(path)
+}
+
+pub fn create_default_config_file(path: &Path) -> Result<()> {
+    let mut file = File::create_new(path)?;
+    let default_config = format!("{} = 48000", ConfigKeys::SampleRate);
+    file.write(default_config.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn load_config() -> Result<HashMap<ConfigKeys, String>> {
+    let config = Config::builder()
+        .add_source(config::File::from(get_config_file()?))
+        .build()?
+        .try_deserialize::<HashMap<ConfigKeys, String>>()?;
+
+    Ok(config)
+}
+
+#[derive(Deserialize, Hash, PartialEq, Eq, Display)]
+pub enum ConfigKeys {
+    SampleRate,
 }
