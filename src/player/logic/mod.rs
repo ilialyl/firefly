@@ -14,7 +14,7 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-use tokio::sync::{Mutex, RwLock, mpsc::Sender};
+use tokio::sync::{Mutex, RwLock, mpsc::UnboundedSender};
 
 use crate::{
     global::message::Message,
@@ -47,7 +47,7 @@ pub struct Player {
 impl Player {
     // Sender is needed because it deals with threads.
     pub async fn new(
-        async_msg_tx: Sender<Message>,
+        async_msg_tx: UnboundedSender<Message>,
         cover_server_addr: Option<SocketAddr>,
         sample_rate: SampleRate,
     ) -> Result<Player> {

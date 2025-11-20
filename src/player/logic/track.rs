@@ -244,7 +244,7 @@ impl Track {
     pub async fn convert_format(
         real_path: &Path,
         temp_path: &Path,
-        async_msg_tx: &tokio::sync::mpsc::Sender<Message>,
+        async_msg_tx: &tokio::sync::mpsc::UnboundedSender<Message>,
         info_tx: &Sender<String>,
     ) {
         let real_path = real_path.to_path_buf();
@@ -264,12 +264,9 @@ impl Track {
                     .await
                     .unwrap(),
             ));
-            if let Err(e) = msg_tx
-                .send(Message::Player(PlayerMessage::ConversionStarted(
-                    ffmpeg_handle.clone(),
-                )))
-                .await
-            {
+            if let Err(e) = msg_tx.send(Message::Player(PlayerMessage::ConversionStarted(
+                ffmpeg_handle.clone(),
+            ))) {
                 log::error!("Error sending FFmpegProcess back to main thread: {e}");
             }
 
@@ -282,9 +279,7 @@ impl Track {
                             log::error!("Error sending info message: {e}");
                         }
                         log::info!("Conversion Complete.");
-                        if let Err(e) = msg_tx
-                            .send(Message::Player(PlayerMessage::ConversionEnded))
-                            .await
+                        if let Err(e) = msg_tx.send(Message::Player(PlayerMessage::ConversionEnded))
                         {
                             log::error!("Error sending ConversionEnded Message: {e}");
                         }

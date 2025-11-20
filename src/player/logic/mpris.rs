@@ -6,7 +6,7 @@ use mpris_server::{
     Volume,
     zbus::{Result, fdo},
 };
-use tokio::sync::{RwLock, mpsc::Sender};
+use tokio::sync::{RwLock, mpsc::UnboundedSender};
 
 use crate::{
     global::message::Message, player::message::PlayerMessage, queue::message::QueueMessage,
@@ -34,7 +34,7 @@ impl Default for MprisPlayerState {
 }
 
 pub struct MprisPlayer {
-    pub tx: Sender<Message>,
+    pub tx: UnboundedSender<Message>,
     pub state: Arc<RwLock<MprisPlayerState>>,
 }
 
@@ -44,7 +44,7 @@ impl RootInterface for MprisPlayer {
     }
 
     async fn quit(&self) -> fdo::Result<()> {
-        if let Err(e) = self.tx.send(Message::Quit).await {
+        if let Err(e) = self.tx.send(Message::Quit) {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -94,7 +94,7 @@ impl RootInterface for MprisPlayer {
 impl PlayerInterface for MprisPlayer {
     async fn next(&self) -> fdo::Result<()> {
         log::info!("Mpris called next().");
-        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Next)).await {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Next)) {
             log::error!("Error sending Message through async channel: {e}");
         }
 
@@ -103,11 +103,7 @@ impl PlayerInterface for MprisPlayer {
 
     async fn previous(&self) -> fdo::Result<()> {
         log::info!("Mpris called previous().");
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::PreviousTrack))
-            .await
-        {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::PreviousTrack)) {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -115,7 +111,7 @@ impl PlayerInterface for MprisPlayer {
 
     async fn pause(&self) -> fdo::Result<()> {
         log::info!("Mpris called pause().");
-        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Pause)).await {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Pause)) {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -123,11 +119,7 @@ impl PlayerInterface for MprisPlayer {
 
     async fn play_pause(&self) -> fdo::Result<()> {
         log::info!("Mpris called play_pause().");
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::TogglePlay))
-            .await
-        {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::TogglePlay)) {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -138,7 +130,6 @@ impl PlayerInterface for MprisPlayer {
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::ClearCurrentSession))
-            .await
         {
             log::error!("Error sending Message through async channel: {e}");
         }
@@ -147,7 +138,7 @@ impl PlayerInterface for MprisPlayer {
 
     async fn play(&self) -> fdo::Result<()> {
         log::info!("Mpris called play().");
-        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Play)).await {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::Play)) {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -159,7 +150,6 @@ impl PlayerInterface for MprisPlayer {
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::SeekOffset(offset)))
-            .await
         {
             log::error!("Error sending Message through async channel: {e}");
         }
@@ -168,13 +158,9 @@ impl PlayerInterface for MprisPlayer {
 
     async fn set_position(&self, _track_id: TrackId, position: Time) -> fdo::Result<()> {
         log::info!("Mpris called set_position().");
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::SetPosition(
-                Duration::from_secs(position.as_secs() as u64),
-            )))
-            .await
-        {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::SetPosition(
+            Duration::from_secs(position.as_secs() as u64),
+        ))) {
             log::error!("Error sending Message through async channel: {e}");
         }
         log::info!("Mpris set position to {:?}.", position);
@@ -189,7 +175,6 @@ impl PlayerInterface for MprisPlayer {
         if let Err(e) = self
             .tx
             .send(Message::Player(PlayerMessage::SyncMprisPos(done_tx)))
-            .await
         {
             log::error!("Error sending Message through async channel: {e}");
         }
@@ -222,11 +207,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn set_loop_status(&self, _loop_status: LoopStatus) -> Result<()> {
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::ToggleLoop))
-            .await
-        {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::ToggleLoop)) {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -246,7 +227,7 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn set_shuffle(&self, _shuffle: bool) -> Result<()> {
-        if let Err(e) = self.tx.send(Message::Queue(QueueMessage::Shuffle)).await {
+        if let Err(e) = self.tx.send(Message::Queue(QueueMessage::Shuffle)) {
             log::error!("Error sending Message through async channel: {e}");
         }
         Ok(())
@@ -267,13 +248,9 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn set_volume(&self, volume: Volume) -> Result<()> {
-        if let Err(e) = self
-            .tx
-            .send(Message::Player(PlayerMessage::SetVolume(
-                ((volume * 1000.0).round() / 1000.0) as f32,
-            )))
-            .await
-        {
+        if let Err(e) = self.tx.send(Message::Player(PlayerMessage::SetVolume(
+            ((volume * 1000.0).round() / 1000.0) as f32,
+        ))) {
             log::error!("Error sending Message through async channel: {e}");
         }
         log::info!("Mpris set volume to {:?}.", volume);

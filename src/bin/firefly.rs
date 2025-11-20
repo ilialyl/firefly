@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
 
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
-    let (msg_async_tx, mut msg_async_rx) = tokio::sync::mpsc::channel(10);
+    let (msg_async_tx, mut msg_async_rx) = tokio::sync::mpsc::unbounded_channel();
     let senders = Senders {
         msg: msg_tx,
         info: info_tx,
