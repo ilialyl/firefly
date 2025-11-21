@@ -179,13 +179,9 @@ impl PlayerInterface for MprisPlayer {
             log::error!("Error sending Message through async channel: {e}");
         }
 
-        let pos;
-        loop {
-            if !done_rx.is_empty() {
-                pos = self.state.read().await.position;
-                break;
-            }
-        }
+        let _ = done_rx.await;
+
+        let pos = self.state.read().await.position;
 
         log::info!("Mpris retrieved position: {}", pos.as_micros());
         Ok(pos)
