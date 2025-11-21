@@ -41,7 +41,9 @@ async fn main() -> Result<()> {
         async_msg: msg_async_tx,
     };
     let mut app = App::new(senders).await?;
-    app.cover_art_server.run_server().await?;
+    if cfg!(target_os = "linux") {
+        app.cover_art_server.run_server().await?;
+    }
 
     // Clap stuff
     let cli_command = cli().get_matches();
