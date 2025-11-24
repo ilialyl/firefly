@@ -100,7 +100,7 @@ pub fn get_art_cache_path() -> Result<PathBuf> {
     Ok(dir)
 }
 
-pub fn get_config_file() -> Result<PathBuf> {
+pub fn get_config_path() -> Result<PathBuf> {
     let path = get_data_dir()?.join(CONFIG_FILE_NAME);
     if !path.exists() {
         if let Some(parent) = path.parent() {
@@ -123,7 +123,7 @@ pub fn create_default_config_file(path: &Path) -> Result<()> {
 
 pub fn load_config() -> Result<HashMap<ConfigKeys, String>> {
     let config = Config::builder()
-        .add_source(config::File::from(get_config_file()?))
+        .add_source(config::File::from(get_config_path()?))
         .build()?
         .try_deserialize::<HashMap<ConfigKeys, String>>()?;
 

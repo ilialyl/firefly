@@ -7,7 +7,10 @@ use std::{
 
 use color_eyre::eyre::Result;
 
-use firefly_music::global::logic::{data::clear_art_cache, senders::Senders};
+use firefly_music::global::logic::{
+    data::{clear_art_cache, get_config_path},
+    senders::Senders,
+};
 use firefly_music::{
     app::App,
     global::{
@@ -59,6 +62,10 @@ async fn main() -> Result<()> {
         }
         Some(("playlist", _)) => {
             println!("{}", get_playlists_path()?.display());
+            return Ok(());
+        }
+        Some(("config", _)) => {
+            println!("{}", get_config_path()?.display());
             return Ok(());
         }
         Some(("with", args)) => {
