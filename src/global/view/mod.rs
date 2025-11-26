@@ -142,6 +142,15 @@ fn draw_mini(app: &mut App, frame: &mut Frame) {
             }
         }
     }
+
+    match app.input_mode.clone() {
+        InputMode::Insert(prompt, _) => {
+            app.user_input
+                .draw(prompt.as_str(), 90, 3, frame, frame.area())
+        }
+        InputMode::Commands => {}
+        InputMode::Confirmation => confirmation_box::draw(app, frame, frame.area()),
+    }
 }
 
 pub fn center_vertical(area: Rect, height: u16) -> Rect {
