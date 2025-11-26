@@ -39,6 +39,9 @@ cargo install cargo-binstall
 
 # Install firefly
 cargo binstall firefly_music
+
+# Launch the app
+firefly
 ```
 ### Optional Dependencies
 - [FFmpeg](https://ffmpeg.org/) - if you want to play unsupported file types.
