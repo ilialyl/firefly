@@ -47,7 +47,7 @@ pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
     list_state.select(app.queue.get_selected());
 
     let top_title = if app.queue.is_arrange() {
-        " Queue [Arrange on] "
+        " Queue - [Arrange on] "
     } else {
         " Queue "
     };

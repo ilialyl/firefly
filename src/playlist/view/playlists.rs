@@ -24,7 +24,7 @@ pub fn draw(app: &mut App, frame: &mut Frame, area: Rect) {
     } else if matches!(app.playlist_ctl.tab_focus, PlaylistTabFocus::Playlists) {
         Style::default().reversed()
     } else {
-        Style::default().reversed().italic()
+        Style::default().reversed().bold()
     };
 
     let list = List::new(playlist_entries).highlight_style(highlight);

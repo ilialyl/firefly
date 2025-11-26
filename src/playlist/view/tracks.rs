@@ -21,6 +21,8 @@ pub fn draw(app: &mut App, frame: &mut Frame, entries_area: Rect, scrollbar_area
         .map(Cell::from)
         .collect::<Row>();
 
+    let is_arrange = app.playlist_ctl.arrange_mode;
+
     if let Some(selected_playlist) = app.playlist_ctl.get_selected_playlist() {
         let track_entries: Vec<Row> = selected_playlist
             .mini_tracks
@@ -52,6 +54,8 @@ pub fn draw(app: &mut App, frame: &mut Frame, entries_area: Rect, scrollbar_area
 
         let highlight_style = if !matches!(app.focused_view_area, FocusedArea::Playlist) {
             Style::default()
+        } else if matches!(tab_focus, PlaylistTabFocus::Tracks) && is_arrange {
+            Style::default().reversed().bold()
         } else if matches!(tab_focus, PlaylistTabFocus::Tracks) {
             Style::default().reversed()
         } else {

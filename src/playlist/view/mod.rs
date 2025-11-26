@@ -60,6 +60,12 @@ pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
         String::new()
     };
 
+    let tracks_block = if app.playlist_ctl.arrange_mode {
+        tracks_block.title(" [Arrange on] ")
+    } else {
+        tracks_block
+    };
+
     tracks_block
         .title(Line::style(Line::from(" Tracks "), Style::new()))
         .title_alignment(Alignment::Right)
