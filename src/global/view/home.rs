@@ -4,11 +4,11 @@ use ratatui::{
     layout::{Constraint, Direction},
 };
 
-use crate::model::Model;
+use crate::app::App;
 use crate::player::view::{cover_art, track_details};
 use crate::{playlist, queue};
 
-pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
+pub fn draw(app: &mut App, frame: &mut Frame, area: Rect) {
     let panels = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![Constraint::Percentage(25), Constraint::Percentage(75)])
@@ -42,10 +42,10 @@ pub fn draw(model: &mut Model, frame: &mut Frame, area: Rect) {
         .margin(1)
         .split(left_panel_chunks[0]);
 
-    if !model.show_help {
-        cover_art::draw(cover_art_area[0], frame, model);
+    if !app.show_help {
+        cover_art::draw(cover_art_area[0], frame, app);
     }
-    queue::view::draw(left_panel_chunks[1], frame, model);
-    track_details::draw(track_details_area[0], frame, model);
-    playlist::view::draw(right_panel_chunks[1], frame, model);
+    queue::view::draw(left_panel_chunks[1], frame, app);
+    track_details::draw(track_details_area[0], frame, app);
+    playlist::view::draw(right_panel_chunks[1], frame, app);
 }

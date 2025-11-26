@@ -12,21 +12,21 @@ use ratatui::{
 };
 
 use crate::{
+    app::App,
     global::view::focused_area::FocusedArea,
-    model::Model,
     player::view::{control_bar, cover_art, track_details},
     playlist, queue,
     user_input::logic::InputMode,
 };
 
-pub fn draw(model: &mut Model, frame: &mut Frame) {
+pub fn draw(app: &mut App, frame: &mut Frame) {
     if terminal_is_small(frame.area()) {
-        draw_mini(model, frame);
+        draw_mini(app, frame);
     } else {
-        if matches!(model.focused_view_area, FocusedArea::Queue) {
-            model.focused_view_area.cycle_right();
+        if matches!(app.focused_view_area, FocusedArea::Queue) {
+            app.focused_view_area.cycle_right();
         }
-        draw_normal_size(model, frame);
+        draw_normal_size(app, frame);
     }
 }
 
@@ -34,7 +34,7 @@ pub fn terminal_is_small(area: Rect) -> bool {
     area.width <= 60 && area.height < 15
 }
 
-fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
+fn draw_normal_size(app: &mut App, frame: &mut Frame) {
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -44,10 +44,10 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
         ])
         .split(frame.area());
 
-    let top_right_text = if model.info_msg.is_empty() {
+    let top_right_text = if app.info_msg.is_empty() {
         format!("v{} ", env!("CARGO_PKG_VERSION"))
     } else {
-        model.info_msg.clone()
+        app.info_msg.clone()
     };
 
     Block::new()
@@ -61,7 +61,7 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
         .padding(Padding::horizontal(1))
         .render(outer_layout[0], frame.buffer_mut());
 
-    let top_left_text = if model.show_help {
+    let top_left_text = if app.show_help {
         Line::from(" Hide Help <H>").bold()
     } else {
         Line::from(" Help <H>")
@@ -73,9 +73,9 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
         .padding(Padding::horizontal(1))
         .render(outer_layout[0], frame.buffer_mut());
 
-    home::draw(model, frame, outer_layout[1]);
+    home::draw(app, frame, outer_layout[1]);
 
-    if matches!(model.focused_view_area, FocusedArea::ControlBar) {
+    if matches!(app.focused_view_area, FocusedArea::ControlBar) {
         Block::bordered().render(outer_layout[2], frame.buffer_mut());
     }
 
@@ -84,27 +84,26 @@ fn draw_normal_size(model: &mut Model, frame: &mut Frame) {
         .margin(1)
         .split(outer_layout[2]);
 
-    control_bar::draw(main_view_chunk[0], frame, model);
+    control_bar::draw(main_view_chunk[0], frame, app);
 
-    if model.show_help {
+    if app.show_help {
         help::draw(frame, frame.area());
     }
 
-    match model.input_mode.clone() {
+    match app.input_mode.clone() {
         InputMode::Insert(prompt, _) => {
-            model
-                .user_input
+            app.user_input
                 .draw(prompt.as_str(), 40, 3, frame, frame.area())
         }
         InputMode::Commands => {}
-        InputMode::Confirmation => confirmation_box::draw(model, frame, frame.area()),
+        InputMode::Confirmation => confirmation_box::draw(app, frame, frame.area()),
     }
 }
 
-fn draw_mini(model: &mut Model, frame: &mut Frame) {
-    match model.focused_view_area {
+fn draw_mini(app: &mut App, frame: &mut Frame) {
+    match app.focused_view_area {
         FocusedArea::ControlBar => {
-            if model.player.current.is_some() {
+            if app.player.current.is_some() {
                 let layout = Layout::default()
                     .direction(Direction::Horizontal)
                     .constraints(vec![
@@ -115,8 +114,8 @@ fn draw_mini(model: &mut Model, frame: &mut Frame) {
                     .spacing(1)
                     .split(frame.area());
 
-                cover_art::draw(layout[0], frame, model);
-                track_details::draw(layout[1], frame, model);
+                cover_art::draw(layout[0], frame, app);
+                track_details::draw(layout[1], frame, app);
             } else {
                 Paragraph::new(vec![
                     Line::from("Mini Player"),
@@ -127,10 +126,10 @@ fn draw_mini(model: &mut Model, frame: &mut Frame) {
             }
         }
         FocusedArea::Playlist => {
-            playlist::view::draw(frame.area(), frame, model);
+            playlist::view::draw(frame.area(), frame, app);
         }
         FocusedArea::Queue => {
-            if model.queue.is_empty() {
+            if app.queue.is_empty() {
                 Paragraph::new("This is queue, but it's empty.")
                     .render(frame.area(), frame.buffer_mut());
             } else {
@@ -138,10 +137,19 @@ fn draw_mini(model: &mut Model, frame: &mut Frame) {
                     .direction(Direction::Vertical)
                     .constraints(vec![Constraint::Fill(1), Constraint::Length(1)])
                     .split(frame.area());
-                queue::view::draw(chunks[0], frame, model);
-                control_bar::draw_mini(chunks[1], frame, model);
+                queue::view::draw(chunks[0], frame, app);
+                control_bar::draw_mini(chunks[1], frame, app);
             }
         }
+    }
+
+    match app.input_mode.clone() {
+        InputMode::Insert(prompt, _) => {
+            app.user_input
+                .draw(prompt.as_str(), 90, 3, frame, frame.area())
+        }
+        InputMode::Commands => {}
+        InputMode::Confirmation => confirmation_box::draw(app, frame, frame.area()),
     }
 }
 

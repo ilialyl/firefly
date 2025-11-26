@@ -9,6 +9,7 @@ pub enum InputMode {
     Confirmation,
 }
 
+/// The selection of where the input will end up.
 #[derive(Clone, Copy)]
 pub enum InputTarget {
     PlaylistName(PlaylistIndex),

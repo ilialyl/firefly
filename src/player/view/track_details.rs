@@ -6,10 +6,10 @@ use lofty::{
 };
 use ratatui::{Frame, layout::Rect, widgets::Paragraph};
 
-use crate::{global::view::center_vertical, model::Model};
+use crate::{app::App, global::view::center_vertical};
 
-pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
-    if let Some(current_track) = model.player.current.as_mut()
+pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
+    if let Some(current_track) = app.player.current.as_mut()
         && let Some(tagged_file) = current_track.tagged_file.as_mut()
     {
         let metadata = get_metadata_lines(tagged_file, &current_track.real_path);

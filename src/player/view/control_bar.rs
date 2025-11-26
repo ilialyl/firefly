@@ -8,16 +8,16 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-use crate::model::Model;
+use crate::app::App;
 
-pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let play_str = match model.player.sink_status_to_mpris_playback_status() {
+pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
+    let play_str = match app.player.sink_status_to_mpris_playback_status() {
         PlaybackStatus::Playing => "Playing",
         PlaybackStatus::Stopped => "Idle",
         PlaybackStatus::Paused => "Paused",
     };
 
-    let quality_str = if let Some(current_track) = model.player.current.as_mut()
+    let quality_str = if let Some(current_track) = app.player.current.as_mut()
         && let Some(tagged_file) = current_track.tagged_file.as_mut()
     {
         get_quality_str(tagged_file)
@@ -25,10 +25,10 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         String::from("              ")
     };
 
-    let duration_str = if let Some(current_track) = model.player.current.as_mut() {
+    let duration_str = if let Some(current_track) = app.player.current.as_mut() {
         format!(
             "{} / {}",
-            duration_as_str(&model.player.sink.get_pos()),
+            duration_as_str(&app.player.sink.get_pos()),
             duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
         )
     } else {
@@ -38,8 +38,8 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     let misc_str = format!(
         "{} {} {} {}",
         duration_str,
-        if model.player.looping { "↻" } else { " " },
-        get_volume_str(model.player.sink.volume()),
+        if app.player.looping { "↻" } else { " " },
+        get_volume_str(app.player.sink.volume()),
         quality_str,
     );
 
@@ -53,12 +53,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     .split(area);
 
     let mut progress_str = "─".repeat(area[1].width as usize);
-    if let Some(current_track) = model.player.current.as_mut()
+    if let Some(current_track) = app.player.current.as_mut()
         && let Some(dur) = current_track.duration
     {
         let bar_pos = get_progress_position(
             progress_str.chars().count(),
-            &model.player.sink.get_pos(),
+            &app.player.sink.get_pos(),
             &dur,
         )
         .saturating_sub(1);
@@ -77,17 +77,17 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
     frame.render_widget(misc, area[2]);
 }
 
-pub fn draw_mini(area: Rect, frame: &mut Frame, model: &mut Model) {
-    let play_str = match model.player.sink_status_to_mpris_playback_status() {
+pub fn draw_mini(area: Rect, frame: &mut Frame, app: &mut App) {
+    let play_str = match app.player.sink_status_to_mpris_playback_status() {
         PlaybackStatus::Playing => "Playing",
         PlaybackStatus::Stopped => "Idle",
         PlaybackStatus::Paused => "Paused",
     };
 
-    let duration_str = if let Some(current_track) = model.player.current.as_mut() {
+    let duration_str = if let Some(current_track) = app.player.current.as_mut() {
         format!(
             "{} / {}",
-            duration_as_str(&model.player.sink.get_pos()),
+            duration_as_str(&app.player.sink.get_pos()),
             duration_as_str(&current_track.duration.unwrap_or(Duration::from_secs(0)))
         )
     } else {
@@ -97,8 +97,8 @@ pub fn draw_mini(area: Rect, frame: &mut Frame, model: &mut Model) {
     let misc_str = format!(
         "{} {} {}",
         duration_str,
-        if model.player.looping { "L" } else { " " },
-        get_volume_str(model.player.sink.volume()),
+        if app.player.looping { "L" } else { " " },
+        get_volume_str(app.player.sink.volume()),
     );
 
     let area = Layout::horizontal(vec![

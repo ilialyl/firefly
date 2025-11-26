@@ -28,10 +28,10 @@ use tokio::sync::Mutex;
 use crate::{
     global::{
         logic::{
+            cover_art_server::COVER_ART_ROUTE,
             data::{get_art_cache_path, get_cache_dir},
             files::{is_opus, is_rodio_supported},
             opus::get_opus_source,
-            servers::COVER_ART_ROUTE,
         },
         message::Message,
     },
@@ -41,6 +41,7 @@ use crate::{
 // So that the program can identify whose cover art is whose after decoding in background.
 static TRACK_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
+/// Stores the most info about a track out of all structs. Used for current playing track.
 pub struct Track {
     pub id: u32,
     pub real_path: PathBuf,
@@ -243,7 +244,7 @@ impl Track {
     pub async fn convert_format(
         real_path: &Path,
         temp_path: &Path,
-        async_msg_tx: &tokio::sync::mpsc::Sender<Message>,
+        async_msg_tx: &tokio::sync::mpsc::UnboundedSender<Message>,
         info_tx: &Sender<String>,
     ) {
         let real_path = real_path.to_path_buf();
@@ -263,12 +264,9 @@ impl Track {
                     .await
                     .unwrap(),
             ));
-            if let Err(e) = msg_tx
-                .send(Message::Player(PlayerMessage::ConversionStarted(
-                    ffmpeg_handle.clone(),
-                )))
-                .await
-            {
+            if let Err(e) = msg_tx.send(Message::Player(PlayerMessage::ConversionStarted(
+                ffmpeg_handle.clone(),
+            ))) {
                 log::error!("Error sending FFmpegProcess back to main thread: {e}");
             }
 
@@ -281,9 +279,7 @@ impl Track {
                             log::error!("Error sending info message: {e}");
                         }
                         log::info!("Conversion Complete.");
-                        if let Err(e) = msg_tx
-                            .send(Message::Player(PlayerMessage::ConversionEnded))
-                            .await
+                        if let Err(e) = msg_tx.send(Message::Player(PlayerMessage::ConversionEnded))
                         {
                             log::error!("Error sending ConversionEnded Message: {e}");
                         }

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
+    app::App,
     global::{
         logic::files::{
             audio_paths_from_dir, choose_dirs, choose_multiple_audio_files,
@@ -8,7 +9,6 @@ use crate::{
         },
         message::Message,
     },
-    model::Model,
     player::{self, logic::Player},
     queue::logic::{TrackQueue, mini_track::MiniTrack},
 };
@@ -124,9 +124,9 @@ pub fn scroll_to_end(queue: &mut TrackQueue) -> Option<Message> {
     None
 }
 
-pub async fn skip_to_selected(model: &mut Model) -> Option<Message> {
-    model.queue.skip_to_selected();
-    player::cmd::play_next_track(model).await;
+pub async fn skip_to_selected(app: &mut App) -> Option<Message> {
+    app.queue.skip_to_selected();
+    player::cmd::play_next_track(app).await;
 
     None
 }

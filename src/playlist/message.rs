@@ -1,9 +1,10 @@
 use crate::{
     global::message::Message,
     playlist::logic::{mini_metadata::MiniMetadata, playlist_collection::Index},
-    terminal::Direction,
+    tui::Direction,
 };
 
+/// Messages related to Playlist
 pub enum PlaylistMessage {
     Navigate(Direction),
     Create,

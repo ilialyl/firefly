@@ -9,6 +9,7 @@ use crate::{
     },
 };
 
+/// Will be merged with PlaylistCollection soon.
 pub struct PlaylistController {
     pub selected_playlist: Option<usize>,
     pub playlist_coll: PlaylistCollection,

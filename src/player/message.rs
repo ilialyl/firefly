@@ -4,9 +4,12 @@ use mpris_server::Time;
 use rust_ffmpeg::FFmpegProcess;
 use tokio::sync::{Mutex, oneshot::Sender};
 
+/// Messages related to Player
 pub enum PlayerMessage {
     LoadNow,
     TogglePlay,
+    Play,
+    Pause,
     Next,
     PreviousTrack,
     IncreaseVolume(f32),
@@ -21,5 +24,5 @@ pub enum PlayerMessage {
     ConversionEnded,
     SyncMprisPos(Sender<()>),
     SyncMprisVolume,
-    ClearCurrent,
+    ClearCurrentSession,
 }

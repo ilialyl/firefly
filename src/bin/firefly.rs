@@ -8,24 +8,25 @@ use std::{
 use color_eyre::eyre::Result;
 
 use firefly_music::global::logic::{
-    data::clear_art_cache, senders::Senders, servers::run_cover_art_server,
+    data::{clear_art_cache, get_config_path},
+    senders::Senders,
 };
 use firefly_music::{
+    app::App,
     global::{
         logic::{
             cli::cli,
             data::{clear_all_cache, get_cache_dir},
             files::get_playlists_path,
             logger::{get_log_path, setup_logger},
-            session_state::RunningState,
+            session_state::SessionState,
         },
         message::Message,
         update::update_global,
         view::draw,
     },
-    model::Model,
     queue::message::QueueMessage,
-    terminal::{handle_events, init_terminal, install_panic_hook, restore_terminal},
+    tui::{handle_events, init_terminal, install_panic_hook, restore_terminal},
 };
 
 #[tokio::main]
@@ -36,15 +37,15 @@ async fn main() -> Result<()> {
 
     let (msg_tx, msg_rx) = mpsc::channel::<Message>();
     let (info_tx, info_rx) = mpsc::channel::<String>();
-    let (msg_async_tx, mut msg_async_rx) = tokio::sync::mpsc::channel(10);
+    let (msg_async_tx, mut msg_async_rx) = tokio::sync::mpsc::unbounded_channel();
     let senders = Senders {
         msg: msg_tx,
         info: info_tx,
         async_msg: msg_async_tx,
     };
-    let mut model = Model::new(senders).await?;
-    if let Some(listener) = model.session.cover_listener.take() {
-        run_cover_art_server(listener).await?;
+    let mut app = App::new(senders).await?;
+    if cfg!(target_os = "linux") {
+        app.cover_art_server.run_server().await?;
     }
 
     // Clap stuff
@@ -63,6 +64,10 @@ async fn main() -> Result<()> {
             println!("{}", get_playlists_path()?.display());
             return Ok(());
         }
+        Some(("config", _)) => {
+            println!("{}", get_config_path()?.display());
+            return Ok(());
+        }
         Some(("with", args)) => {
             if let Some(path_strs) = args.get_many::<String>("paths") {
                 let paths: Vec<PathBuf> = path_strs.map(PathBuf::from).collect();
@@ -72,8 +77,7 @@ async fn main() -> Result<()> {
                     eprintln!("No path is valid.");
                     return Ok(());
                 }
-                model
-                    .senders
+                app.senders
                     .msg
                     .send(Message::Queue(QueueMessage::QueuePaths(valid_paths)))
                     .expect("Error sending queue.");
@@ -85,20 +89,20 @@ async fn main() -> Result<()> {
     let mut terminal = init_terminal()?;
     install_panic_hook();
 
-    while model.session.state != RunningState::Exit {
+    while app.session_state != SessionState::Exit {
         // VecDeque is better for queues
         let mut msg_queue: VecDeque<Message> = VecDeque::new();
 
         // Tick at the start to keep things updated
-        if let Some(msg) = update_global(&mut model, Message::Tick).await {
+        if let Some(msg) = update_global(&mut app, Message::Tick).await {
             msg_queue.push_back(msg);
         }
 
         // Draw TUI view
-        terminal.draw(|f| draw(&mut model, f))?;
+        terminal.draw(|f| draw(&mut app, f))?;
 
         // Handle terminal events
-        if let Some(msg) = handle_events(&model)? {
+        if let Some(msg) = handle_events(&app)? {
             msg_queue.push_back(msg);
         }
 
@@ -114,14 +118,14 @@ async fn main() -> Result<()> {
 
         // Display info sent from other threads
         if let Ok(info) = info_rx.try_recv() {
-            update_global(&mut model, Message::UpdateInfoMsg(info)).await;
+            update_global(&mut app, Message::UpdateInfoMsg(info)).await;
         }
 
         // Consume messages
         while !msg_queue.is_empty()
             && let Some(msg) = msg_queue.pop_front()
         {
-            if let Some(msg) = update_global(&mut model, msg).await {
+            if let Some(msg) = update_global(&mut app, msg).await {
                 msg_queue.push_back(msg);
             }
         }

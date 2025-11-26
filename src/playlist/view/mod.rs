@@ -11,11 +11,11 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
+use crate::app::App;
 use crate::global::view::focused_area::FocusedArea;
-use crate::model::Model;
 use crate::playlist::logic::playlist_tab_focus::PlaylistTabFocus;
 
-pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
+pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
     let inner_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![
@@ -25,12 +25,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         ])
         .split(area);
 
-    let (playlists_block, tracks_block) =
-        if matches!(model.focused_view_area, FocusedArea::Playlist) {
-            (Block::bordered(), Block::bordered())
-        } else {
-            (Block::new(), Block::new())
-        };
+    let (playlists_block, tracks_block) = if matches!(app.focused_view_area, FocusedArea::Playlist)
+    {
+        (Block::bordered(), Block::bordered())
+    } else {
+        (Block::new(), Block::new())
+    };
 
     playlists_block
         .title(Line::style(Line::from(" Playlists "), Style::new()))
@@ -38,9 +38,9 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         .title_alignment(Alignment::Left)
         .render(inner_chunks[0], frame.buffer_mut());
 
-    let playlist_tab_focus = model.playlist_ctl.tab_focus;
-    let tracks_bottom_title = if matches!(model.focused_view_area, FocusedArea::Playlist)
-        && let Some(selected_playlist) = model.playlist_ctl.get_selected_playlist()
+    let playlist_tab_focus = app.playlist_ctl.tab_focus;
+    let tracks_bottom_title = if matches!(app.focused_view_area, FocusedArea::Playlist)
+        && let Some(selected_playlist) = app.playlist_ctl.get_selected_playlist()
     {
         if matches!(playlist_tab_focus, PlaylistTabFocus::Tracks) {
             format!(
@@ -58,6 +58,12 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         }
     } else {
         String::new()
+    };
+
+    let tracks_block = if app.playlist_ctl.arrange_mode {
+        tracks_block.title(" [Arrange on] ")
+    } else {
+        tracks_block
     };
 
     tracks_block
@@ -80,6 +86,6 @@ pub fn draw(area: Rect, frame: &mut Frame, model: &mut Model) {
         .split(inner_chunks[1]);
 
     // draw_mini_controls(frame, outer_chunks[1]);
-    playlists::draw(model, frame, left_panel_chunks[0]);
-    tracks::draw(model, frame, right_panel_chunks[0], inner_chunks[2]);
+    playlists::draw(app, frame, left_panel_chunks[0]);
+    tracks::draw(app, frame, right_panel_chunks[0], inner_chunks[2]);
 }

@@ -21,6 +21,7 @@ use crate::{
 
 pub type Index = usize;
 
+/// A collection of playlists, with utilities to manipulate them.
 pub struct PlaylistCollection {
     playlists: Vec<Playlist>,
     metadata_loader_tx: Sender<(Index, Vec<PathBuf>)>,

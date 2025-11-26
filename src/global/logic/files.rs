@@ -9,11 +9,11 @@ use rfd::FileDialog;
 
 use crate::global::logic::data::get_data_dir;
 
-pub const RODIO_SUPPORTED_FORMATS: [&str; 5] = ["flac", "mp3", "ogg", "wav", "opus"];
-pub const TESTED_FORMATS: [&str; 6] = ["mp3", "flac", "wav", "ogg", "opus", "oga"];
+pub const RODIO_SUPPORTED_FORMATS: [&str; 6] = ["flac", "mp3", "ogg", "wav", "opus", "m4a"];
+pub const TESTED_FORMATS: [&str; 7] = ["mp3", "flac", "wav", "ogg", "opus", "oga", "m4a"];
 pub const UNTESTED_FORMATS: [&str; 5] = ["pcm", "aiff", "aac", "wma", "alac"];
-pub const AUDIO_FORMATS: [&str; 11] = [
-    "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac",
+pub const AUDIO_FORMATS: [&str; 12] = [
+    "mp3", "flac", "wav", "ogg", "opus", "oga", "pcm", "aiff", "aac", "wma", "alac", "m4a",
 ];
 
 pub fn is_rodio_supported(path: &Path) -> Result<bool> {

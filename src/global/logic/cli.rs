@@ -9,8 +9,9 @@ pub fn cli() -> Command {
         .subcommand(
             Command::new("clean").about("Remove FLAC files generated from format conversion."),
         )
-        .subcommand(Command::new("log").about("Print log path"))
-        .subcommand(Command::new("playlist").about("Print playlist path"))
+        .subcommand(Command::new("log").about("Print the path to the log file."))
+        .subcommand(Command::new("playlist").about("Print the path to playlist files."))
+        .subcommand(Command::new("config").about("Print the path to the configuration file."))
         .subcommand(
             Command::new("with")
                 .about("Open with paths of audio files or directories enqueued.")

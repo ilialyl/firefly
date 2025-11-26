@@ -1,10 +1,11 @@
 pub mod format_conversion;
+pub mod mpris;
 pub mod playback_status;
 pub mod track;
 
 use color_eyre::eyre::{Result, eyre};
 use mpris_server::{LoopStatus, Metadata, PlaybackStatus, Property, Server, Signal, Time};
-use rodio::{OutputStream, Sink};
+use rodio::{OutputStream, OutputStreamBuilder, SampleRate, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
     net::SocketAddr,
@@ -13,22 +14,23 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-use tokio::sync::{Mutex, RwLock, mpsc::Sender};
+use tokio::sync::{Mutex, RwLock, mpsc::UnboundedSender};
 
 use crate::{
-    global::{
-        logic::mpris::{MprisPlayer, MprisPlayerState},
-        message::Message,
+    global::message::Message,
+    player::logic::{
+        mpris::{MprisPlayer, MprisPlayerState},
+        track::Track,
     },
-    player::logic::track::Track,
     queue::logic::TrackQueue,
 };
 
 const MIN_VOLUME: f32 = 0.0;
 const MAX_VOLUME: f32 = 2.0;
 pub const DEFAULT_VOLUME_CHANGE_AMOUNT: f32 = 0.05;
+pub const DEFAULT_SAMPLE_RATE: SampleRate = 48_000;
 
-/// Deals with stuff like current track, previous tracks, looping bool, sink, and MPRIS server.
+/// Deals player-related stuff like current track, previous tracks, looping bool, sink, and MPRIS server.
 pub struct Player {
     pub current: Option<Track>,
     // Previous is Vec instead of VecDeque because it's a stack, not queue.
@@ -45,10 +47,11 @@ pub struct Player {
 impl Player {
     // Sender is needed because it deals with threads.
     pub async fn new(
-        async_msg_tx: Sender<Message>,
+        async_msg_tx: UnboundedSender<Message>,
         cover_server_addr: Option<SocketAddr>,
+        sample_rate: SampleRate,
     ) -> Result<Player> {
-        let (stream, sink) = Self::get_sink()?;
+        let (stream, sink) = Self::get_sink(sample_rate)?;
         let mpris_state = Arc::new(RwLock::new(MprisPlayerState::default()));
         let mpris_server = Server::new_with_all(
             "Firefly",
@@ -84,9 +87,11 @@ impl Player {
         Ok(())
     }
 
-    pub fn get_sink() -> Result<(OutputStream, Sink)> {
-        let mut stream_handle = rodio::OutputStreamBuilder::open_default_stream()?;
-        let sink = rodio::Sink::connect_new(stream_handle.mixer());
+    pub fn get_sink(sample_rate: SampleRate) -> Result<(OutputStream, Sink)> {
+        let mut stream_handle = OutputStreamBuilder::from_default_device()?
+            .with_sample_rate(sample_rate)
+            .open_stream()?;
+        let sink = Sink::connect_new(stream_handle.mixer());
 
         stream_handle.log_on_drop(false);
 
@@ -227,6 +232,20 @@ impl Player {
             self.sink.pause();
         }
 
+        self.sync_and_notify_playback_status().await?;
+
+        Ok(())
+    }
+
+    pub async fn play(&mut self) -> Result<()> {
+        self.sink.play();
+        self.sync_and_notify_playback_status().await?;
+
+        Ok(())
+    }
+
+    pub async fn pause(&mut self) -> Result<()> {
+        self.sink.pause();
         self.sync_and_notify_playback_status().await?;
 
         Ok(())
