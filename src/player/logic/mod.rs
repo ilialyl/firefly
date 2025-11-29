@@ -9,7 +9,7 @@ use rodio::{OutputStream, OutputStreamBuilder, SampleRate, Sink};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
     net::SocketAddr,
-    ops::{Add, Sub},
+    ops::Add,
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -130,9 +130,11 @@ impl Player {
             if let Err(e) = self.sink.try_seek(current_pos.add(seek_dur)) {
                 return Err(eyre!("{e}"));
             };
-        } else if track_dur.sub(current_pos) < seek_dur
-            && track_dur.sub(current_pos) > Duration::from_secs(1)
-            && let Err(e) = self.sink.try_seek(track_dur.sub(Duration::from_secs(1)))
+        } else if track_dur.saturating_sub(current_pos) < seek_dur
+            && track_dur.saturating_sub(current_pos) > Duration::from_secs(1)
+            && let Err(e) = self
+                .sink
+                .try_seek(track_dur.saturating_sub(Duration::from_secs(1)))
         {
             return Err(eyre!("{e}"));
         };
@@ -145,11 +147,16 @@ impl Player {
     pub async fn rewind(&mut self, rewind_dur: Duration) -> Result<()> {
         if self.current.is_some() {
             let current_pos = self.sink.get_pos();
+            if self.sink.empty() {
+                self.reload().await?;
+                log::info!("Reloading...");
+            }
             let rewinded_pos = current_pos.saturating_sub(rewind_dur);
 
             if let Err(e) = self.sink.try_seek(rewinded_pos) {
                 return Err(eyre!("{e}"));
             };
+            log::info!("Rewinding...");
         }
 
         self.sync_and_notify_mpris_pos().await?;
