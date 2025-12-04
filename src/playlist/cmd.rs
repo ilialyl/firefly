@@ -288,8 +288,11 @@ pub fn ask_to_save(
     then_call: Option<Message>,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
+    let current_playlist_index = playlist_ctl.selected_playlist.clone();
+    let metadata_loader_tx = playlist_ctl.playlist_coll.metadata_loader_tx.clone();
     if let Some(current_playlist) = playlist_ctl.get_selected_playlist()
         && current_playlist.is_dirty()
+        && let Some(current_playlist_index) = current_playlist_index
     {
         if let Some(confirm) = confirmation.take() {
             match confirm {
@@ -303,6 +306,12 @@ pub fn ask_to_save(
                 Response::No => {
                     if let Err(e) = current_playlist.reload_from_file() {
                         log::error!("Error reloading playlist: {e}");
+                    }
+
+                    if let Err(e) = metadata_loader_tx
+                        .send((current_playlist_index, current_playlist.get_path_vec()))
+                    {
+                        log::error!("Error sending playlist to metadata loader: {e}");
                     }
                     return then_call;
                 }
