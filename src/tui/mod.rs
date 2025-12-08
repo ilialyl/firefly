@@ -52,7 +52,7 @@ pub fn install_panic_hook() {
 }
 
 pub fn handle_events(app: &App) -> Result<Option<Message>> {
-    let frame_time = match app.unlocked_tick_rate.load(Ordering::Relaxed) {
+    let frame_time = match app.tick_rate_unlocked.load(Ordering::Relaxed) {
         true => Duration::ZERO,
         false => Duration::from_millis(30),
     };

@@ -1,4 +1,4 @@
-pub mod cli;
+pub mod channels;
 pub mod confirmation;
 pub mod cover_art_server;
 pub mod data;
@@ -6,5 +6,5 @@ pub mod files;
 pub mod image;
 pub mod logger;
 pub mod opus;
-pub mod senders;
 pub mod session_state;
+pub mod windows;

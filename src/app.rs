@@ -1,26 +1,31 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
+    io::Stdout,
     sync::{Arc, atomic::AtomicBool},
 };
 
 use color_eyre::eyre::Result;
+use ratatui::{Terminal, prelude::CrosstermBackend};
 use ratatui_image::picker::Picker;
 use rodio::SampleRate;
 
 use crate::{
     global::{
         logic::{
+            channels::{Receivers, Senders, channels},
             confirmation::Confirmation,
             cover_art_server::CoverArtServer,
             data::{ConfigKeys, load_config},
-            senders::Senders,
             session_state::SessionState,
         },
-        view::focused_area::FocusedArea,
+        message::Message,
+        update::update_global,
+        view::{draw, focused_area::FocusedArea},
     },
     player::logic::{DEFAULT_SAMPLE_RATE, Player},
     playlist::logic::playlist_controller::PlaylistController,
     queue::logic::TrackQueue,
+    tui::handle_events,
     user_input::logic::{InputMode, UserInput},
 };
 
@@ -30,8 +35,9 @@ pub struct App {
     pub input_mode: InputMode,
     pub show_help: bool,
     pub session_state: SessionState,
-    pub unlocked_tick_rate: Arc<AtomicBool>,
+    pub tick_rate_unlocked: Arc<AtomicBool>,
     pub senders: Senders,
+    pub receivers: Receivers,
     pub player: Player,
     pub queue: TrackQueue,
     pub playlist_ctl: PlaylistController,
@@ -44,12 +50,12 @@ pub struct App {
 }
 
 impl App {
-    pub async fn new(senders: Senders) -> Result<App> {
+    pub async fn new() -> Result<App> {
         log::info!("Initializing App State...");
-        let picker = Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12)));
-        let cover_art_server = CoverArtServer::new().await?;
-        let unlocked_tick_rate = Arc::new(AtomicBool::default());
         let config = load_config()?;
+        let (senders, receivers) = channels();
+        let cover_art_server = CoverArtServer::new().await?;
+        let tick_rate_unlocked = Arc::new(AtomicBool::default());
 
         Ok(Self {
             player: Player::new(
@@ -61,20 +67,74 @@ impl App {
                     .unwrap_or(DEFAULT_SAMPLE_RATE),
             )
             .await?,
-            queue: TrackQueue::new(senders.msg.clone(), unlocked_tick_rate.clone()),
-            playlist_ctl: PlaylistController::new(senders.msg.clone(), unlocked_tick_rate.clone())?,
+            queue: TrackQueue::new(senders.msg.clone(), tick_rate_unlocked.clone()),
+            playlist_ctl: PlaylistController::new(senders.msg.clone(), tick_rate_unlocked.clone())?,
             info_msg: String::new(),
             focused_view_area: FocusedArea::default(),
             input_mode: InputMode::default(),
             user_input: UserInput::default(),
             user_confirmation: Confirmation::default(),
             show_help: false,
-            picker: Arc::new(picker),
+            picker: Arc::new(
+                Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((8, 12))),
+            ),
             senders,
+            receivers,
             cover_art_server,
             session_state: SessionState::default(),
-            unlocked_tick_rate,
+            tick_rate_unlocked,
             config,
         })
+    }
+
+    /// Run the main app loop.
+    pub async fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+        if cfg!(target_os = "linux") {
+            self.cover_art_server.run_server().await?;
+        }
+
+        while self.session_state != SessionState::Exit {
+            // VecDeque is better for queues
+            let mut msg_queue: VecDeque<Message> = VecDeque::new();
+
+            // Tick at the start to keep things updated
+            if let Some(msg) = update_global(self, Message::Tick).await {
+                msg_queue.push_back(msg);
+            }
+
+            // Draw TUI view
+            terminal.draw(|f| draw(self, f))?;
+
+            // Handle terminal events
+            if let Some(msg) = handle_events(&self)? {
+                msg_queue.push_back(msg);
+            }
+
+            // Receive message from other threads
+            while let Ok(msg) = self.receivers.msg.try_recv() {
+                msg_queue.push_back(msg);
+            }
+
+            // Async receiver
+            while let Ok(msg) = self.receivers.async_msg.try_recv() {
+                msg_queue.push_back(msg);
+            }
+
+            // Display info sent from other threads
+            if let Ok(info) = self.receivers.info.try_recv() {
+                update_global(self, Message::UpdateInfoMsg(info)).await;
+            }
+
+            // Consume messages
+            while !msg_queue.is_empty()
+                && let Some(msg) = msg_queue.pop_front()
+            {
+                if let Some(msg) = update_global(self, msg).await {
+                    msg_queue.push_back(msg);
+                }
+            }
+        }
+
+        Ok(())
     }
 }

@@ -1,4 +1,5 @@
 pub mod app;
+pub mod cli;
 pub mod global;
 pub mod player;
 pub mod playlist;
