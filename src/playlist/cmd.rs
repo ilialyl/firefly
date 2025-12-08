@@ -288,7 +288,7 @@ pub fn ask_to_save(
     then_call: Option<Message>,
     playlist_ctl: &mut PlaylistController,
 ) -> Option<Message> {
-    let current_playlist_index = playlist_ctl.selected_playlist.clone();
+    let current_playlist_index = playlist_ctl.selected_playlist;
     let metadata_loader_tx = playlist_ctl.playlist_coll.metadata_loader_tx.clone();
     if let Some(current_playlist) = playlist_ctl.get_selected_playlist()
         && current_playlist.is_dirty()

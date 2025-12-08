@@ -113,11 +113,9 @@ impl Player {
         if let Some(current_track) = self.current.as_ref()
             && let Some(dur) = current_track.duration
             && dur > position
-        {
-            if let Err(e) = self.sink.try_seek(position) {
+            && let Err(e) = self.sink.try_seek(position) {
                 return Err(eyre!("{e}"));
             };
-        }
 
         self.sync_and_notify_mpris_pos().await?;
 

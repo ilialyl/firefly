@@ -106,7 +106,7 @@ impl App {
             terminal.draw(|f| draw(self, f))?;
 
             // Handle terminal events
-            if let Some(msg) = handle_events(&self)? {
+            if let Some(msg) = handle_events(self)? {
                 msg_queue.push_back(msg);
             }
 

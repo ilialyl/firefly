@@ -68,8 +68,7 @@ pub async fn tick(app: &mut App) -> Option<Message> {
                 if let Err(e) = app.player.reload().await {
                     log::error!("Error looping track: {}", e);
                 }
-            } else {
-            }
+            } 
         }
 
         // Load the next track after current track ends.
