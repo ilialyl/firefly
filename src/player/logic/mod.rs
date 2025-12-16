@@ -113,9 +113,10 @@ impl Player {
         if let Some(current_track) = self.current.as_ref()
             && let Some(dur) = current_track.duration
             && dur > position
-            && let Err(e) = self.sink.try_seek(position) {
-                return Err(eyre!("{e}"));
-            };
+            && let Err(e) = self.sink.try_seek(position)
+        {
+            return Err(eyre!("{e}"));
+        };
 
         self.sync_and_notify_mpris_pos().await?;
 
@@ -232,7 +233,8 @@ impl Player {
     pub async fn toggle_play(&mut self) -> Result<()> {
         if self.sink.is_paused() {
             self.sink.play();
-        } else if self.sink.empty() {
+        } else if self.sink.empty() && self.current.is_some() {
+            self.reload().await?;
         } else {
             self.sink.pause();
         }
