@@ -21,7 +21,16 @@ pub fn handle_key_inputs(key_event: KeyEvent, app: &App) -> Option<Message> {
                 KeyCode::Char('w') => Some(Message::Playlist(PlaylistMessage::AddTracks)),
                 KeyCode::Char('s') => Some(Message::Player(PlayerMessage::Next)),
                 KeyCode::Char('p') => Some(Message::Player(PlayerMessage::PreviousTrack)),
+                KeyCode::Char('l') => Some(Message::Player(PlayerMessage::ToggleLoop)),
+                KeyCode::Char('q') => Some(Message::Queue(QueueMessage::QueueFilesWithFileDialog)),
+                KeyCode::Char('Q') => Some(Message::Queue(QueueMessage::QueueDirsWithFileDialog)),
                 KeyCode::Char(' ') => Some(Message::Player(PlayerMessage::TogglePlay)),
+                KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume(
+                    DEFAULT_VOLUME_CHANGE_AMOUNT,
+                ))),
+                KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume(
+                    DEFAULT_VOLUME_CHANGE_AMOUNT,
+                ))),
                 KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::SendToPlayer)),
                 KeyCode::Delete => Some(Message::Playlist(PlaylistMessage::RemoveTrack)),
                 KeyCode::Right => Some(Message::Playlist(PlaylistMessage::Navigate(
