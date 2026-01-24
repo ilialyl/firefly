@@ -32,6 +32,10 @@ pub async fn toggle_play(app: &mut App) -> Option<Message> {
         return None;
     }
 
+    if app.player.current.is_none() {
+        return None;
+    }
+
     if let Err(e) = app.player.toggle_play().await {
         log::error!("Error toggling play: {e}");
     }

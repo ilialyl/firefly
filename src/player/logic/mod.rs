@@ -223,7 +223,7 @@ impl Player {
     pub fn sink_status_to_mpris_playback_status(&self) -> PlaybackStatus {
         if self.sink.is_paused() {
             PlaybackStatus::Paused
-        } else if self.sink.empty() {
+        } else if self.sink.empty() || self.sink.empty() && self.current.is_some() {
             PlaybackStatus::Stopped
         } else {
             PlaybackStatus::Playing
