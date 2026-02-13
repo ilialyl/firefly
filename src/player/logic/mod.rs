@@ -19,7 +19,7 @@ use tokio::sync::{Mutex, RwLock, mpsc::UnboundedSender};
 use crate::{
     global::message::Message,
     player::logic::{
-        mpris::{MprisPlayer, MprisPlayerState},
+        mpris::{MprisPlayer, MprisPlayerState, get_bus_name},
         track::Track,
     },
     queue::logic::TrackQueue,
@@ -53,8 +53,9 @@ impl Player {
     ) -> Result<Player> {
         let (stream, sink) = Self::get_sink(sample_rate)?;
         let mpris_state = Arc::new(RwLock::new(MprisPlayerState::default()));
+
         let mpris_server = Server::new_with_all(
-            "Firefly",
+            &get_bus_name().await?,
             MprisPlayer {
                 tx: async_msg_tx,
                 state: mpris_state.clone(),
@@ -62,6 +63,7 @@ impl Player {
         )
         .await
         .ok();
+
         let mpris_state = if mpris_server.is_some() {
             Some(mpris_state)
         } else {

@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use color_eyre::eyre;
 use mpris_server::{
     LoopStatus, Metadata, PlaybackRate, PlaybackStatus, PlayerInterface, Playlist, PlaylistId,
     PlaylistOrdering, PlaylistsInterface, RootInterface, Time, TrackId, TrackListInterface, Uri,
@@ -7,10 +8,13 @@ use mpris_server::{
     zbus::{Result, fdo},
 };
 use tokio::sync::{RwLock, mpsc::UnboundedSender};
+use zbus::{Connection, fdo::DBusProxy, names::BusName};
 
 use crate::{
     global::message::Message, player::message::PlayerMessage, queue::message::QueueMessage,
 };
+
+const BUS_NAME_BASE: &str = "Firefly";
 
 /// Store states that MPRIS can retrieve on demand.
 pub struct MprisPlayerState {
@@ -350,4 +354,37 @@ impl PlaylistsInterface for MprisPlayer {
     async fn active_playlist(&self) -> fdo::Result<Option<Playlist>> {
         Ok(None)
     }
+}
+
+pub async fn bus_name_is_used(name: &str) -> eyre::Result<bool> {
+    let connection = Connection::session().await?;
+
+    let proxy = DBusProxy::new(&connection).await?;
+
+    let bus_name = format!("org.mpris.MediaPlayer2.{}", name);
+
+    if proxy.name_has_owner(BusName::try_from(bus_name)?).await? {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub async fn get_bus_name() -> eyre::Result<String> {
+    let mut n = 0;
+    let bus_name = loop {
+        let candidate = if n == 0 {
+            BUS_NAME_BASE.to_string()
+        } else {
+            format!("{BUS_NAME_BASE}{n}")
+        };
+
+        if !bus_name_is_used(&candidate).await? {
+            break candidate;
+        }
+
+        n += 1;
+    };
+
+    Ok(bus_name)
 }
