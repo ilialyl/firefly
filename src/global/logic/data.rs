@@ -12,6 +12,8 @@ use platform_dirs::AppDirs;
 use serde::Deserialize;
 use strum_macros::Display;
 
+use crate::app::SESSION_ID;
+
 pub const APP_NAME: &str = "firefly_music";
 pub const COVER_ART_DIR: &str = "cover_art/";
 const CONFIG_FILE_NAME: &str = "config.toml";
@@ -68,7 +70,7 @@ pub fn clear_all_cache() -> Result<()> {
 pub fn clear_art_cache() -> Result<()> {
     let dir = get_art_cache_path()?;
     if let Some(dir_str) = dir.as_os_str().to_str() {
-        let temp_pattern = glob(format!("{}/*", dir_str).as_str());
+        let temp_pattern = glob(format!("{}/{}*", dir_str, *SESSION_ID).as_str());
         for path in temp_pattern? {
             match path {
                 Ok(path) => {
@@ -82,10 +84,6 @@ pub fn clear_art_cache() -> Result<()> {
                 }
             }
         }
-    }
-
-    if dir.exists() && dir.is_dir() {
-        fs::remove_dir(dir)?;
     }
 
     Ok(())

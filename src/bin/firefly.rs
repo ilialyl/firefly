@@ -34,7 +34,10 @@ async fn main() -> Result<()> {
     clear_art_cache()?;
 
     // Tell user they can clean up if they need to
-    if fs::read_dir(get_cache_dir()?)?.count() != 0 {
+    if fs::read_dir(get_cache_dir()?)?
+        .filter_map(Result::ok)
+        .any(|e| e.file_type().map(|t| t.is_file()).unwrap_or(false))
+    {
         println!("run \"firefly clean\" or \"cargo run --release -- clean\" to clear FLAC cache.");
     }
 
