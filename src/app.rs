@@ -5,6 +5,8 @@ use std::{
 };
 
 use color_eyre::eyre::Result;
+use lazy_static::lazy_static;
+use rand::{Rng, distr::Alphanumeric};
 use ratatui::{Terminal, prelude::CrosstermBackend};
 use ratatui_image::picker::Picker;
 use rodio::SampleRate;
@@ -28,6 +30,14 @@ use crate::{
     tui::handle_events,
     user_input::logic::{InputMode, UserInput},
 };
+
+lazy_static! {
+    pub static ref SESSION_ID: String = rand::rng()
+        .sample_iter(&Alphanumeric)
+        .take(5)
+        .map(char::from)
+        .collect();
+}
 
 /// Stores app state.
 pub struct App {

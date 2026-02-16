@@ -26,6 +26,7 @@ use rust_ffmpeg::{AudioFilter, FFmpegBuilder};
 use tokio::sync::Mutex;
 
 use crate::{
+    app::SESSION_ID,
     global::{
         logic::{
             cover_art_server::COVER_ART_ROUTE,
@@ -212,7 +213,7 @@ impl Track {
             metadata.set_track_number(primary_tag.track().map(|n| n as i32));
             metadata.set_genre(primary_tag.genre().map(|s| vec![s.to_string()]));
             if let Some(pic) = picture {
-                let file_name = format!("{}.jpg", id);
+                let file_name = format!("{}{}.jpg", *SESSION_ID, id);
                 log::info!("Cover art: {file_name}");
                 let image_path = get_art_cache_path()?.join(&file_name);
 

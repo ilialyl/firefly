@@ -1309,6 +1309,7 @@ dependencies = [
  "glob",
  "humantime",
  "image",
+ "lazy_static",
  "local-ip-address",
  "lofty",
  "log",
