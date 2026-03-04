@@ -55,7 +55,7 @@ impl Player {
         let mpris_state = Arc::new(RwLock::new(MprisPlayerState::default()));
 
         let mpris_server = Server::new_with_all(
-            &get_bus_name().await?,
+            &get_bus_name().await,
             MprisPlayer {
                 tx: async_msg_tx,
                 state: mpris_state.clone(),

@@ -370,7 +370,7 @@ pub async fn bus_name_is_used(name: &str) -> eyre::Result<bool> {
     }
 }
 
-pub async fn get_bus_name() -> eyre::Result<String> {
+pub async fn get_bus_name() -> String {
     let mut n = 0;
     let bus_name = loop {
         let candidate = if n == 0 {
@@ -379,12 +379,17 @@ pub async fn get_bus_name() -> eyre::Result<String> {
             format!("{BUS_NAME_BASE}{n}")
         };
 
-        if !bus_name_is_used(&candidate).await? {
-            break candidate;
+        if let Ok(bool) = bus_name_is_used(&candidate).await {
+            if !bool {
+                break candidate;
+            }
+        } else {
+            log::error!("Error checking bus name. Possibly not on Linux.");
+            break String::new();
         }
 
         n += 1;
     };
 
-    Ok(bus_name)
+    bus_name
 }
