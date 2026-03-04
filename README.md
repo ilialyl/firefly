@@ -84,6 +84,7 @@ firefly with ./**/*.opus
 - Seeking an OPUS track is slow.
 - Wezterm (Windows) does not display cover art.
 - Does not work with WSL as no audio output is connected.
+- Does not launch on Windows [[issue](https://github.com/ilialyl/firefly/issues/22)].
 
 ## Bug Report
 If you find any bugs, you can open an [issue](https://github.com/ilialyl/firefly/issues). I will get to it as soon as possible.
