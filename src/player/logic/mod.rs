@@ -90,9 +90,13 @@ impl Player {
     }
 
     pub fn get_sink(sample_rate: SampleRate) -> Result<(OutputStream, Sink)> {
-        let mut stream_handle = OutputStreamBuilder::from_default_device()?
+        let mut stream_handle = match OutputStreamBuilder::from_default_device()?
             .with_sample_rate(sample_rate)
-            .open_stream()?;
+            .open_stream()
+        {
+            Ok(handle) => handle,
+            Err(_) => OutputStreamBuilder::open_default_stream()?,
+        };
         let sink = Sink::connect_new(stream_handle.mixer());
 
         stream_handle.log_on_drop(false);
