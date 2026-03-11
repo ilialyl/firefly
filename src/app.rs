@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, VecDeque},
     io::Stdout,
+    num::NonZero,
     sync::{Arc, atomic::AtomicBool},
 };
 
@@ -74,7 +75,7 @@ impl App {
                 config
                     .get(&ConfigKeys::SampleRate)
                     .and_then(|v| v.parse::<SampleRate>().ok())
-                    .unwrap_or(DEFAULT_SAMPLE_RATE),
+                    .unwrap_or(NonZero::try_from(DEFAULT_SAMPLE_RATE)?),
             )
             .await?,
             queue: TrackQueue::new(senders.msg.clone(), tick_rate_unlocked.clone()),

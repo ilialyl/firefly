@@ -32,7 +32,7 @@ use crate::{
             cover_art_server::COVER_ART_ROUTE,
             data::{get_art_cache_path, get_cache_dir},
             files::{is_opus, is_rodio_supported},
-            opus::OpusSource,
+            opus_source::OpusSource,
         },
         message::Message,
     },

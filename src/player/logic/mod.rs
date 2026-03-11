@@ -5,7 +5,7 @@ pub mod track;
 
 use color_eyre::eyre::{Result, eyre};
 use mpris_server::{LoopStatus, Metadata, PlaybackStatus, Property, Server, Signal, Time};
-use rodio::{OutputStream, OutputStreamBuilder, SampleRate, Sink};
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, SampleRate};
 use rust_ffmpeg::FFmpegProcess;
 use std::{
     net::SocketAddr,
@@ -28,7 +28,7 @@ use crate::{
 const MIN_VOLUME: f32 = 0.0;
 const MAX_VOLUME: f32 = 2.0;
 pub const DEFAULT_VOLUME_CHANGE_AMOUNT: f32 = 0.05;
-pub const DEFAULT_SAMPLE_RATE: SampleRate = 48_000;
+pub const DEFAULT_SAMPLE_RATE: u32 = 48_000;
 
 /// Deals player-related stuff like current track, previous tracks, looping bool, sink, and MPRIS server.
 pub struct Player {
@@ -36,8 +36,8 @@ pub struct Player {
     // Previous is Vec instead of VecDeque because it's a stack, not queue.
     pub previous: Vec<PathBuf>,
     pub looping: bool,
-    pub stream: OutputStream,
-    pub sink: Sink,
+    pub stream: MixerDeviceSink,
+    pub sink: rodio::Player,
     pub ffmpeg_handle: Option<Arc<Mutex<FFmpegProcess>>>,
     pub mpris_server: Option<Server<MprisPlayer>>,
     pub mpris_state: Option<Arc<RwLock<MprisPlayerState>>>,
@@ -89,15 +89,15 @@ impl Player {
         Ok(())
     }
 
-    pub fn get_sink(sample_rate: SampleRate) -> Result<(OutputStream, Sink)> {
-        let mut stream_handle = match OutputStreamBuilder::from_default_device()?
+    pub fn get_sink(sample_rate: SampleRate) -> Result<(MixerDeviceSink, rodio::Player)> {
+        let mut stream_handle = match DeviceSinkBuilder::from_default_device()?
             .with_sample_rate(sample_rate)
             .open_stream()
         {
             Ok(handle) => handle,
-            Err(_) => OutputStreamBuilder::open_default_stream()?,
+            Err(_) => DeviceSinkBuilder::open_default_sink()?,
         };
-        let sink = Sink::connect_new(stream_handle.mixer());
+        let sink = rodio::Player::connect_new(stream_handle.mixer());
 
         stream_handle.log_on_drop(false);
 
