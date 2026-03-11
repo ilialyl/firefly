@@ -32,7 +32,7 @@ use crate::{
             cover_art_server::COVER_ART_ROUTE,
             data::{get_art_cache_path, get_cache_dir},
             files::{is_opus, is_rodio_supported},
-            opus::get_opus_source,
+            opus::OpusSource,
         },
         message::Message,
     },
@@ -171,8 +171,9 @@ impl Track {
         let path = self.get_path()?;
         let file = File::open(&path)?;
         if is_opus(&self.get_path()?)? {
-            let source = get_opus_source(&path);
-            Ok(source)
+            let source = OpusSource::new(&path)?;
+            let boxed: Box<dyn Source<Item = f32> + Send> = Box::new(source);
+            Ok(boxed)
         } else {
             let source = Decoder::try_from(file)?;
             Ok(Box::new(source))

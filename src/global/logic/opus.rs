@@ -1,252 +1,155 @@
-use std::fs::File;
-use std::io::BufReader;
-use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::{collections::VecDeque, fs::File, path::Path, time::Duration};
 
 use color_eyre::eyre::Result;
-use ogg::reading::PacketReader;
-use opus::{Channels as OpusChannels, Decoder as OpusDecoder};
-use rodio::source::{SeekError, Source};
+use rodio::{ChannelCount, SampleRate, Source};
+use symphonia::core::{
+    audio::{AudioBufferRef, Signal},
+    codecs::{CODEC_TYPE_NULL, CodecRegistry, Decoder, DecoderOptions},
+    errors::Error,
+    formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
+    io::MediaSourceStream,
+    meta::MetadataOptions,
+    probe::Hint,
+    units::Time,
+};
+use symphonia_adapter_libopus::OpusDecoder;
 
-// This file was 99% vibe-coded. I can't possibly do it myself if an issue opened for it hasn't been closed after 10 years - https://github.com/RustAudio/rodio/issues/38.
-
-pub struct OpusOggSource {
-    path: PathBuf,
-    packet_reader: PacketReader<BufReader<File>>,
-    decoder: OpusDecoder,
-    channels: u16,
+pub struct OpusSource {
+    channels: usize,
     sample_rate: u32,
-    decoded_buf: Vec<f32>,
-    decoded_pos: usize,
-    finished: bool,
+    buffer: VecDeque<f32>,
+    decoder: Box<dyn Decoder>,
+    track_id: u32,
+    format: Box<dyn FormatReader>,
+    duration: Option<Duration>,
 }
 
-impl OpusOggSource {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn std::error::Error>> {
-        let path = path.as_ref().to_path_buf();
-        let file = File::open(&path)?;
-        let reader = BufReader::new(file);
-        let mut pr = PacketReader::new(reader);
+impl OpusSource {
+    pub fn new(path: &Path) -> Result<Self> {
+        let src = File::open(path)?;
+        let mss = MediaSourceStream::new(Box::new(src), Default::default());
+        let meta_opts: MetadataOptions = Default::default();
+        let fmt_opts: FormatOptions = Default::default();
 
-        let id_packet = pr.read_packet()?.ok_or("unexpected EOF reading OpusHead")?;
-        if id_packet.data.len() < 10 || &id_packet.data[0..8] != b"OpusHead" {
-            return Err("not an Ogg Opus stream (missing OpusHead)".into());
-        }
-        let channels = id_packet.data[9] as u16;
+        let probed = symphonia::default::get_probe().format(
+            Hint::new().with_extension("opus"),
+            mss,
+            &fmt_opts,
+            &meta_opts,
+        )?;
 
-        let _ = pr.read_packet()?;
+        let format = probed.format;
 
-        let sample_rate = 48_000;
-        let opus_channels = if channels == 1 {
-            OpusChannels::Mono
-        } else {
-            OpusChannels::Stereo
+        let track = format
+            .tracks()
+            .iter()
+            .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
+            .unwrap();
+
+        let dec_opts: DecoderOptions = Default::default();
+
+        let mut codec_registry = CodecRegistry::new();
+        codec_registry.register_all::<OpusDecoder>();
+
+        let decoder = codec_registry.make(&track.codec_params, &dec_opts)?;
+
+        let track_id = track.id;
+
+        let duration = match (track.codec_params.n_frames, track.codec_params.sample_rate) {
+            (Some(frames), Some(rate)) => {
+                Some(Duration::from_secs_f64(frames as f64 / rate as f64))
+            }
+            _ => None,
         };
 
-        let decoder = OpusDecoder::new(sample_rate, opus_channels)?;
-
-        Ok(Self {
-            path,
-            packet_reader: pr,
+        Ok(OpusSource {
+            channels: track.codec_params.channels.unwrap().count(),
+            sample_rate: track.codec_params.sample_rate.unwrap(),
+            buffer: VecDeque::new(),
             decoder,
-            channels,
-            sample_rate,
-            decoded_buf: Vec::new(),
-            decoded_pos: 0,
-            finished: false,
+            track_id,
+            format,
+            duration,
         })
     }
-
-    fn decode_next_packet(&mut self) -> Result<bool, Box<dyn std::error::Error>> {
-        loop {
-            match self.packet_reader.read_packet()? {
-                Some(pkt) => {
-                    if pkt.data.is_empty() {
-                        continue;
-                    }
-
-                    let nb = self.decoder.get_nb_samples(&pkt.data).unwrap_or(960);
-                    let needed = nb * (self.channels as usize);
-                    let mut out = vec![0.0f32; needed];
-
-                    let decoded_per_chan = self.decoder.decode_float(&pkt.data, &mut out, false)?;
-                    let total = decoded_per_chan * (self.channels as usize);
-                    out.truncate(total);
-
-                    self.decoded_buf = out;
-                    self.decoded_pos = 0;
-                    return Ok(true);
-                }
-                None => {
-                    self.finished = true;
-                    return Ok(false);
-                }
-            }
-        }
-    }
 }
 
-impl Iterator for OpusOggSource {
+impl Iterator for OpusSource {
     type Item = f32;
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(sample) = self.buffer.pop_front() {
+                return Some(sample);
+            }
 
-    fn next(&mut self) -> Option<f32> {
-        if self.decoded_pos < self.decoded_buf.len() {
-            let v = self.decoded_buf[self.decoded_pos];
-            self.decoded_pos += 1;
-            return Some(v);
-        }
+            let packet = match self.format.next_packet() {
+                Ok(p) => p,
+                Err(_) => return None,
+            };
 
-        if self.finished {
-            return None;
-        }
+            while !self.format.metadata().is_latest() {
+                self.format.metadata().pop();
+            }
 
-        match self.decode_next_packet() {
-            Ok(true) => {
-                if self.decoded_pos < self.decoded_buf.len() {
-                    let v = self.decoded_buf[self.decoded_pos];
-                    self.decoded_pos += 1;
-                    Some(v)
-                } else {
-                    None
+            if packet.track_id() != self.track_id {
+                continue;
+            }
+
+            match self.decoder.decode(&packet) {
+                Ok(decoded) => match decoded {
+                    AudioBufferRef::F32(buf) => {
+                        for i in 0..buf.frames() {
+                            for c in 0..self.channels {
+                                self.buffer.push_back(buf.chan(c)[i]);
+                            }
+                        }
+                    }
+                    _ => {
+                        unimplemented!()
+                    }
+                },
+                Err(Error::IoError(_)) => continue,
+                Err(Error::DecodeError(_)) => continue,
+                Err(e) => {
+                    panic!("{}", e);
                 }
             }
-            Ok(false) | Err(_) => None,
         }
     }
 }
 
-impl Source for OpusOggSource {
-    fn current_span_len(&self) -> Option<usize> {
-        let rem = self.decoded_buf.len().saturating_sub(self.decoded_pos);
-        Some(rem).filter(|&v| v != 0)
+impl Source for OpusSource {
+    fn channels(&self) -> ChannelCount {
+        self.channels as u16
     }
 
-    fn channels(&self) -> u16 {
-        self.channels
-    }
-
-    fn sample_rate(&self) -> u32 {
+    fn sample_rate(&self) -> SampleRate {
         self.sample_rate
     }
 
-    fn total_duration(&self) -> Option<Duration> {
+    fn current_span_len(&self) -> Option<usize> {
         None
     }
 
-    fn try_seek(&mut self, pos: Duration) -> std::result::Result<(), rodio::source::SeekError> {
-        let seconds = pos.as_secs_f64();
-        let target_samples_per_chan = (seconds * (self.sample_rate as f64)).round() as usize;
-
-        let file = File::open(&self.path).map_err(|_| SeekError::NotSupported {
-            underlying_source: "open failed",
-        })?;
-        let reader = BufReader::new(file);
-        let mut pr = PacketReader::new(reader);
-
-        // Read headers
-        let id_packet = pr
-            .read_packet()
-            .map_err(|_| SeekError::NotSupported {
-                underlying_source: "read header",
-            })?
-            .ok_or(SeekError::NotSupported {
-                underlying_source: "eof header",
-            })?;
-        if id_packet.data.len() < 10 || &id_packet.data[0..8] != b"OpusHead" {
-            return Err(SeekError::NotSupported {
-                underlying_source: "bad head",
-            });
-        }
-        let channels = id_packet.data[9] as u16;
-        let _ = pr.read_packet();
-
-        let sample_rate = 48_000;
-        let opus_channels = if channels == 1 {
-            OpusChannels::Mono
-        } else {
-            OpusChannels::Stereo
-        };
-
-        let mut decoder =
-            OpusDecoder::new(sample_rate, opus_channels).map_err(|_| SeekError::NotSupported {
-                underlying_source: "decoder",
-            })?;
-
-        let mut cum_samples_per_chan: usize = 0;
-
-        // Phase 1: Skip packets without decoding until we're close
-        // We'll start decoding when we're within ~1 second of target
-        let decode_threshold = target_samples_per_chan.saturating_sub(sample_rate as usize);
-
-        loop {
-            match pr.read_packet() {
-                Ok(Some(pkt)) => {
-                    if pkt.data.is_empty() {
-                        continue;
-                    }
-
-                    // Estimate samples for this packet
-                    let nb = decoder.get_nb_samples(&pkt.data).unwrap_or(960);
-
-                    // If we're still far from target, just skip
-                    if cum_samples_per_chan < decode_threshold {
-                        cum_samples_per_chan += nb;
-                        continue;
-                    }
-
-                    // We're close now, start decoding
-                    let mut out = vec![0.0f32; nb * (channels as usize)];
-                    let decoded_per_chan = decoder
-                        .decode_float(&pkt.data, &mut out, false)
-                        .map_err(|_| SeekError::NotSupported {
-                            underlying_source: "decode",
-                        })?;
-                    let total = decoded_per_chan * (channels as usize);
-                    out.truncate(total);
-
-                    // Check if this packet contains our target
-                    if cum_samples_per_chan + decoded_per_chan > target_samples_per_chan {
-                        let start_in_packet =
-                            target_samples_per_chan.saturating_sub(cum_samples_per_chan);
-                        let start_index = start_in_packet * (channels as usize);
-                        self.decoded_buf = if start_index < out.len() {
-                            out[start_index..].to_vec()
-                        } else {
-                            Vec::new()
-                        };
-                        self.decoded_pos = 0;
-                        self.packet_reader = pr;
-                        self.decoder = decoder;
-                        self.channels = channels;
-                        self.sample_rate = sample_rate;
-                        self.finished = false;
-                        return Ok(());
-                    }
-
-                    cum_samples_per_chan += decoded_per_chan;
-                }
-                Ok(None) => {
-                    self.decoded_buf.clear();
-                    self.decoded_pos = 0;
-                    self.packet_reader = pr;
-                    self.decoder = decoder;
-                    self.channels = channels;
-                    self.sample_rate = sample_rate;
-                    self.finished = true;
-                    return Ok(());
-                }
-                Err(_) => {
-                    return Err(SeekError::NotSupported {
-                        underlying_source: "packet read",
-                    });
-                }
-            }
-        }
+    fn total_duration(&self) -> Option<std::time::Duration> {
+        self.duration
     }
-}
 
-pub fn get_opus_source(path: &Path) -> Box<dyn Source<Item = f32> + Send> {
-    let source = OpusOggSource::from_path(path).unwrap();
+    fn try_seek(&mut self, pos: Duration) -> std::result::Result<(), rodio::source::SeekError> {
+        self.buffer.clear();
 
-    Box::new(source)
+        self.format
+            .seek(
+                SeekMode::Accurate,
+                SeekTo::Time {
+                    time: Time::from(pos),
+                    track_id: Some(self.track_id),
+                },
+            )
+            .unwrap();
+
+        self.decoder.reset();
+
+        Ok(())
+    }
 }
