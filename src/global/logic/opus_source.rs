@@ -1,9 +1,9 @@
 use std::{collections::VecDeque, fs::File, num::NonZero, path::Path, sync::Arc, time::Duration};
 
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{OptionExt, Result};
 use rodio::{ChannelCount, SampleRate, Source, decoder::symphonia::SeekError, source};
 use symphonia::core::{
-    audio::{AudioBufferRef, Signal},
+    audio::SampleBuffer,
     codecs::{CODEC_TYPE_NULL, CodecRegistry, Decoder, DecoderOptions},
     errors::Error,
     formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
@@ -18,6 +18,7 @@ pub struct OpusSource {
     channels: usize,
     sample_rate: u32,
     buffer: VecDeque<f32>,
+    sample_buf: Option<SampleBuffer<f32>>,
     decoder: Box<dyn Decoder>,
     track_id: u32,
     format: Box<dyn FormatReader>,
@@ -44,7 +45,7 @@ impl OpusSource {
             .tracks()
             .iter()
             .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
-            .unwrap();
+            .ok_or_eyre("no track found")?;
 
         let dec_opts: DecoderOptions = Default::default();
 
@@ -63,8 +64,16 @@ impl OpusSource {
         };
 
         Ok(OpusSource {
-            channels: track.codec_params.channels.unwrap().count(),
-            sample_rate: track.codec_params.sample_rate.unwrap(),
+            channels: track
+                .codec_params
+                .channels
+                .ok_or_eyre("missing channel info")?
+                .count(),
+            sample_rate: track
+                .codec_params
+                .sample_rate
+                .ok_or_eyre("missing sample rate info")?,
+            sample_buf: None,
             buffer: VecDeque::new(),
             decoder,
             track_id,
@@ -84,7 +93,13 @@ impl Iterator for OpusSource {
 
             let packet = match self.format.next_packet() {
                 Ok(p) => p,
-                Err(_) => return None, // The last packet.
+                Err(Error::IoError(ref e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                    return None;
+                }
+                Err(e) => {
+                    log::error!("OpusSource Error: {e}");
+                    return None;
+                }
             };
 
             while !self.format.metadata().is_latest() {
@@ -96,20 +111,22 @@ impl Iterator for OpusSource {
             }
 
             match self.decoder.decode(&packet) {
-                Ok(decoded) => match decoded {
-                    AudioBufferRef::F32(buf) => {
-                        for i in 0..buf.frames() {
-                            for c in 0..self.channels {
-                                self.buffer.push_back(buf.chan(c)[i]);
-                            }
-                        }
-                    }
-                    _ => {
-                        unimplemented!()
-                    }
-                },
+                Ok(decoded) => {
+                    let buf = self.sample_buf.get_or_insert_with(|| {
+                        SampleBuffer::<f32>::new(decoded.capacity() as u64, *decoded.spec())
+                    });
+
+                    buf.copy_interleaved_ref(decoded);
+
+                    self.buffer.extend(buf.samples().iter().copied());
+                }
                 Err(Error::IoError(_)) => continue,
                 Err(Error::DecodeError(_)) => continue,
+                Err(Error::ResetRequired) => {
+                    self.sample_buf = None;
+                    self.decoder.reset();
+                    continue;
+                }
                 Err(e) => {
                     // An unrecoverable error.
                     panic!("{}", e);
@@ -121,11 +138,11 @@ impl Iterator for OpusSource {
 
 impl Source for OpusSource {
     fn channels(&self) -> ChannelCount {
-        NonZero::new(self.channels as u16).unwrap()
+        NonZero::new(self.channels as u16).expect("Error converting channel count to non-zero.")
     }
 
     fn sample_rate(&self) -> SampleRate {
-        NonZero::new(self.sample_rate).unwrap()
+        NonZero::new(self.sample_rate).expect("Error converting sample rate to non-zero.")
     }
 
     fn current_span_len(&self) -> Option<usize> {
