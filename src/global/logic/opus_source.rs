@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs::File, num::NonZero, path::Path, sync::Arc, time::Duration};
+use std::{collections::VecDeque, fs::File, path::Path, sync::LazyLock, time::Duration};
 
 use color_eyre::eyre::{OptionExt, Result};
 use rodio::{ChannelCount, SampleRate, Source, decoder::symphonia::SeekError, source};
@@ -13,6 +13,12 @@ use symphonia::core::{
     units::Time,
 };
 use symphonia_adapter_libopus::OpusDecoder;
+
+static CODEC_REGISTRY: LazyLock<CodecRegistry> = LazyLock::new(|| {
+    let mut r = CodecRegistry::new();
+    r.register_all::<OpusDecoder>();
+    r
+});
 
 pub struct OpusSource {
     channels: usize,
@@ -49,10 +55,7 @@ impl OpusSource {
 
         let dec_opts: DecoderOptions = Default::default();
 
-        let mut codec_registry = CodecRegistry::new();
-        codec_registry.register_all::<OpusDecoder>();
-
-        let decoder = codec_registry.make(&track.codec_params, &dec_opts)?;
+        let decoder = CODEC_REGISTRY.make(&track.codec_params, &dec_opts)?;
 
         let track_id = track.id;
 
@@ -138,11 +141,11 @@ impl Iterator for OpusSource {
 
 impl Source for OpusSource {
     fn channels(&self) -> ChannelCount {
-        NonZero::new(self.channels as u16).expect("Error converting channel count to non-zero.")
+        self.channels as u16
     }
 
     fn sample_rate(&self) -> SampleRate {
-        NonZero::new(self.sample_rate).expect("Error converting sample rate to non-zero.")
+        self.sample_rate
     }
 
     fn current_span_len(&self) -> Option<usize> {
@@ -168,7 +171,7 @@ impl Source for OpusSource {
                     SeekError::RandomAccessNotSupported,
                 ));
             }
-            other => other.map_err(Arc::new).map_err(SeekError::Demuxer),
+            other => other.map_err(SeekError::Demuxer),
         }?;
 
         self.decoder.reset();

@@ -14,7 +14,7 @@ exclude = ["example_img/", ".github/", ".*", "test_assets/"]
 
 
 [dependencies]
-rodio = "0.22.2"
+rodio = "0.21.1"
 ratatui = "0.29.0"
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
