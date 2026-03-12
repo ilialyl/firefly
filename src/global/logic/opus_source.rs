@@ -2,15 +2,16 @@ use std::{collections::VecDeque, fs::File, path::Path, sync::LazyLock, time::Dur
 
 use color_eyre::eyre::{OptionExt, Result};
 use rodio::{ChannelCount, SampleRate, Source, decoder::symphonia::SeekError, source};
-use symphonia::core::{
-    audio::SampleBuffer,
-    codecs::{CODEC_TYPE_NULL, CodecRegistry, Decoder, DecoderOptions},
-    errors::Error,
-    formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
-    io::MediaSourceStream,
-    meta::MetadataOptions,
-    probe::Hint,
-    units::Time,
+use symphonia::{
+    core::{
+        audio::SampleBuffer,
+        codecs::{CODEC_TYPE_NULL, CodecRegistry, Decoder, DecoderOptions},
+        errors::Error,
+        formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
+        io::MediaSourceStream,
+        units::Time,
+    },
+    default::formats::OggReader,
 };
 use symphonia_adapter_libopus::OpusDecoder;
 
@@ -33,29 +34,29 @@ pub struct OpusSource {
 
 impl OpusSource {
     pub fn new(path: &Path) -> Result<Self> {
+        let now = std::time::Instant::now();
         let src = File::open(path)?;
         let mss = MediaSourceStream::new(Box::new(src), Default::default());
-        let meta_opts: MetadataOptions = Default::default();
         let fmt_opts: FormatOptions = Default::default();
+        log::info!("file open: {:?}", now.elapsed());
 
-        let probed = symphonia::default::get_probe().format(
-            Hint::new().with_extension("opus"),
-            mss,
-            &fmt_opts,
-            &meta_opts,
-        )?;
+        let now = std::time::Instant::now();
+        let format: Box<dyn FormatReader> = Box::new(OggReader::try_new(mss, &fmt_opts)?);
+        log::info!("ogg reader: {:?}", now.elapsed());
 
-        let format = probed.format;
-
+        let now = std::time::Instant::now();
         let track = format
             .tracks()
             .iter()
             .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
             .ok_or_eyre("no track found")?;
+        log::info!("track: {:?}", now.elapsed());
 
         let dec_opts: DecoderOptions = Default::default();
 
+        let now = std::time::Instant::now();
         let decoder = CODEC_REGISTRY.make(&track.codec_params, &dec_opts)?;
+        log::info!("decoder: {:?}", now.elapsed());
 
         let track_id = track.id;
 
