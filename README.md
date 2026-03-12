@@ -81,7 +81,7 @@ firefly with ./**/*.opus
 ```
 
 ## Known Issue
-- Seeking an OPUS track is slow.
+- Loading an OPUS track can be slow for files with large cover art (i.e. 1000x1000).
 - Wezterm (Windows) does not display cover art.
 - Does not work with WSL as no audio output is connected.
 
