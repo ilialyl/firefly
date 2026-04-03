@@ -10,7 +10,7 @@ use crate::{
         message::Message,
     },
     player::{self, logic::Player},
-    playlist::cmd::create_playlist,
+    playlist::cmd::rename_playlist,
     queue::logic::{TrackQueue, mini_track::MiniTrack},
 };
 
@@ -134,12 +134,8 @@ pub async fn skip_to_selected(app: &mut App) -> Option<Message> {
 
 pub async fn save_as_playlist(app: &mut App) -> Option<Message> {
     if !app.queue.is_empty() {
-        create_playlist(&mut app.playlist_ctl);
-        let playlist = app
-            .playlist_ctl
-            .playlist_coll
-            .get_playlist(app.playlist_ctl.playlist_coll.len() - 1)
-            .unwrap();
+        let index = app.playlist_ctl.create_playlist();
+        let playlist = app.playlist_ctl.playlist_coll.get_playlist(index).unwrap();
         if let Some(current_track) = app.player.current.as_mut() {
             playlist
                 .mini_tracks
@@ -152,7 +148,9 @@ pub async fn save_as_playlist(app: &mut App) -> Option<Message> {
             .tracks
             .iter()
             .for_each(|t| playlist.mini_tracks.push(t.clone()));
-    }
 
-    None
+        rename_playlist(Some(index), &mut app.playlist_ctl)
+    } else {
+        None
+    }
 }
