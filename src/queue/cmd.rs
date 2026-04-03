@@ -142,13 +142,15 @@ pub async fn save_as_playlist(app: &mut App) -> Option<Message> {
                 .push(Rc::new(RefCell::new(MiniTrack::new(
                     &current_track.real_path,
                 ))));
+            if !playlist.is_empty() {
+                playlist.selected_track = Some(0);
+            }
         }
 
         app.queue
             .tracks
             .iter()
             .for_each(|t| playlist.mini_tracks.push(t.clone()));
-
         rename_playlist(Some(index), &mut app.playlist_ctl)
     } else {
         None
