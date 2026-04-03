@@ -260,13 +260,20 @@ pub fn delete_playlist(
     None
 }
 
-pub fn rename_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
-    playlist_ctl.selected_playlist.map(|index| {
-        Message::UserInput(UserInputMessage::EnterEditMode(
-            "Playlist Rename".to_string(),
-            InputTarget::PlaylistName(index),
-        ))
-    })
+/// Rename selected playlist unless index is specified.
+pub fn rename_playlist(
+    index: Option<usize>,
+    playlist_ctl: &mut PlaylistController,
+) -> Option<Message> {
+    index
+        .or(playlist_ctl.selected_playlist)
+        .filter(|&idx| playlist_ctl.playlist_coll.get_playlist(idx).is_some())
+        .map(|index| {
+            Message::UserInput(UserInputMessage::EnterEditMode(
+                "Playlist Rename".to_string(),
+                InputTarget::PlaylistName(index),
+            ))
+        })
 }
 
 pub fn save_selected_playlist(playlist_ctl: &mut PlaylistController) -> Option<Message> {
