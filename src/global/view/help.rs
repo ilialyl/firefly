@@ -89,6 +89,7 @@ fn get_player_controls<'a>() -> Vec<(&'a str, &'a str)> {
         ("Clear Queue", "<Backspace>"),
         ("Move Queue Up", "<↑>"),
         ("Move Queue Down", "<↓>"),
+        ("Save Queue as Playlist", "<F5>"),
         ("Prev/Skip", "<P/S>"),
         ("Rewind/Seek", "<←/→>"),
         ("Volume", "<=/->"),
