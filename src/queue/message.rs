@@ -17,4 +17,5 @@ pub enum QueueMessage {
     RemoveSelected,
     CreatedMiniTrack(MiniTrack),
     SkipToSelected,
+    SaveAsPlaylist,
 }

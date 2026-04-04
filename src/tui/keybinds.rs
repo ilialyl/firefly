@@ -82,6 +82,7 @@ pub fn handle_key_inputs(key_event: KeyEvent, app: &App) -> Option<Message> {
                 KeyCode::Home => Some(Message::Queue(QueueMessage::ScrollToStart)),
                 KeyCode::End => Some(Message::Queue(QueueMessage::ScrollToEnd)),
                 KeyCode::Tab => Some(Message::CycleTabs),
+                KeyCode::F(5) => Some(Message::Queue(QueueMessage::SaveAsPlaylist)),
                 _ => None,
             },
         },

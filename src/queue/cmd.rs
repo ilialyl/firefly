@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 use crate::{
     app::App,
@@ -10,6 +10,7 @@ use crate::{
         message::Message,
     },
     player::{self, logic::Player},
+    playlist::cmd::rename_playlist,
     queue::logic::{TrackQueue, mini_track::MiniTrack},
 };
 
@@ -129,4 +130,29 @@ pub async fn skip_to_selected(app: &mut App) -> Option<Message> {
     player::cmd::play_next_track(app).await;
 
     None
+}
+
+pub async fn save_as_playlist(app: &mut App) -> Option<Message> {
+    if !app.queue.is_empty() {
+        let index = app.playlist_ctl.create_playlist();
+        let playlist = app.playlist_ctl.playlist_coll.get_playlist(index).unwrap();
+        if let Some(current_track) = app.player.current.as_mut() {
+            playlist
+                .mini_tracks
+                .push(Rc::new(RefCell::new(MiniTrack::new(
+                    &current_track.real_path,
+                ))));
+            if !playlist.is_empty() {
+                playlist.selected_track = Some(0);
+            }
+        }
+
+        app.queue
+            .tracks
+            .iter()
+            .for_each(|t| playlist.mini_tracks.push(t.clone()));
+        rename_playlist(Some(index), &mut app.playlist_ctl)
+    } else {
+        None
+    }
 }
