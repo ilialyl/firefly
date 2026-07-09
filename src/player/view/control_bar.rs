@@ -17,14 +17,6 @@ pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
         PlaybackStatus::Paused => "Paused",
     };
 
-    let quality_str = if let Some(current_track) = app.player.current.as_mut()
-        && let Some(tagged_file) = current_track.tagged_file.as_mut()
-    {
-        get_quality_str(tagged_file)
-    } else {
-        String::from("              ")
-    };
-
     let duration_str = if let Some(current_track) = app.player.current.as_mut() {
         format!(
             "{} / {}",
@@ -36,11 +28,10 @@ pub fn draw(area: Rect, frame: &mut Frame, app: &mut App) {
     };
 
     let misc_str = format!(
-        "{} {} {} {}",
+        "{} {} {}",
         duration_str,
         if app.player.looping { "↻" } else { " " },
-        get_volume_str(app.player.sink.volume()),
-        quality_str,
+        get_volume_str(app.player.sink.volume())
     );
 
     let area = Layout::horizontal(vec![
@@ -132,7 +123,7 @@ fn duration_as_str(dur: &Duration) -> String {
     }
 }
 
-fn get_quality_str(tag: &TaggedFile) -> String {
+fn _get_quality_str(tag: &TaggedFile) -> String {
     let mut bit_depth = tag
         .properties()
         .bit_depth()
