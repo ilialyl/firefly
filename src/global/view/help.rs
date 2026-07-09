@@ -112,7 +112,8 @@ fn get_playlist_controls<'a>() -> Vec<(&'a str, &'a str)> {
         ("Add Directory", "<ShiftW>"),
         ("Remove Track", "<Del>"),
         ("Arrange Tracks", "<A>"),
-        ("Send Selected to Player", "<F1/Enter>"),
+        ("Enqueue Selected Entry", "<Enter>"),
+        ("Prepend Selected Entry to Queue", "<\\>"),
         ("Focus Player", "<Tab>"),
     ]
     .into_iter()
