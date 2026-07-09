@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{cell::RefCell, collections::VecDeque, path::PathBuf, rc::Rc};
 
 use crate::{
     app::App,
@@ -16,6 +16,7 @@ use crate::{
         },
         message::PlaylistMessage,
     },
+    queue::logic::mini_track::MiniTrack,
     tui::Direction,
     user_input::{logic::InputTarget, message::UserInputMessage},
 };
@@ -124,7 +125,7 @@ pub fn add_dir(playlist_ctl: &mut PlaylistController) -> Option<Message> {
     None
 }
 
-pub fn send_to_player(app: &mut App) -> Option<Message> {
+pub fn enqueue(app: &mut App) -> Option<Message> {
     match app.playlist_ctl.tab_focus {
         PlaylistTabFocus::Playlists => {
             if let Some(selected) = app.playlist_ctl.get_selected_playlist() {
@@ -134,7 +135,7 @@ pub fn send_to_player(app: &mut App) -> Option<Message> {
                     .for_each(|m| app.queue.enqueue_mini_track_ref(m.clone()));
 
                 log::info!(
-                    "Sent playlist \"{}\" to queue.",
+                    "Enqueued playlist \"{}\".",
                     selected.get_name().unwrap_or_default()
                 );
             }
@@ -145,10 +146,36 @@ pub fn send_to_player(app: &mut App) -> Option<Message> {
                 && let Some(mini_track) = playlist.mini_tracks.get(index)
             {
                 app.queue.enqueue_mini_track_ref(mini_track.clone());
+                log::info!("Enqueued \"{}\".", mini_track.borrow().path.display());
+            }
+        }
+    }
+
+    None
+}
+
+pub fn prepend_queue(app: &mut App) -> Option<Message> {
+    match app.playlist_ctl.tab_focus {
+        PlaylistTabFocus::Playlists => {
+            if let Some(selected) = app.playlist_ctl.get_selected_playlist() {
+                let tracks: VecDeque<Rc<RefCell<MiniTrack>>> =
+                    selected.mini_tracks.iter().cloned().collect();
+                app.queue.prepend_mini_track_refs(tracks);
+
                 log::info!(
-                    "Sent track \"{}\" to queue.",
-                    mini_track.borrow().path.display()
+                    "Enqueued playlist \"{}\".",
+                    selected.get_name().unwrap_or_default()
                 );
+            }
+        }
+        PlaylistTabFocus::Tracks => {
+            if let Some(playlist) = app.playlist_ctl.get_selected_playlist()
+                && let Some(index) = playlist.selected_track
+                && let Some(mini_track) = playlist.mini_tracks.get(index)
+            {
+                app.queue
+                    .prepend_mini_track_refs(VecDeque::from(vec![mini_track.clone()]));
+                log::info!("Enqueued \"{}\".", mini_track.borrow().path.display());
             }
         }
     }

@@ -28,10 +28,11 @@ pub fn handle_key_inputs(key_event: KeyEvent, app: &App) -> Option<Message> {
                 KeyCode::Char('=') => Some(Message::Player(PlayerMessage::IncreaseVolume(
                     DEFAULT_VOLUME_CHANGE_AMOUNT,
                 ))),
+                KeyCode::Char('\\') => Some(Message::Playlist(PlaylistMessage::PrependQueue)),
                 KeyCode::Char('-') => Some(Message::Player(PlayerMessage::DecreaseVolume(
                     DEFAULT_VOLUME_CHANGE_AMOUNT,
                 ))),
-                KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::SendToPlayer)),
+                KeyCode::Enter => Some(Message::Playlist(PlaylistMessage::Enqueue)),
                 KeyCode::Delete => Some(Message::Playlist(PlaylistMessage::RemoveTrack)),
                 KeyCode::Right => Some(Message::Playlist(PlaylistMessage::Navigate(
                     Direction::Right,
@@ -43,7 +44,6 @@ pub fn handle_key_inputs(key_event: KeyEvent, app: &App) -> Option<Message> {
                 KeyCode::Down => Some(Message::Playlist(PlaylistMessage::Navigate(
                     Direction::Down,
                 ))),
-                KeyCode::F(1) => Some(Message::Playlist(PlaylistMessage::SendToPlayer)),
                 KeyCode::F(2) => Some(Message::Playlist(PlaylistMessage::Rename)),
                 KeyCode::F(9) => Some(Message::Playlist(PlaylistMessage::Delete)),
                 KeyCode::F(5) => Some(Message::Playlist(PlaylistMessage::SaveSelected)),

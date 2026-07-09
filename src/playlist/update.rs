@@ -8,7 +8,8 @@ pub fn update_playlist(app: &mut App, msg: PlaylistMessage) -> Option<Message> {
     match msg {
         PlaylistMessage::Create => create_playlist(&mut app.playlist_ctl),
         PlaylistMessage::AddTracks => add_tracks(&mut app.playlist_ctl),
-        PlaylistMessage::SendToPlayer => send_to_player(app),
+        PlaylistMessage::Enqueue => enqueue(app),
+        PlaylistMessage::PrependQueue => prepend_queue(app),
         PlaylistMessage::Navigate(direction) => move_cursor(direction, &mut app.playlist_ctl),
         PlaylistMessage::AddDir => add_dir(&mut app.playlist_ctl),
         PlaylistMessage::Delete => {

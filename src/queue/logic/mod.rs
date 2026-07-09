@@ -64,6 +64,19 @@ impl TrackQueue {
     pub fn prepend_track(&mut self, path: &Path) {
         self.tracks
             .push_front(Rc::new(RefCell::new(MiniTrack::new(path))));
+        if !self.is_empty() && self.selected_index.is_none() {
+            self.selected_index = Some(0)
+        }
+    }
+
+    pub fn prepend_mini_track_refs(&mut self, mini_track: VecDeque<Rc<RefCell<MiniTrack>>>) {
+        let mut new_tracks = mini_track;
+        let old_tracks = self.tracks.clone();
+        new_tracks.extend(old_tracks);
+        self.tracks = new_tracks;
+        if !self.is_empty() && self.selected_index.is_none() {
+            self.selected_index = Some(0)
+        }
     }
 
     pub fn enqueue_paths(&mut self, path_vec: Vec<PathBuf>) {
