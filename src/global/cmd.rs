@@ -68,7 +68,7 @@ pub async fn tick(app: &mut App) -> Option<Message> {
                 if let Err(e) = app.player.reload().await {
                     log::error!("Error looping track: {}", e);
                 }
-            } 
+            }
         }
 
         // Load the next track after current track ends.
@@ -81,13 +81,12 @@ pub async fn tick(app: &mut App) -> Option<Message> {
             player::cmd::play_next_track(app).await;
         } else if app.player.current.is_some()
             && app.player.sink.empty()
-            && !app.queue.is_empty()
+            && app.queue.is_empty()
             && (status == FormatConversion::Done || status == FormatConversion::Unnecessary)
         {
-            if let Err(e) = app.player.reload().await {
-                log::error!("Error looping track: {}", e);
-            }
-            app.player.sink.pause();
+            // When the last track in the queue ends
+            app.player.reload().await.inspect_err(|e| log::error!("Error looping track: {}", e)).ok();
+            app.player.pause().await.inspect_err(|e| log::error!("Error looping track: {}", e)).ok();
         }
 
         // Load first track if no current track and there is something in the queue.
